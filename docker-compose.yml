@@ -1,0 +1,24 @@
+version: '3'
+
+services:
+  socks-router:
+    image: leoslf/socks-router:${VERSION?}
+    build:
+      context: .
+    restart: always
+    ports:
+      - ${SOCKS_ROUTER_PORT:-1080}:1080
+    volumes:
+      - ${HOME}/.ssh:/root/.ssh:ro
+    environment:
+      LOG_LEVEL: DEBUG
+    env_file:
+      - .env
+    x-develop:
+      watch:
+        - action: sync
+          path: .
+          target: /usr/src/app
+        - action: rebuild
+          path: pyproject.toml
+
