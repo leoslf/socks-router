@@ -7,17 +7,17 @@ import pathlib
 import click
 
 from typing import Optional, cast
+from functools import partial
 
 from click_option_group import optgroup, MutuallyExclusiveOptionGroup
 
-from pyaml_env import parse_config # type: ignore[import-untyped]
+from pyaml_env import parse_config
 
 from threading import Lock
-from socketserver import ThreadingTCPServer
 
 from socks_router.parsers import configuration
 from socks_router.models import ApplicationContext, RoutingTable
-from socks_router.router import SocksRouter
+from socks_router.router import SocksRouter, SocksRouterRequestHandler
 
 logger = logging.getLogger(__name__)
 
@@ -42,15 +42,8 @@ def cli(ctx: click.Context,
     )
 
     routing_table: RoutingTable = configuration.parse(routes or cast(pathlib.Path, routes_file).read_text())
+    context = ApplicationContext(hostname, port, routing_table, Lock(), {})
 
-    context = ApplicationContext(
-        routing_table,
-        Lock(),
-        {},
-    )
-
-    logger.info(f"Starting server at {hostname}:{port} with {routing_table}")
-
-    with ThreadingTCPServer((hostname, port), lambda *argv, **kwargs: SocksRouter(context, *argv, **kwargs)) as server:
+    with SocksRouter(context, (hostname, port), SocksRouterRequestHandler) as server:
         server.serve_forever()
 

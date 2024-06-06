@@ -1,5 +1,5 @@
-from typing import Mapping, Optional
-from collections.abc import Callable
+from typing import Optional
+from collections.abc import Callable, Mapping, MutableMapping
 from enum import IntEnum, StrEnum, auto
 from dataclasses import dataclass
 from threading import Lock
@@ -83,6 +83,9 @@ class Pattern:
     is_positive_match: bool
     address: Address
 
+    def __str__(self):
+        return ("" if self.is_positive_match else "!") + "%s" % self.address
+
 type RoutingTable = Mapping[Address, list[Pattern]]
 
 Socks5Addresses: Mapping[Socks5AddressType, Callable[[str, Optional[int]], Address]] = {
@@ -92,8 +95,15 @@ Socks5Addresses: Mapping[Socks5AddressType, Callable[[str, Optional[int]], Addre
 }
 
 @dataclass
+class Upstream:
+    ssh_client: Popen
+    proxy_server: Address
+
+@dataclass
 class ApplicationContext:
+    hostname: str
+    port: int
     routing_table: RoutingTable
     mutex: Lock
-    upstreams: dict[Address, tuple[Popen, Address]]
+    upstreams: MutableMapping[Address, Upstream]
 

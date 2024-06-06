@@ -2,7 +2,7 @@ version: 1
 disable_existing_loggers: false
 formatters:
   default:
-    format: !ENV ${LOG_FORMAT:%(asctime)s [%(threadName)s] %(levelname)-s (%(filename)s:%(funcName)s:%(lineno)d) %(message)s}
+    format: !ENV ${LOG_FORMAT:%(asctime)s [%(levelname)-s] [%(threadName)s] (%(filename)s:%(funcName)s:%(lineno)d) %(message)s}
     datefmt: !ENV ${LOG_DATE_FORMAT:%Y-%m-%dT%H:%M:%S%z}
 handlers:
   console:
