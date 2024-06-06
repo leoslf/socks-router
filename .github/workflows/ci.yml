@@ -41,7 +41,7 @@ jobs:
         run: poetry run ruff check .
 
       - name: Type checking
-        run: poetry run mypy .
+        run: poetry run mypy . --enable-incomplete-feature=NewGenericSyntax
 
       - name: Run the automated tests
         run: >-
