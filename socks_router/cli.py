@@ -7,7 +7,6 @@ import pathlib
 import click
 
 from typing import Optional, cast
-from functools import partial
 
 from click_option_group import optgroup, MutuallyExclusiveOptionGroup
 

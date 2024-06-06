@@ -139,7 +139,7 @@ class SocksRouter(ThreadingTCPServer):
         super().__init__(*argv, **kwargs)
 
     def server_activate(self) -> None:
-        logger.info(f"Server started on %s:%s", *self.server_address)
+        logger.info("Server started on %s:%s", *self.server_address)
         super().server_activate()
 
     def get_request(self) -> tuple[socket.socket, str]:
