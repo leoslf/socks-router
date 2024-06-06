@@ -88,12 +88,12 @@ jobs:
 
       - name: Setup poetry
         uses: ./.github/actions/setup-poetry
-
-      - name: Install the project dependencies
-        run: poetry install
         with:
           python-version: ${{ matrix.python-version }}
           poetry-version: ${{ matrix.poetry-version }}
+
+      - name: Install the project dependencies
+        run: poetry install
 
       - name: Merge xunit reports
         run: |
