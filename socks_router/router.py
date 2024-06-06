@@ -6,7 +6,7 @@ import struct
 import fnmatch
 
 import socket
-import socks
+import socks # type: ignore[import-untyped]
 
 from typing import Optional
 from more_itertools import partition
@@ -100,7 +100,7 @@ def reply(reply: Socks5Reply,
                        0 if bind_address is None else struct.unpack("!I", socket.inet_aton(bind_address))[0],
                        0 if bind_port is None else bind_port)
 
-def create_remote(type: Socks5AddressType) -> socket.socket:
+def create_remote(type: Socks5AddressType) -> socks.socksocket:
     match type:
         case Socks5AddressType.IPv4 | Socks5AddressType.DOMAINNAME:
             return socks.socksocket()

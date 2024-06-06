@@ -20,7 +20,7 @@ click = "^8.1.7"
 more-itertools = "^10.2.0"
 pyaml-env = "^1.2.1"
 setuptools = "^70.0.0"
-parsec = "^3.17"
+parsec = { git = "https://github.com/leoslf/parsec.py", branch = "master" } # "^3.17"
 
 [tool.poetry.extras]
 docs = ["sphinx", "sphinx-rtd-theme", "myst-parser", "sphinx-pyproject", "sphinxcontrib-apidoc", "sphinx-autoapi"]
@@ -31,7 +31,7 @@ pytest-cov = ">=4.1,<6.0"
 pytest-mock = "^3.12.0"
 freezegun = "^1.4.0"
 ruff = "^0.3.2"
-mypy = "^1.9.0"
+mypy = { git = "https://github.com/python/mypy", branch = "master" }
 junitparser = "^3.1.2"
 
 [tool.poetry.group.release.dependencies]

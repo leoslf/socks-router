@@ -1,4 +1,5 @@
 from typing import Mapping, Optional
+from collections.abc import Callable
 from enum import IntEnum, StrEnum, auto
 from dataclasses import dataclass
 from threading import Lock
@@ -84,7 +85,7 @@ class Pattern:
 
 type RoutingTable = Mapping[Address, list[Pattern]]
 
-Socks5Addresses: Mapping[Socks5AddressType, Address] = {
+Socks5Addresses: Mapping[Socks5AddressType, Callable[[str, Optional[int]], Address]] = {
     Socks5AddressType.IPv4: IPv4,
     Socks5AddressType.IPv6: IPv6,
     Socks5AddressType.DOMAINNAME: Host,
@@ -94,5 +95,5 @@ Socks5Addresses: Mapping[Socks5AddressType, Address] = {
 class ApplicationContext:
     routing_table: RoutingTable
     mutex: Lock
-    upstreams: Mapping[Address, tuple[Popen, Address]]
+    upstreams: dict[Address, tuple[Popen, Address]]
 

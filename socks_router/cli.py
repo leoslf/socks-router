@@ -6,11 +6,11 @@ import pathlib
 
 import click
 
-from typing import Optional
+from typing import Optional, cast
 
 from click_option_group import optgroup, MutuallyExclusiveOptionGroup
 
-from pyaml_env import parse_config
+from pyaml_env import parse_config # type: ignore[import-untyped]
 
 from threading import Lock
 from socketserver import ThreadingTCPServer
@@ -41,7 +41,7 @@ def cli(ctx: click.Context,
         parse_config(logging_config)
     )
 
-    routing_table: RoutingTable = configuration.parse(routes or routes_file.read_text())
+    routing_table: RoutingTable = configuration.parse(routes or cast(pathlib.Path, routes_file).read_text())
 
     context = ApplicationContext(
         routing_table,
