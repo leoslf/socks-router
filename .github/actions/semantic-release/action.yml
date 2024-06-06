@@ -1,0 +1,47 @@
+name: Semantic Release
+description: Semantic Release
+inputs:
+  github-token:
+    required: true
+  pypi-token:
+    required: true
+  shell:
+    required: true
+    default: bash
+runs:
+  using: composite
+  steps:
+    - name: Check release status
+      id: release-status
+      shell: ${{ inputs.shell }}
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: |
+        if poetry run semantic-release --noop --strict version; then
+          echo "Releasing new version." 1>&2
+        else
+          echo "Skipping release steps." 1>&2
+        fi
+
+    - name: Release to GitHub
+      id: github-release
+      if: steps.release-status.outputs.released == 'true'
+      shell: ${{ inputs.shell }}
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: |
+        poetry run semantic-release version
+        git fetch --tags
+        for file in ./dist/**
+          do gh release upload "${{ steps.release-status.outputs.tag }}" $file
+        done
+
+    - name: Release to PyPI
+      id: pypi-release
+      if: steps.release-status.outputs.released == 'true'
+      shell: ${{ inputs.shell }}
+      env:
+        PYPI_TOKEN: ${{ inputs.pypi-token }}
+      run: |
+        poetry config pypi-token.pypi $PYPI_TOKEN
+        poetry publish

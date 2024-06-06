@@ -1,0 +1,187 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+  workflow_dispatch:
+
+jobs:
+  ci:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12"]
+        poetry-version: ["1.7.1"]
+        os: ["ubuntu-22.04", "macos-latest"]
+
+    timeout-minutes: 15
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup poetry
+        uses: ./.github/actions/setup-poetry
+        with:
+          python-version: ${{ matrix.python-version }}
+          poetry-version: ${{ matrix.poetry-version }}
+
+      - name: Install the project dependencies
+        run: poetry install
+
+      - name: Linting
+        run: poetry run ruff check .
+
+      - name: Type checking
+        run: poetry run mypy more_decorators
+
+      - name: Run the automated tests
+        run: >-
+          poetry run pytest 
+          -s
+          -o junit_suite_name=${{ matrix.os }}-python${{ matrix.python-version }}-poetry${{ matrix.poetry-version }}
+          --junit-xml=.output/unittest/${{ matrix.os }}-python${{ matrix.python-version }}-poetry${{ matrix.poetry-version }}.xml
+          --cov-report xml:.output/coverage/${{ matrix.os }}-python${{ matrix.python-version }}-poetry${{ matrix.poetry-version }}.xml
+
+      - name: Upload artifacts (unittest reports)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unittest-reports-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.poetry-version }}
+          path: .output/unittest/**/*.xml
+
+      - name: Upload artifacts (coverage reports)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-reports-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.poetry-version }}
+          path: .output/coverage/**/*.xml
+
+  consolidation:
+    needs: ci
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: unittest-reports-*
+          path: .output/unittest
+          merge-multiple: true
+
+      - name: Setup poetry
+        uses: ./.github/actions/setup-poetry
+
+      - name: Install the project dependencies
+        run: poetry install
+
+      - name: Merge xunit reports
+        run: |
+          shopt -s globstar
+          poetry run junitparser merge .output/unittest/**/*.xml .output/unittest/merged.xml
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: unittest-report
+          path: .output/unittest/merged.xml
+
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v4
+        if: always()
+        with:
+          report_paths: .output/unittest/merged.xml
+          include_passed: true
+
+  sonarqube:
+    needs: consolidation
+    runs-on: ubuntu-22.04
+    steps:
+      # NOTE: sonarqube doesn't like shallow checkout
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup poetry
+        uses: ./.github/actions/setup-poetry
+
+      - name: Install the project dependencies
+        run: poetry install
+
+      - name: Download artifacts (merged unittest report)
+        uses: actions/download-artifact@v4
+        with:
+          pattern: unittest-report 
+          path: .output/unittest
+          merge-multiple: true
+
+      - name: Download artifacts (coverage reports)
+        uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-reports-*
+          path: .output/coverage
+          merge-multiple: true
+
+      - name: Sonarqube Analysis
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+          SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      # If you wish to fail your job when the Quality Gate is red, uncomment the
+      # following lines. This would typically be used to fail a deployment.
+      - uses: sonarsource/sonarqube-quality-gate-action@master
+        if: ${{ github.event_name != 'pull_request' }}
+        timeout-minutes: 5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+          SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  publish:
+    needs: sonarqube
+    runs-on: ubuntu-22.04
+    steps:
+      # NOTE: semantic-release requires tags
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup poetry
+        uses: ./.github/actions/setup-poetry
+
+      - name: Install the project dependencies
+        run: poetry install --with=release -E docs
+
+      - name: Build docs
+        run: poetry run make -C docs html
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        with:
+          publish_branch: gh-pages
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/build/html
+          force_orphan: true
+
+      - name: Semantic Release
+        uses: ./.github/actions/semantic-release
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pypi-token: ${{ secrets.PYPI_TOKEN }}
