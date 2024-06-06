@@ -1,4 +1,4 @@
-from typing import Mapping, Optional, Callable, Iterable
+from typing import Mapping, Optional
 from enum import IntEnum, StrEnum, auto
 from dataclasses import dataclass
 from threading import Lock

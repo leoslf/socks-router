@@ -1,24 +1,39 @@
 from __future__ import annotations
 
-import operator
-import re
 
 import logging
 
 # from collection.abc import Callable
-from functools import reduce
 
-from parsec import *
-from socks_router.models import *
-from socks_router.utils import *
+from parsec import (
+    Parser,
+    string,
+    regex,
+    optional,
+    end_of_line,
+    times,
+    many,
+    one_of,
+    sepBy,
+    between,
+    joint,
+    separated,
+    try_choices_longest,
+    fail_with,
+    validate,
+    decimal_number,
+    hexadecimal_number,
+)
+from socks_router.models import Address, IPv4, IPv6, Host, Pattern, RoutingTable
+from socks_router.utils import to_hex
 
 logger = logging.getLogger(__name__)
 
-def trace(value: T) -> T:
+def trace[T](value: T) -> T:
     logger.debug(f"value: {value}")
     return value
 
-ipv4_octet = (decimal >= validate(lambda value: 0 <= value < (1 << 8))) | fail_with(f"ipv4_octet can only carry a value ranged from 0 to {1 << 8} exclusive")
+ipv4_octet = (decimal_number >= validate(lambda value: 0 <= value < (1 << 8))) | fail_with(f"ipv4_octet can only carry a value ranged from 0 to {1 << 8} exclusive")
 ipv6_doublet = (hexadecimal_number >= validate(lambda value: 0 <= value < (1 << 16))) | fail_with("doublet can only carry a value from 0 to {1 << 16} exclusive")
 
 ipv4 = separated(ipv4_octet.map(str), string("."), 4, end=False).map(".".join)
@@ -36,19 +51,19 @@ ipv6 = try_choices_longest(
 
 port = (decimal_number >= validate(lambda value: 0 <= value < 65536)) | fail_with("port can only carry between 0 to 65536 exclusive")
 
-ipv4_address: Parser[SocketAddress] = (ipv4 + optional(string(":") >> port)).map(IPv4, star=True)
+ipv4_address: Parser[IPv4] = (ipv4 + optional(string(":") >> port)).map(IPv4, star=True)
 
-ipv6_address: Parser[SocketAddress] = ((between(string("["), string("]"), ipv6) + (string(":") >> port)) ^ ipv6.map(lambda ipv6: (ipv6, None))).map(IPv6, star=True)
+ipv6_address: Parser[IPv6] = ((between(string("["), string("]"), ipv6) + (string(":") >> port)) ^ ipv6.map(lambda ipv6: (ipv6, None))).map(IPv6, star=True)
 
 hostname: Parser[str] = regex(r"(?P<hostname>\b(?:(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*(?:[A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])\b)")
 
-host_address: Parser[SocketAddress] = (hostname + optional(string(":") >> port)).map(Host, star=True)
+host_address: Parser[Host] = (hostname + optional(string(":") >> port)).map(Host, star=True)
 
-upstream: Parser[SocketAddress] = ipv4_address ^ ipv6_address ^ host_address
+upstream: Parser[Address] = ipv4_address ^ ipv6_address ^ host_address
 
 wildcard_hostname = regex(r"(?:\S*[*]\S*)|(?:(?:[*]|(?:(?:[a-zA-Z0-9?*]|[a-zA-Z0-9?*][a-zA-Z0-9\-?*]*[a-zA-Z0-9?*]))\.)*(?:[*]|(?:[A-Za-z0-9?*]|[A-Za-z0-9?*][A-Za-z0-9\-?*]*[A-Za-z0-9?*]))\b)")
 
-wildcard_host_address: Parser[SocketAddress] = (wildcard_hostname + optional(string(":") >> port)).map(Host, star=True)
+wildcard_host_address: Parser[Host] = (wildcard_hostname + optional(string(":") >> port)).map(Host, star=True)
 
 pattern: Parser[Pattern] = (optional(string("!").result(False), True) + wildcard_host_address).map(Pattern, star=True)
 

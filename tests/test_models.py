@@ -1,6 +1,6 @@
 import pytest
 
-from socks_router.models import *
+from socks_router.models import IPv4, IPv6
 
 @pytest.mark.parametrize("address,port,ipv4", [
     ("10.0.0.1", None, IPv4("10.0.0.1")),

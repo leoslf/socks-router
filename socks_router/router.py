@@ -1,4 +1,3 @@
-import os
 import logging
 import traceback
 
@@ -9,14 +8,24 @@ import fnmatch
 import socket
 import socks
 
-from typing import Mapping, Optional
+from typing import Optional
 from more_itertools import partition
 from select import select
-from threading import Lock
 from subprocess import Popen
 from socketserver import StreamRequestHandler
 
-from socks_router.models import *
+from socks_router.models import (
+    Socks5Command,
+    Socks5Method,
+    Socks5AddressType,
+    Socks5Reply,
+    Socks5State,
+    Socks5Addresses,
+    Address,
+    IPv4,
+    ApplicationContext,
+    RoutingTable,
+)
 
 SOCKS_VERSION = 5
 CHUNK_SIZE = 4096

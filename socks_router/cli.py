@@ -6,7 +6,7 @@ import pathlib
 
 import click
 
-from typing import Mapping, Optional, IO
+from typing import Optional
 
 from click_option_group import optgroup, MutuallyExclusiveOptionGroup
 
@@ -16,7 +16,7 @@ from threading import Lock
 from socketserver import ThreadingTCPServer
 
 from socks_router.parsers import configuration
-from socks_router.models import *
+from socks_router.models import ApplicationContext, RoutingTable
 from socks_router.router import SocksRouter
 
 logger = logging.getLogger(__name__)

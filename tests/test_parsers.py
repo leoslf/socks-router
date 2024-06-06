@@ -2,12 +2,19 @@ from __future__ import annotations
 
 import pytest
 
-import re
-
-from typing import Optional
-
-from parsec import *
-from socks_router.parsers import *
+from parsec import ParseError
+from socks_router.models import Host, IPv4, IPv6, Address, Pattern, RoutingTable
+from socks_router.parsers import (
+    trace,
+    ipv4_octet,
+    ipv4,
+    ipv4_address,
+    ipv6,
+    ipv6_address,
+    pattern,
+    configuration_entry,
+    configuration,
+)
 
 def test_trace():
     assert trace(1) == 1
