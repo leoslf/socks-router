@@ -67,7 +67,14 @@ jobs:
 
   consolidation:
     needs: ci
-    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12"]
+        poetry-version: ["1.7.1"]
+        os: ["ubuntu-22.04"]
+
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -105,7 +112,14 @@ jobs:
 
   sonarqube:
     needs: consolidation
-    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12"]
+        poetry-version: ["1.7.1"]
+        os: ["ubuntu-22.04"]
+
+    runs-on: ${{ matrix.os }}
     steps:
       # NOTE: sonarqube doesn't like shallow checkout
       - name: Checkout code
@@ -115,6 +129,9 @@ jobs:
 
       - name: Setup poetry
         uses: ./.github/actions/setup-poetry
+        with:
+          python-version: ${{ matrix.python-version }}
+          poetry-version: ${{ matrix.poetry-version }}
 
       - name: Install the project dependencies
         run: poetry install
@@ -154,7 +171,14 @@ jobs:
 
   publish:
     needs: sonarqube
-    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12"]
+        poetry-version: ["1.7.1"]
+        os: ["ubuntu-22.04"]
+
+    runs-on: ${{ matrix.os }}
     steps:
       # NOTE: semantic-release requires tags
       - name: Checkout code
@@ -164,6 +188,9 @@ jobs:
 
       - name: Setup poetry
         uses: ./.github/actions/setup-poetry
+        with:
+          python-version: ${{ matrix.python-version }}
+          poetry-version: ${{ matrix.poetry-version }}
 
       - name: Install the project dependencies
         run: poetry install --with=release -E docs
@@ -181,6 +208,7 @@ jobs:
           force_orphan: true
 
       - name: Semantic Release
+        if: ${{ false }}
         uses: ./.github/actions/semantic-release
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
