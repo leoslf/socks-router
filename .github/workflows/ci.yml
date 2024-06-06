@@ -91,6 +91,9 @@ jobs:
 
       - name: Install the project dependencies
         run: poetry install
+        with:
+          python-version: ${{ matrix.python-version }}
+          poetry-version: ${{ matrix.poetry-version }}
 
       - name: Merge xunit reports
         run: |
