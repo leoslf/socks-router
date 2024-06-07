@@ -13,3 +13,5 @@ exclude_lines =
     @overload
     \.\.\.
     if TYPE_CHECKING:
+    case _ as unreachable:
+    assert_never

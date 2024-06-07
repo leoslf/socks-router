@@ -4,7 +4,7 @@ inputs:
   github-token:
     required: true
   pypi-token:
-    required: true
+    required: false
   shell:
     required: true
     default: bash
@@ -38,7 +38,7 @@ runs:
 
     - name: Release to PyPI
       id: pypi-release
-      if: steps.release-status.outputs.released == 'true'
+      if: inputs.pypi-token != null && steps.release-status.outputs.released == 'true'
       shell: ${{ inputs.shell }}
       env:
         PYPI_TOKEN: ${{ inputs.pypi-token }}

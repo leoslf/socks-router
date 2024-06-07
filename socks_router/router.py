@@ -10,7 +10,7 @@ import socket
 import socks
 
 from types import FrameType
-from typing import Optional
+from typing import Optional, assert_never
 from collections.abc import Callable
 from more_itertools import partition
 from select import select
@@ -38,10 +38,22 @@ CHUNK_SIZE = 4096
 
 logger = logging.getLogger(__name__)
 
-def free_port() -> int:
+def free_port(address: str = "") -> tuple[str, int]:
     with socket.socket() as s:
-        s.bind(('', 0))
-        return s.getsockname()[1]
+        s.bind((address, 0))
+        return s.getsockname()
+
+def read_address(type: Socks5AddressType, connection: socket.socket) -> str:
+    match type:
+        case Socks5AddressType.IPv4:
+            return socket.inet_ntop(socket.AF_INET, connection.recv(4))
+        case Socks5AddressType.DOMAINNAME:
+            address_length, = connection.recv(1)
+            return connection.recv(address_length).decode("utf-8")
+        case Socks5AddressType.IPv6:
+            return socket.inet_ntop(socket.AF_INET6, connection.recv(6))
+        case _ as unreachable:
+            assert_never(unreachable)
 
 def read_request(connection: socket.socket) -> tuple[int, Socks5Command, Address]:
     """ Read Request.
@@ -55,20 +67,6 @@ def read_request(connection: socket.socket) -> tuple[int, Socks5Command, Address
     port, = struct.unpack("!H", connection.recv(2))
     return version, cmd, Socks5Addresses[address_type](address, port)
 
-def read_address(type: Socks5AddressType,
-                 connection: socket.socket) -> str:
-    logger.info(f"type: {type}")
-    match type:
-        case Socks5AddressType.IPv4:
-            return socket.inet_ntop(socket.AF_INET, connection.recv(4))
-        case Socks5AddressType.DOMAINNAME:
-            address_length, = connection.recv(1)
-            return connection.recv(address_length).decode("utf-8")
-        case Socks5AddressType.IPv6:
-            return socket.inet_ntop(socket.AF_INET6, connection.recv(6))
-        case _:
-            raise ValueError(f"unsupported type: {type}")
-
 def read_header(connection: socket.socket) -> tuple[int, set[int]]:
     """ Read Socks5 Header.
     Header
@@ -80,6 +78,37 @@ def read_header(connection: socket.socket) -> tuple[int, set[int]]:
 
     # get available methods
     return version, set(connection.recv(method_count))
+
+def create_socket(type: Socks5AddressType) -> socks.socksocket:
+    match type:
+        case Socks5AddressType.IPv4 | Socks5AddressType.DOMAINNAME:
+            return socks.socksocket(socket.AF_INET, socket.SOCK_STREAM, proto=0)
+        case Socks5AddressType.IPv6:
+            return socks.socksocket(socket.AF_INET6, socket.SOCK_STREAM, proto=0)
+        case _ as unreachable:
+            assert_never(unreachable)
+
+def with_proxy(socket: socks.socksocket, proxy_server: Optional[Address] = None) -> socks.socksocket:
+    if proxy_server is not None:
+        socket.set_proxy(socks.SOCKS5, proxy_server.address, proxy_server.port)
+    return socket
+
+def connect_socket(address: Address, timeout: float = 0.1):
+    with create_socket(address.type) as socket:
+        socket.settimeout(timeout)
+        socket.connect((address.address, address.port))
+
+def reply(reply: Socks5Reply,
+          address_type: Socks5AddressType = Socks5AddressType.IPv4,
+          bind_address: Optional[str] = None,
+          bind_port: Optional[int] = None):
+    return struct.pack("!BBBBIH",
+                       SOCKS_VERSION,
+                       reply,
+                       0x00,
+                       address_type,
+                       0 if bind_address is None else struct.unpack("!I", socket.inet_aton(bind_address))[0],
+                       0 if bind_port is None else bind_port)
 
 def exchange_loop(client: socket.socket,
                   remote: socket.socket,
@@ -96,35 +125,6 @@ def exchange_loop(client: socket.socket,
             data = remote.recv(chunk_size)
             if client.send(data) <= 0:
                 break
-
-def reply(reply: Socks5Reply,
-          address_type: Socks5AddressType = Socks5AddressType.IPv4,
-          bind_address: Optional[str] = None,
-          bind_port: Optional[int] = None):
-    return struct.pack("!BBBBIH",
-                       SOCKS_VERSION,
-                       reply,
-                       0x00,
-                       address_type,
-                       0 if bind_address is None else struct.unpack("!I", socket.inet_aton(bind_address))[0],
-                       0 if bind_port is None else bind_port)
-
-def create_socket(type: Socks5AddressType) -> socks.socksocket:
-    match type:
-        case Socks5AddressType.IPv4 | Socks5AddressType.DOMAINNAME:
-            return socks.socksocket(socket.AF_INET, socket.SOCK_STREAM, proto=0)
-        case Socks5AddressType.IPv6:
-            return socks.socksocket(socket.AF_INET6, socket.SOCK_STREAM, proto=0)
-
-def with_proxy(socket: socks.socksocket, proxy_server: Optional[Address] = None) -> socks.socksocket:
-    if proxy_server is not None:
-        socket.set_proxy(socks.SOCKS5, proxy_server.address, proxy_server.port)
-    return socket
-
-def connect_socket(address: Address, timeout: float = 0.1):
-    with create_socket(address.type) as socket:
-        socket.settimeout(timeout)
-        socket.connect((address.address, address.port))
 
 class SocksRouter(ThreadingTCPServer):
     reuse_address = True
@@ -210,7 +210,7 @@ class SocksRouterRequestHandler(StreamRequestHandler):
                 logger.debug(f"upstream: {upstream} does not appear in self.upstreams")
 
         with self.context.mutex:
-            proxy_server = IPv4("127.0.0.1", free_port())
+            proxy_server = IPv4(*free_port("127.0.0.1"))
             logger.debug(f"Free port: {proxy_server.port}")
             ssh_client = Popen(["ssh", "-NT", "-D", f"{proxy_server.port}", "-o", "ServerAliveInterval=240", "-o", "ExitOnForwardFailure=yes", f"{upstream.address}"] + ([] if upstream.port is None else ["-p", f"{upstream.port}"]))
 
@@ -302,8 +302,7 @@ class SocksRouterRequestHandler(StreamRequestHandler):
                     if self.remote is not None:
                         self.remote.close()
                     self.remote = None
-                    # self.server.close_request(self.request)
-                    break
+                    return
 
     def finish(self):
         logger.info("finish")

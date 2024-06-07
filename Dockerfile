@@ -42,4 +42,4 @@ COPY . .
 
 # Run application
 EXPOSE 1080
-CMD ["poetry", "run", "python", "."]
+CMD ["poetry", "run", "socks-router"]
