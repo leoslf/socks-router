@@ -106,7 +106,7 @@ class Socks5Method(IntEnum):
     USERNAME_PASSWORD = 0x02
     # IANA_ASSIGNED = 0x03
     # RESERVED_FOR_PRIVATE_METHODS = frozenset(range(0x80, 0xFF)) # 0x80..0xFE
-    NO_ACCEPTABLE_METHDOS = 0xFF
+    NO_ACCEPTABLE_METHODS = 0xFF
 
 
 class Socks5Command(IntEnum):
@@ -135,7 +135,7 @@ class Socks5MethodSelectionRequest:
     | 1 byte  | 1 byte       | [method_count] bytes |
     """
 
-    version: Literal[5]
+    version: int
     methods: list[int]
 
     def __bytes__(self) -> bytes:
@@ -152,7 +152,7 @@ class Socks5MethodSelectionResponse:
     | 1 byte  | 1 byte |
     """
 
-    version: Literal[5]
+    version: int
     method: Socks5Method
 
     def __bytes__(self) -> bytes:
@@ -163,7 +163,7 @@ class Socks5MethodSelectionResponse:
 class Socks5Request:
     """SEE: https://datatracker.ietf.org/doc/html/rfc1928#section-4"""
 
-    version: Literal[5]
+    version: int
     command: Socks5Command
     reserved: Literal[0x00]
     address_type: Socks5AddressType
@@ -199,11 +199,13 @@ class Socks5Reply:
     | 1 byte  | 1 byte | 0x00 | 1 byte | 4-255 bytes | 2 bytes  |
     """
 
+    version: Literal[5]
     reply: Socks5ReplyType
+    reserved: Literal[0] = 0x00
     address: Address = IPv4("0.0.0.0", 0)
 
     def __bytes__(self) -> bytes:
-        return struct.pack("!BBB", SOCKS_VERSION, self.reply, 0x00) + bytes(self.address)
+        return struct.pack("!BBB", self.version, self.reply, self.reserved) + bytes(self.address)
 
 
 class Socks5State(StrEnum):

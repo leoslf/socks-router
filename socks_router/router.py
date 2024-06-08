@@ -316,7 +316,7 @@ class SocksRouterRequestHandler(StreamRequestHandler):
 
         # none of the methods listed by the client are acceptable
         # notify the client
-        self.connection.sendall(bytes(Socks5MethodSelectionResponse(SOCKS_VERSION, Socks5Method.NO_ACCEPTABLE_METHDOS)))
+        self.connection.sendall(bytes(Socks5MethodSelectionResponse(SOCKS_VERSION, Socks5Method.NO_ACCEPTABLE_METHODS)))
         # the client MUST close the connection
         self.state = Socks5State.CLOSED
 
@@ -337,7 +337,7 @@ class SocksRouterRequestHandler(StreamRequestHandler):
                     self.logger.info(
                         f"Connected to destination {request.destination}, binding client socket: {self.remote.getsockname()}"
                     )
-                    self.connection.sendall(bytes(Socks5Reply(Socks5ReplyType.SUCCEEDED)))
+                    self.connection.sendall(bytes(Socks5Reply(SOCKS_VERSION, Socks5ReplyType.SUCCEEDED)))
                     self.state = Socks5State.ESTABLISHED
                     return
                 case _:

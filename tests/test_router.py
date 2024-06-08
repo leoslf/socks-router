@@ -15,9 +15,12 @@ import socket
 import socks
 
 from socks_router.models import (
+    SOCKS_VERSION,
+    Socks5Method,
+    Socks5MethodSelectionRequest,
+    Socks5MethodSelectionResponse,
     Socks5Command,
     Socks5AddressType,
-    Socks5MethodSelectionRequest,
     Socks5Request,
     IPv4,
     Host,
@@ -28,7 +31,6 @@ from socks_router.models import (
     ApplicationContext,
 )
 from socks_router.router import (
-    SOCKS_VERSION,
     free_port,
     read_request,
     read_address,
@@ -233,7 +235,17 @@ def describe_SocksRouter():
     def when_client_attempt_to_use_socks4():
         def it_should_close_socket(destination):
             with daemonize() as proxy:
-                with pytest.raises(requests.exceptions.ConnectionError):
+                with pytest.raises(requests.exceptions.ConnectionError, match=r".*Connection reset by peer.*"):
                     requests.get(
                         f"http://{destination}/", proxies={type: f"socks4://{proxy.address}" for type in ["http", "https"]}
                     ).json()
+
+    def when_client_attempt_to_use_unacceptable_methods():
+        def it_should_reply_no_acceptable_methods():
+            with daemonize() as proxy:
+                # handshake
+                with connect_remote(proxy.address) as client:
+                    client.sendall(bytes(Socks5MethodSelectionRequest(SOCKS_VERSION, methods=[Socks5Method.USERNAME_PASSWORD])))
+                    assert bytes(
+                        Socks5MethodSelectionResponse(SOCKS_VERSION, method=Socks5Method.NO_ACCEPTABLE_METHODS)
+                    ) == client.recv(2)
