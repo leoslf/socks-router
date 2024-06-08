@@ -21,8 +21,8 @@ from socks_router.parsers import (
     ipv6,
     ipv6_address,
     pattern,
-    configuration_entry,
-    configuration,
+    routing_rule,
+    routing_table,
 )
 
 
@@ -131,8 +131,8 @@ def test_pattern(input: str, result: Pattern):
         ),
     ],
 )
-def test_configuration_entry(input: str, result: tuple[UpstreamAddress, RoutingEntry]):
-    assert configuration_entry.parse(input) == result
+def test_routing_entry(input: str, result: tuple[UpstreamAddress, RoutingEntry]):
+    assert routing_rule.parse(input) == result
 
 
 @pytest.mark.parametrize(
@@ -141,13 +141,13 @@ def test_configuration_entry(input: str, result: tuple[UpstreamAddress, RoutingE
         "!foo",
     ],
 )
-def test_configuration_entry_failures(input: str):
+def test_routing_entry_failures(input: str):
     with pytest.raises(ParseError):
-        configuration_entry.parse(input)
+        routing_rule.parse(input)
 
 
 @pytest.mark.parametrize(
-    "input,routing_table",
+    "input,routing",
     [
         (
             "test foo bar\n",
@@ -174,5 +174,5 @@ def test_configuration_entry_failures(input: str):
         ),
     ],
 )
-def test_configuration(input: str, routing_table: RoutingTable):
-    assert configuration.parse(input) == routing_table
+def test_routing_table(input: str, routing: RoutingTable):
+    assert routing_table.parse(input) == routing

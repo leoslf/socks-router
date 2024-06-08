@@ -171,14 +171,14 @@ def exchange_loop(
                 break
 
 
-def match_upstream(routing_table: RoutingTable, address: Address) -> Optional[UpstreamAddress]:
+def match_upstream(routing_table: RoutingTable, destination: Address) -> Optional[UpstreamAddress]:
     for upstream, patterns in routing_table.items():
-        logger.debug(f"matching upstream: {upstream}, patterns: {list(map(str, patterns))}, address: {address}")
+        logger.debug(f"matching upstream: {upstream}, patterns: {list(map(str, patterns))}, destination: {destination}")
         denied, allowed = partition(lambda pattern: pattern.is_positive_match, patterns)
-        if any(fnmatch.filter([str(address)], pattern.address.pattern) for pattern in allowed) and not any(
-            fnmatch.filter([str(address)], pattern.address.pattern) for pattern in denied
+        if any(fnmatch.filter([str(destination)], pattern.address.pattern) for pattern in allowed) and not any(
+            fnmatch.filter([str(destination)], pattern.address.pattern) for pattern in denied
         ):
-            logger.debug(f"matched upstream: {upstream}, patterns: {list(map(str, patterns))}, address: {address}")
+            logger.debug(f"matched upstream: {upstream}, patterns: {list(map(str, patterns))}, destination: {destination}")
             return upstream
     logger.debug(f"fallback upstream: {None}")
     return None
@@ -370,10 +370,7 @@ class SocksRouterRequestHandler(StreamRequestHandler):
             self.state = Socks5State.CLOSED
 
     def exchange(self):
-        try:
-            exchange_loop(self.connection, self.remote, timeout=0)
-        except Exception as e:
-            logger.error(e)
+        exchange_loop(self.connection, self.remote, timeout=0)
         self.state = Socks5State.CLOSED
 
     def setup(self):

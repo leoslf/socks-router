@@ -6,15 +6,15 @@ import pathlib
 
 import click
 
-from typing import Optional, cast
+from typing import Optional
 
 from click_option_group import optgroup, MutuallyExclusiveOptionGroup
 
 from pyaml_env import parse_config
 
 
-from socks_router.parsers import configuration
-from socks_router.models import ApplicationContext, RoutingTable
+from socks_router.parsers import routing_table
+from socks_router.models import ApplicationContext
 from socks_router.router import SocksRouter, SocksRouterRequestHandler
 
 logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 @click.option(
     "--logging-config",
     envvar="LOGGING_CONFIG",
-    type=click.Path(exists=True, dir_okay=False, resolve_path=True),
+    type=click.Path(dir_okay=False, resolve_path=True),
     default="logging.yaml",
     show_default=True,
 )
@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 @optgroup.option(
     "--routes-file",
     envvar="SOCKS_ROUTER_ROUTES_FILE",
-    type=click.Path(exists=True, dir_okay=False, resolve_path=True, path_type=pathlib.Path),
+    type=click.Path(dir_okay=False, resolve_path=True, path_type=pathlib.Path),
     default=os.path.expanduser("~/.ssh/routes"),
     show_default=True,
 )
@@ -53,17 +53,20 @@ def cli(
     hostname: str,
     port: int,
     routes: Optional[str],
-    routes_file: Optional[pathlib.Path],
+    routes_file: pathlib.Path,
 ):
     # load logging config
-    logging.config.dictConfig(parse_config(logging_config))
+    if os.path.exists(logging_config):
+        logging.config.dictConfig(parse_config(logging_config))
 
-    routing_table: RoutingTable = configuration.parse(routes or cast(pathlib.Path, routes_file).read_text())
+    if routes is None and routes_file.exists():
+        routes = routes_file.read_text()
 
     with SocksRouter(
         (hostname, port),
         SocksRouterRequestHandler,
-        context=ApplicationContext(routing_table=routing_table),
+        context=ApplicationContext(
+            routing_table=routing_table.parse(routes or ""),
+        ),
     ) as server:
         server.serve_forever()
-        server.shutdown()

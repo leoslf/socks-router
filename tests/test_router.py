@@ -36,6 +36,7 @@ from socks_router.router import (
     create_socket,
     with_proxy,
     connect_remote,
+    match_upstream,
     SocksRouter,
     SocksRouterRequestHandler,
 )
@@ -160,6 +161,25 @@ def daemonize(
         yield server
     finally:
         server.shutdown()
+
+
+def describe_match_upstream():
+    @pytest.mark.parametrize(
+        "routing_table,destination,upstream",
+        [
+            ({}, IPv4("127.0.0.1", 443), None),
+            (
+                {
+                    UpstreamAddress(UpstreamScheme.SSH, IPv4("127.0.0.1", 22)): [],
+                    UpstreamAddress(UpstreamScheme.SOCKS5, IPv4("127.0.0.1", 1080)): [Pattern(Host("*"))],
+                },
+                IPv4("127.0.0.1", 443),
+                UpstreamAddress(UpstreamScheme.SOCKS5, IPv4("127.0.0.1", 1080)),
+            ),
+        ],
+    )
+    def it_should_match_accordingly(routing_table, destination, upstream):
+        assert match_upstream(routing_table, destination) == upstream
 
 
 def describe_SocksRouter():

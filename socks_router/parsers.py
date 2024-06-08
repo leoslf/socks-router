@@ -110,11 +110,11 @@ pattern: Parser[Pattern] = (optional(string("!").result(False), True) + wildcard
     lambda is_positive, address: Pattern(address, is_positive), star=True
 )
 
-configuration_entry: Parser[tuple[UpstreamAddress, RoutingEntry]] = (upstream_address << whitespace) + sepBy(
-    pattern, whitespace
-).desc("patterns")
+routing_rule: Parser[tuple[UpstreamAddress, RoutingEntry]] = (upstream_address << whitespace) + sepBy(pattern, whitespace).desc(
+    "patterns"
+)
 
-configuration: Parser[RoutingTable] = many(configuration_entry << end_of_line()).map(
+routing_table: Parser[RoutingTable] = many(routing_rule << end_of_line()).map(
     cast(Callable[[list[tuple[UpstreamAddress, RoutingEntry]]], RoutingTable], dict)
 )
 
