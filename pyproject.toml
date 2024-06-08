@@ -38,6 +38,11 @@ mypy = { git = "https://github.com/python/mypy", branch = "master" }
 junitparser = "^3.1.2"
 pytest-describe = "^2.2.0"
 mocket = "^3.12.8"
+requests = { extras = ["socks"], version = "^2.32.3" }
+pytest-mock-server = "^0.3.0"
+pytest-env = "^1.1.3"
+werkzeug = "2.0.0"
+pre-commit = "^3.7.1"
 
 [tool.poetry.group.release.dependencies]
 python-semantic-release = "^9.1.1"
@@ -46,6 +51,9 @@ python-semantic-release = "^9.1.1"
 install_types = true
 ignore_missing_imports = true
 enable_incomplete_feature = ["NewGenericSyntax"]
+
+[tool.ruff]
+line-length = 132
 
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
@@ -103,4 +111,3 @@ build-backend = "poetry.core.masonry.api"
 [virtualenvs]
 create = true
 in-project = true
-

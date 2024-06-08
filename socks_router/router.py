@@ -1,16 +1,14 @@
 import logging
 import traceback
+import dataclasses
 
-import time
 import struct
 import fnmatch
-import signal
 
 import socket
 import socks
 
-from types import FrameType
-from typing import Optional, assert_never
+from typing import Optional, assert_never, cast
 from collections.abc import Callable
 from more_itertools import partition
 from select import select
@@ -19,65 +17,84 @@ from socketserver import ThreadingTCPServer, StreamRequestHandler
 
 from retry.api import retry_call
 
+from socks_router.parsers import parse_sockaddr
+
 from socks_router.models import (
-    Socks5Command,
+    SOCKS_VERSION,
     Socks5Method,
+    Socks5Command,
     Socks5AddressType,
+    Socks5MethodSelectionRequest,
+    Socks5MethodSelectionResponse,
+    Socks5Request,
+    Socks5ReplyType,
     Socks5Reply,
     Socks5State,
-    Socks5Addresses,
     Address,
     IPv4,
-    Upstream,
+    UpstreamScheme,
+    UpstreamAddress,
+    SSHUpstream,
+    ProxyUpstream,
+    RetryOptions,
     ApplicationContext,
     RoutingTable,
 )
 
-SOCKS_VERSION = 5
 CHUNK_SIZE = 4096
 
 logger = logging.getLogger(__name__)
+
 
 def free_port(address: str = "") -> tuple[str, int]:
     with socket.socket() as s:
         s.bind((address, 0))
         return s.getsockname()
 
+
 def read_address(type: Socks5AddressType, connection: socket.socket) -> str:
     match type:
         case Socks5AddressType.IPv4:
             return socket.inet_ntop(socket.AF_INET, connection.recv(4))
         case Socks5AddressType.DOMAINNAME:
-            address_length, = connection.recv(1)
+            (address_length,) = connection.recv(1)
             return connection.recv(address_length).decode("utf-8")
         case Socks5AddressType.IPv6:
             return socket.inet_ntop(socket.AF_INET6, connection.recv(6))
         case _ as unreachable:
             assert_never(unreachable)
 
-def read_request(connection: socket.socket) -> tuple[int, Socks5Command, Address]:
-    """ Read Request.
+
+def read_method_selection_request(
+    connection: socket.socket,
+) -> Socks5MethodSelectionRequest:
+    """Read Socks5 Method Selection Request.
+    SEE: https://datatracker.ietf.org/doc/html/rfc1928#section-3
+    Method Selection Request
+    ------------------------
+    | version | method_count | methods              |
+    | 1 byte  | 1 byte       | [method_count] bytes |
+    """
+    version, method_count = struct.unpack("!BB", connection.recv(2))
+    # get available methods
+    methods = connection.recv(method_count)
+
+    return Socks5MethodSelectionRequest(version, list(map(int, methods)))
+
+
+def read_request(connection: socket.socket) -> Socks5Request:
+    """Read Request.
+    SEE: https://datatracker.ietf.org/doc/html/rfc1928#section-4
     Request
     -------
     | version | cmd    | rsv  | atyp   | dst.addr    | dst.port |
     | 1 byte  | 1 byte | 0x00 | 1 byte | 4-255 bytes | 2 bytes  |
     """
-    version, cmd, _, address_type = struct.unpack("!BBBB", connection.recv(4))
+    version, command, reserved, address_type = struct.unpack("!BBBB", connection.recv(4))
     address = read_address(address_type, connection)
-    port, = struct.unpack("!H", connection.recv(2))
-    return version, cmd, Socks5Addresses[address_type](address, port)
+    (port,) = struct.unpack("!H", connection.recv(2))
+    return Socks5Request(version, command, reserved, address_type, address, port)
 
-def read_header(connection: socket.socket) -> tuple[int, set[int]]:
-    """ Read Socks5 Header.
-    Header
-    ------
-    | version | method_count | methods              |
-    | 1 byte  | 1 byte       | [method_count] bytes |
-    """
-    version, method_count = struct.unpack("!BB", connection.recv(2))
-
-    # get available methods
-    return version, set(connection.recv(method_count))
 
 def create_socket(type: Socks5AddressType) -> socks.socksocket:
     match type:
@@ -88,32 +105,59 @@ def create_socket(type: Socks5AddressType) -> socks.socksocket:
         case _ as unreachable:
             assert_never(unreachable)
 
+
 def with_proxy(socket: socks.socksocket, proxy_server: Optional[Address] = None) -> socks.socksocket:
     if proxy_server is not None:
         socket.set_proxy(socks.SOCKS5, proxy_server.address, proxy_server.port)
     return socket
 
-def connect_socket(address: Address, timeout: float = 0.1):
-    with create_socket(address.type) as socket:
+
+def poll_socket(destination: Address, timeout: float = 0.1):
+    with create_socket(destination.type) as socket:
         socket.settimeout(timeout)
-        socket.connect((address.address, address.port))
+        socket.connect(destination.sockaddr)
+        socket.close()
 
-def reply(reply: Socks5Reply,
-          address_type: Socks5AddressType = Socks5AddressType.IPv4,
-          bind_address: Optional[str] = None,
-          bind_port: Optional[int] = None):
-    return struct.pack("!BBBBIH",
-                       SOCKS_VERSION,
-                       reply,
-                       0x00,
-                       address_type,
-                       0 if bind_address is None else struct.unpack("!I", socket.inet_aton(bind_address))[0],
-                       0 if bind_port is None else bind_port)
 
-def exchange_loop(client: socket.socket,
-                  remote: socket.socket,
-                  chunk_size: int = CHUNK_SIZE,
-                  timeout: Optional[float] = None):
+def create_remote(address: Address, proxy_server: Optional[Address] = None) -> socks.socksocket:
+    return with_proxy(create_socket(address.type), proxy_server)
+
+
+def connect_remote(
+    destination: Address,
+    proxy_factory: Callable[[Address], Optional[Address]] = lambda _: None,
+    poll_proxy_factory: Callable[[Address], bool] = lambda _: True,
+    proxy_retry_options: Optional[RetryOptions] = None,
+    logger: logging.Logger = logger,
+) -> socks.socksocket:
+    if (proxy_server := proxy_factory(destination)) is not None and poll_proxy_factory(destination):
+        retry_options: RetryOptions = proxy_retry_options or RetryOptions.exponential_backoff()
+        logger.debug(
+            f"polling proxy_server: {proxy_server} before connecting to destination {destination} with retry_options {retry_options}"
+        )
+        retry_call(
+            poll_socket,
+            (proxy_server,),
+            exceptions=(ConnectionRefusedError,),
+            **dataclasses.asdict(retry_options),
+        )
+        logger.debug(f"proxy_server {proxy_server} ready")
+
+    logger.debug(f"creating remote to destination {destination} with proxy_server {proxy_server}")
+    remote = create_remote(destination, proxy_server)
+    remote.bind(("", 0))
+    logger.debug(f"connecting to {destination.sockaddr}, binding client socket: {remote.getsockname()}")
+    remote.connect(destination.sockaddr)
+    logger.debug(f"connected to {destination.sockaddr}, binding client socket: {remote.getsockname()}")
+    return remote
+
+
+def exchange_loop(
+    client: socket.socket,
+    remote: socket.socket,
+    chunk_size: int = CHUNK_SIZE,
+    timeout: Optional[float] = None,
+):
     while True:
         r, w, e = select([client, remote], [client, remote], [], timeout)
         if client in r and remote in w:
@@ -126,51 +170,59 @@ def exchange_loop(client: socket.socket,
             if client.send(data) <= 0:
                 break
 
+
+def match_upstream(routing_table: RoutingTable, address: Address) -> Optional[UpstreamAddress]:
+    for upstream, patterns in routing_table.items():
+        logger.debug(f"matching upstream: {upstream}, patterns: {list(map(str, patterns))}, address: {address}")
+        denied, allowed = partition(lambda pattern: pattern.is_positive_match, patterns)
+        if any(fnmatch.filter([str(address)], str(pattern.address)) for pattern in allowed) and not any(
+            fnmatch.filter([str(address)], str(pattern.address)) for pattern in denied
+        ):
+            logger.debug(f"matched upstream: {upstream}, patterns: {list(map(str, patterns))}, address: {address}")
+            return upstream
+    logger.debug(f"fallback upstream: {None}")
+    return None
+
+
 class SocksRouter(ThreadingTCPServer):
-    reuse_address = True
+    allow_reuse_address = True
     daemon_threads = True
     block_on_close = True
 
     context: ApplicationContext
-    is_interrupted: bool = False
+    logger: logging.Logger
 
-    def __init__(self, context: ApplicationContext, *argv, **kwargs):
-        self.context = context
+    def __init__(self, *argv, context: Optional[ApplicationContext] = None, **kwargs):
+        self.context = context or ApplicationContext()
+        self.logger = logging.getLogger(self.context.name)
         super().__init__(*argv, **kwargs)
 
+    @property
+    def address(self) -> Address:
+        return parse_sockaddr(cast(tuple[str, int], self.server_address))
+
     def server_activate(self) -> None:
-        logger.info("Server started on %s:%s", *self.server_address)
+        self.logger.info("Server started on %s:%d", *self.server_address)
         super().server_activate()
 
     def get_request(self) -> tuple[socket.socket, str]:
         conn, addr = super().get_request()
-        logger.info("Starting connection from %s:%s", *addr)
+        self.logger.info("Starting connection from client %s:%d", *addr)
         return conn, addr
 
     def shutdown_request(self, request: socket.socket | tuple[bytes, socket.socket]) -> None:
         if isinstance(request, socket.socket):
-            logger.info("Closing connection  %s:%s", *request.getpeername())
+            try:
+                self.logger.info("Closing connection from client %s:%d", *request.getpeername())
+            except (OSError, TypeError):
+                self.logger.info("Closing connection from client, request: %r", request)
+
         super().shutdown_request(request)
 
     def shutdown(self) -> None:
-        logger.info("Server is shutting down")
+        self.logger.info("Server is shutting down")
         super().shutdown()
 
-    def handle_signal(self, timeout: int, delay: int = 1) -> Callable[[int, Optional[FrameType]], None]:
-        """ Signal Handler Factory  """
-        def handler(signum: int, _: Optional[FrameType]) -> None:
-            deadline = time.monotonic() + timeout
-            signal_name = signal.Signals(signum).name
-            self.is_interrupted = True
-
-            while (current_time := time.monotonic()) < deadline:
-                logger.info("%s received, closing server in %d seconds...", signal_name, int(deadline - current_time) + delay)
-                time.sleep(delay)
-
-            self.server_close()
-            self.shutdown()
-
-        return handler
 
 class SocksRouterRequestHandler(StreamRequestHandler):
     server: SocksRouter
@@ -178,99 +230,143 @@ class SocksRouterRequestHandler(StreamRequestHandler):
     remote: Optional[socks.socksocket] = None
 
     @property
-    def context(self) -> ApplicationContext:
-        return self.server.context
+    def timeout(self):
+        return self.server.context.request_timeout
 
-    @staticmethod
-    def match_upstream(routing_table: RoutingTable, address: Address) -> Optional[Address]:
-        for upstream, patterns in routing_table.items():
-            logger.debug(f"[match_upstream] matching upstream: {upstream}, patterns: {patterns}, address: {address}")
-            denied, allowed = partition(lambda pattern: pattern.is_positive_match, patterns)
-            if any(fnmatch.filter([str(address)], str(pattern.address)) for pattern in allowed) and not any(fnmatch.filter([str(address)], str(pattern.address)) for pattern in denied):
-                logger.debug(f"[match_upstream] matched upstream: {upstream}, patterns: {patterns}, address: {address}")
-                return upstream
-        logger.debug(f"fallback upstream: {None}")
-        return None
+    @property
+    def logger(self):
+        client_address = parse_sockaddr(self.client_address)
+        return self.server.logger.getChild(f"handler-{client_address}")
 
-    def acquire_upstream(self, address: Address) -> Optional[Address]:
-        upstream = self.match_upstream(self.context.routing_table, address)
-        if upstream is None:
+    def acquire_upstream(self, destination: Address) -> Optional[UpstreamAddress]:
+        if (upstream := match_upstream(self.server.context.routing_table, destination)) is None:
             return None
 
-        match self.context.upstreams.get(upstream):
-            case Upstream(ssh_client, proxy_server):
-                if ssh_client.poll() is None:
-                    logger.debug(f"found working upstream: {upstream} -> {proxy_server}")
+        with self.server.context.mutex:
+            match self.server.context.upstreams.get(upstream):
+                case SSHUpstream(ssh_client, proxy_server):
+                    if ssh_client.poll() is None:
+                        self.logger.debug(f"found working upstream: {upstream} -> {proxy_server}")
+                        return upstream
+
+                    self.logger.debug(
+                        f"upstream {upstream}, proxy_server: {proxy_server} connection is dead, removing from upstreams"
+                    )
+                    del self.server.context.upstreams[upstream]
+                case ProxyUpstream(proxy_server):
+                    self.logger.debug(f"found existing proxy upstream {upstream} -> {proxy_server}")
                     return upstream
+                case None:
+                    self.logger.debug(f"upstream: {upstream} does not appear in self.upstreams, creating...")
+                case _ as unreachable:
+                    assert_never(unreachable)
 
-                with self.context.mutex:
-                    logger.debug(f"upstream {upstream}, proxy_server: {proxy_server} connection is dead, removing from upstreams")
-                    del self.context.upstreams[upstream]
-            case None:
-                logger.debug(f"upstream: {upstream} does not appear in self.upstreams")
+            match upstream.scheme:
+                case UpstreamScheme.SSH:
+                    proxy_server = IPv4(*free_port("127.0.0.1"))
+                    self.logger.debug(f"Free port: {proxy_server.port}")
+                    ssh_client = Popen(
+                        [
+                            "ssh",
+                            "-NT",
+                            "-D",
+                            f"{proxy_server.port}",
+                            "-o",
+                            "ServerAliveInterval=240",
+                            "-o",
+                            "ExitOnForwardFailure=yes",
+                            f"{upstream.address}",
+                        ]
+                        + ([] if upstream.address.port is None else ["-p", f"{upstream.address.port}"])
+                    )
 
-        with self.context.mutex:
-            proxy_server = IPv4(*free_port("127.0.0.1"))
-            logger.debug(f"Free port: {proxy_server.port}")
-            ssh_client = Popen(["ssh", "-NT", "-D", f"{proxy_server.port}", "-o", "ServerAliveInterval=240", "-o", "ExitOnForwardFailure=yes", f"{upstream.address}"] + ([] if upstream.port is None else ["-p", f"{upstream.port}"]))
+                    self.server.context.upstreams[upstream] = SSHUpstream(ssh_client, proxy_server)
+                    return upstream
+                case UpstreamScheme.SOCKS5:
+                    self.server.context.upstreams[upstream] = ProxyUpstream(upstream.address)
+                    return upstream
+                case _ as unreachable:  # type: ignore[misc]
+                    assert_never(unreachable)
 
-            self.context.upstreams[upstream] = Upstream(ssh_client, proxy_server)
-            return upstream
-
-        return None
-
-    def acquire_proxy(self, address: Address) -> Optional[Address]:
-        if upstream := self.acquire_upstream(address):
-            proxy_server = self.context.upstreams[upstream].proxy_server
-            logger.debug(f"acquired upstream {upstream} with proxy_server {repr(proxy_server)} for address {address}")
+    def acquire_proxy(self, destination: Address) -> Optional[Address]:
+        if upstream := self.acquire_upstream(destination):
+            proxy_server = self.server.context.upstreams[upstream].proxy_server
+            self.logger.debug(f"acquired upstream {upstream} with proxy_server {proxy_server} for destination {destination}")
             return proxy_server
         return None
 
-    def create_remote(self, address: Address, retries: int = -1) -> socks.socksocket:
-        if proxy_server := self.acquire_proxy(address):
-            # retry with exponential backoff until proxy is up
-            retry_call(connect_socket, (proxy_server,), exceptions=(ConnectionRefusedError,), tries=retries, delay=1, backoff=2)
-
-        return with_proxy(
-            create_socket(address.type),
-            proxy_server,
-        )
-
     def handshake(self):
-        version, methods = read_header(self.connection)
-        if version != SOCKS_VERSION or Socks5Method.NO_AUTHENTICATION_REQUIRED not in methods:
-            logger.error(f"invalid request: version: {version}, methods: {methods}")
-            self.state = Socks5State.CLOSE
+        request = read_method_selection_request(self.connection)
+        if request.version != SOCKS_VERSION:
+            self.logger.error(f"invalid request: version: {request.version}, methods: {request.methods}")
+            self.state = Socks5State.CLOSED
             return
 
-        self.connection.sendall(struct.pack("!BB", SOCKS_VERSION, Socks5Method.NO_AUTHENTICATION_REQUIRED))
-        self.state = Socks5State.REQUEST
+        # select method from server side
+        for method in request.methods:
+            match method:
+                case Socks5Method.NO_AUTHENTICATION_REQUIRED:
+                    self.connection.sendall(
+                        bytes(Socks5MethodSelectionResponse(SOCKS_VERSION, Socks5Method.NO_AUTHENTICATION_REQUIRED))
+                    )
+                    self.state = Socks5State.REQUEST
+                    return
+                case _:
+                    pass
+
+        # none of the methods listed by the client are acceptable
+        # notify the client
+        self.connection.sendall(bytes(Socks5MethodSelectionResponse(SOCKS_VERSION, Socks5Method.NO_ACCEPTABLE_METHDOS)))
+        # the client MUST close the connection
+        self.state = Socks5State.CLOSED
 
     def handle_request(self):
-        # request
-        version, cmd, address = read_request(self.connection)
-        # reply
-        try:
-            match cmd:
-                case Socks5Command.CONNECT:
-                    remote = self.create_remote(address)
-                    remote.connect((address.address, address.port))
-                    logger.info(f"Connected to {address}, bind_address: {remote.getsockname()}")
-                    self.connection.sendall(reply(Socks5Reply.SUCCEEDED))
-                    self.remote = remote
-                    self.state = Socks5State.ESTABLISHED
-                case _:
-                    logger.warn(f"COMMAND_NOT_SUPPORTED: {cmd}")
-                    self.connection.sendall(reply(Socks5Reply.COMMAND_NOT_SUPPORTED))
-                    self.state = Socks5State.CLOSED
-        except (socks.ProxyConnectionError, ConnectionRefusedError) as e:
-            logger.error(e)
-            self.connection.sendall(reply(Socks5Reply.CONNECTION_REFUSED))
-            self.state = Socks5State.CLOSED
+        request = read_request(self.connection)
 
+        try:
+            match request.command:
+                case Socks5Command.CONNECT:
+                    self.remote = connect_remote(
+                        request.destination,
+                        proxy_factory=self.acquire_proxy,
+                        # poll_proxy_factory=lambda destination: (upstream := self.acquire_upstream(destination)) is not None and upstream.scheme == UpstreamScheme.SSH,
+                        proxy_retry_options=self.server.context.proxy_retry_options,
+                        logger=self.logger,
+                    )
+
+                    self.logger.info(
+                        f"Connected to destination {request.destination}, binding client socket: {self.remote.getsockname()}"
+                    )
+                    self.connection.sendall(bytes(Socks5Reply(Socks5ReplyType.SUCCEEDED)))
+                    self.state = Socks5State.ESTABLISHED
+                    return
+                case _:
+                    self.logger.warn(f"COMMAND_NOT_SUPPORTED: {request.command}")
+                    self.connection.sendall(bytes(Socks5Reply(Socks5ReplyType.COMMAND_NOT_SUPPORTED)))
+                    self.state = Socks5State.CLOSED
+        except ConnectionRefusedError as e:
+            self.logger.error(f"ConnectionRefused when connecting to request.destination: {request.destination}")
+            self.logger.error(e)
+            self.connection.sendall(bytes(Socks5Reply(Socks5ReplyType.CONNECTION_REFUSED)))
+            self.state = Socks5State.CLOSED
+            return
+        except socks.ProxyConnectionError as e:
+            self.logger.error(e)
+            self.connection.sendall(bytes(Socks5Reply(Socks5ReplyType.CONNECTION_REFUSED)))
+            self.state = Socks5State.CLOSED
+        except socks.ProxyError as e:
+            if isinstance(e.socket_err, socket.error):
+                self.logger.error(type(e.socket_err))
+                self.logger.error(e.socket_err)
+            self.logger.error(type(e))
+            self.logger.error(e)
+            self.connection.sendall(bytes(Socks5Reply(Socks5ReplyType.GENERAL_SOCKS_SERVER_FAILURE)))
+            self.state = Socks5State.CLOSED
         except Exception as e:
             traceback.print_exc()
-            logger.error(e)
+            self.logger.error(type(e))
+            self.logger.error(e)
+            self.connection.sendall(bytes(Socks5Reply(Socks5ReplyType.GENERAL_SOCKS_SERVER_FAILURE)))
             self.state = Socks5State.CLOSED
 
     def exchange(self):
@@ -281,29 +377,41 @@ class SocksRouterRequestHandler(StreamRequestHandler):
         self.state = Socks5State.CLOSED
 
     def setup(self):
-        logger.info("setup")
+        self.logger.info("setup")
         super().setup()
 
     def handle(self):
-        """ Handle incoming connections """
-
+        """Handle incoming connections"""
         while True:
-            logger.info(f"state: {self.state.upper()}")
-            match self.state:
-                case Socks5State.LISTEN:
-                    self.state = Socks5State.HANDSHAKE
-                case Socks5State.HANDSHAKE:
-                    self.handshake()
-                case Socks5State.REQUEST:
-                    self.handle_request()
-                case Socks5State.ESTABLISHED:
-                    self.exchange()
-                case Socks5State.CLOSED:
-                    if self.remote is not None:
-                        self.remote.close()
-                    self.remote = None
-                    return
+            try:
+                self.logger.info(f"state: {self.state.upper()}")
+                match self.state:
+                    case Socks5State.LISTEN:
+                        self.state = Socks5State.HANDSHAKE
+                    case Socks5State.HANDSHAKE:
+                        self.handshake()
+                    case Socks5State.REQUEST:
+                        self.handle_request()
+                    case Socks5State.ESTABLISHED:
+                        self.exchange()
+                    case Socks5State.CLOSED:
+                        break
+                    case _ as unreachable:
+                        assert_never(unreachable)
+            except struct.error:
+                # ignore: socket has nothing to read
+                self.state = Socks5State.CLOSED
+            except TimeoutError as e:
+                self.logger.warning(e)
+                self.state = Socks5State.CLOSED
+            except Exception as e:
+                self.logger.error(e)
+                self.state = Socks5State.CLOSED
 
     def finish(self):
-        logger.info("finish")
+        if self.remote is not None:
+            self.remote.close()
+            self.remote = None
+
+        self.logger.info("finish")
         super().finish()
