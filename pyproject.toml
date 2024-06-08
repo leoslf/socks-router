@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "socks-router"
-version = "0.1.0"
+version = "0.0.1"
 description = "A thin layer of facade over ssh dynamic proxies with more sophisticated routing"
 authors = ["Leo Sin <leo.sin@my.cityu.edu.hk>"]
 readme = "README.md"
