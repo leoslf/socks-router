@@ -22,6 +22,7 @@ def test_IPv4(address, port, ipv4):
     assert repr(ipv4)
     assert str(ipv4)
     assert bytes(ipv4)
+    assert ipv4.pattern
 
 
 @pytest.mark.parametrize(
@@ -36,6 +37,7 @@ def test_IPv6(address, port, ipv6):
     assert repr(ipv6)
     assert str(ipv6)
     assert bytes(ipv6)
+    assert ipv6.pattern
 
 
 @pytest.mark.parametrize(
@@ -50,6 +52,7 @@ def test_Host(address, port, host):
     assert repr(host)
     assert str(host)
     assert bytes(host)
+    assert host.pattern
 
 
 @pytest.mark.parametrize(

@@ -163,10 +163,15 @@ def daemonize(
 
 
 def describe_SocksRouter():
+    mock_server_port = 5000
+
+    @pytest.fixture
+    def destination():
+        return IPv4("127.0.0.1", mock_server_port)
+
     @pytest.mark.server(url="/", response=(mocked_response := {"foo": "bar"}), method="GET")
-    @pytest.mark.server_settings(port=(mock_server_port := 5000))
+    @pytest.mark.server_settings(port=mock_server_port)
     def when_used_with_empty_routing_table():
-        @pytest.mark.parametrize("destination", [IPv4("127.0.0.1", mock_server_port)])
         def it_should_transparently_go_through(destination: Address):
             # we use a server without routing table to be a pass-through socks5 server
             with daemonize(context=ApplicationContext("passthrough")) as passthrough:
@@ -180,7 +185,6 @@ def describe_SocksRouter():
                 )
 
     def when_used_with_transparent_upstream():
-        @pytest.mark.parametrize("destination", [IPv4("127.0.0.1", mock_server_port)])
         def it_should_relay_through_upstream(destination: Address):
             # we use a server without routing table to be a pass-through socks5 server
             with daemonize(context=ApplicationContext("passthrough")) as passthrough:
@@ -205,3 +209,11 @@ def describe_SocksRouter():
                         ).json()
                         == mocked_response
                     )
+
+    def when_client_attempt_to_use_socks4():
+        def it_should_close_socket(destination):
+            with daemonize() as proxy:
+                with pytest.raises(requests.exceptions.ConnectionError):
+                    requests.get(
+                        f"http://{destination}/", proxies={type: f"socks4://{proxy.address}" for type in ["http", "https"]}
+                    ).json()
