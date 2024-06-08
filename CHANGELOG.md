@@ -2,6 +2,17 @@
 
 
 
+## v0.0.2 (2024-06-08)
+
+### Ci
+
+* ci: fixed pipeline ([`b207d42`](https://github.com/leoslf/socks-router/commit/b207d420bf33759bdbb249136f979de394fc1c48))
+
+### Fix
+
+* fix: pattern matching should match any port if port not given in routing table ([`b71b215`](https://github.com/leoslf/socks-router/commit/b71b215c134a33f200604effb9e4d0a7122d44d3))
+
+
 ## v0.0.1 (2024-06-08)
 
 ### Chore
