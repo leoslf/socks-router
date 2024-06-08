@@ -232,7 +232,7 @@ jobs:
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
+          username: ${{ vars.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
 
@@ -242,9 +242,9 @@ jobs:
         with:
           images: ${{ github.repository }}
           tags: |
-            type=semver,pattern={{version}},value=${{ steps.read-package.outputs.version }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ steps.read-package.outputs.version }}
-            type=semver,pattern={{major}},value=${{ steps.read-package.outputs.version }}
+            type=semver,pattern={{version}},value=${{ steps.read-package.outputs.value }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ steps.read-package.outputs.value }}
+            type=semver,pattern={{major}},value=${{ steps.read-package.outputs.value }}
             # set latest tag for default branch
             type=raw,value=latest,enable={{is_default_branch}}
 
