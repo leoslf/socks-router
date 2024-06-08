@@ -175,8 +175,8 @@ def match_upstream(routing_table: RoutingTable, address: Address) -> Optional[Up
     for upstream, patterns in routing_table.items():
         logger.debug(f"matching upstream: {upstream}, patterns: {list(map(str, patterns))}, address: {address}")
         denied, allowed = partition(lambda pattern: pattern.is_positive_match, patterns)
-        if any(fnmatch.filter([str(address)], str(pattern.address)) for pattern in allowed) and not any(
-            fnmatch.filter([str(address)], str(pattern.address)) for pattern in denied
+        if any(fnmatch.filter([str(address)], pattern.address.pattern) for pattern in allowed) and not any(
+            fnmatch.filter([str(address)], pattern.address.pattern) for pattern in denied
         ):
             logger.debug(f"matched upstream: {upstream}, patterns: {list(map(str, patterns))}, address: {address}")
             return upstream

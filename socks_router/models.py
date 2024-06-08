@@ -24,6 +24,10 @@ class SocketAddress:
         return f"{self.address}:{self.port}"
 
     @property
+    def pattern(self) -> str:
+        return f"{self.address}:{self.port or '*'}"
+
+    @property
     def sockaddr(self) -> tuple[str, int]:
         return self.address, self.port or 0
 
@@ -68,6 +72,10 @@ class IPv6(SocketAddress):
         if self.port is None:
             return f"{self.address}"
         return f"[{self.address}]:{self.port}"
+
+    @property
+    def pattern(self):
+        return f"[{self.address}]:{self.port or '*'}"
 
     @property
     def packed_address(self) -> bytes:
