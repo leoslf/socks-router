@@ -114,8 +114,8 @@ def describe_read_method_selection_request():
     @pytest.mark.parametrize(
         "version,methods",
         [
-            (SOCKS_VERSION, set()),
-            (SOCKS_VERSION, set([1, 2, 3])),
+            (SOCKS_VERSION, []),
+            (SOCKS_VERSION, [1, 2, 3]),
         ],
     )
     def it_should_correctly_read(client, version, methods):

@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 
 from typing import cast
-from collection.abc import Callable
+from collections.abc import Callable
 
 from parsec import (
     Parser,

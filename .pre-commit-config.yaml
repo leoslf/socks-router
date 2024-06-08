@@ -33,3 +33,8 @@ repos:
       types:
         - python
       pass_filenames: false
+    - id: pytest
+      name: pytest
+      entry: poetry run pytest --cov-report html
+      language: system
+      pass_filenames: false
