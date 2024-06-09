@@ -1,12 +1,9 @@
 import pytest
 
 from socks_router.models import (
-    SOCKS_VERSION,
     IPv4,
     IPv6,
     Host,
-    Socks5Method,
-    Socks5MethodSelectionRequest,
 )
 
 
@@ -21,7 +18,6 @@ def test_IPv4(address, port, ipv4):
     assert IPv4(address, port) == ipv4
     assert repr(ipv4)
     assert str(ipv4)
-    assert bytes(ipv4)
     assert ipv4.pattern
 
 
@@ -36,7 +32,6 @@ def test_IPv6(address, port, ipv6):
     assert IPv6(address, port) == ipv6
     assert repr(ipv6)
     assert str(ipv6)
-    assert bytes(ipv6)
     assert ipv6.pattern
 
 
@@ -51,15 +46,14 @@ def test_Host(address, port, host):
     assert Host(address, port) == host
     assert repr(host)
     assert str(host)
-    assert bytes(host)
     assert host.pattern
 
 
-@pytest.mark.parametrize(
-    "method_selection_request",
-    [
-        Socks5MethodSelectionRequest(SOCKS_VERSION, [Socks5Method.NO_AUTHENTICATION_REQUIRED]),
-    ],
-)
-def test_Socks5MethodSelectionRequest(method_selection_request):
-    assert bytes(method_selection_request)
+# @pytest.mark.parametrize(
+#     "method_selection_request",
+#     [
+#         Socks5MethodSelectionRequest(SOCKS_VERSION, [Socks5Method.NO_AUTHENTICATION_REQUIRED]),
+#     ],
+# )
+# def test_Socks5MethodSelectionRequest(method_selection_request):
+#     assert bytes(method_selection_request)

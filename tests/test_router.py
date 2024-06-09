@@ -9,9 +9,7 @@ import pytest
 from mocket import Mocket, MocketEntry, mocketize
 from mocket.mocket import MocketSocket, true_gethostbyname
 
-import struct
 import threading
-import socket
 import socks
 
 from socks_router.models import (
@@ -19,9 +17,7 @@ from socks_router.models import (
     Socks5Method,
     Socks5MethodSelectionRequest,
     Socks5MethodSelectionResponse,
-    Socks5Command,
     Socks5AddressType,
-    Socks5Request,
     IPv4,
     Host,
     Address,
@@ -32,9 +28,9 @@ from socks_router.models import (
 )
 from socks_router.router import (
     free_port,
-    read_request,
-    read_address,
-    read_method_selection_request,
+    # read_request,
+    # read_address,
+    # read_method_selection_request,
     create_socket,
     with_proxy,
     connect_remote,
@@ -42,6 +38,7 @@ from socks_router.router import (
     SocksRouter,
     SocksRouterRequestHandler,
 )
+from socks_router.utils import read_socket, write_socket
 
 logger = logging.getLogger(__name__)
 
@@ -73,57 +70,57 @@ def describe_free_port():
         MocketSocket._address = None
 
 
-def describe_read_address():
-    @pytest.mark.parametrize("ipv4", ["1.2.3.4"])
-    def it_should_successfully_read_ipv4(mocker, client, ipv4):
-        client.recv.side_effect = [socket.inet_pton(socket.AF_INET, ipv4)]
-        assert read_address(Socks5AddressType.IPv4, client) == ipv4
-
-    @pytest.mark.parametrize("domainname", ["foo.com"])
-    def it_should_successfully_read_domainname(client, domainname):
-        encoded = domainname.encode("utf-8")
-        client.recv.side_effect = [struct.pack("!B", len(encoded)), encoded]
-        assert read_address(Socks5AddressType.DOMAINNAME, client) == domainname
-
-    @pytest.mark.parametrize("ipv6", ["::1"])
-    def it_should_successfully_read_ipv6(client, ipv6):
-        client.recv.return_value = socket.inet_pton(socket.AF_INET6, ipv6)
-        assert read_address(Socks5AddressType.IPv6, client) == ipv6
-
-
-def describe_read_request():
-    @pytest.mark.parametrize(
-        "version,command,address_type,address,port",
-        [
-            (
-                SOCKS_VERSION,
-                Socks5Command.CONNECT,
-                Socks5AddressType.IPv4,
-                "127.0.0.1",
-                1234,
-            ),
-        ],
-    )
-    def it_should_successfully_read(mocker, client, version, command, address_type, address, port):
-        client.recv.side_effect = [
-            struct.pack("!BBBB", version, command, 0, address_type),
-            struct.pack("!H", port),
-        ]
-        mocker.patch("socks_router.router.read_address").return_value = address
-        assert read_request(client) == Socks5Request(version, command, 0x00, address_type, address, port)
+# def describe_read_address():
+#     @pytest.mark.parametrize("ipv4", ["1.2.3.4"])
+#     def it_should_successfully_read_ipv4(mocker, client, ipv4):
+#         client.recv.side_effect = [socket.inet_pton(socket.AF_INET, ipv4)]
+#         assert read_address(Socks5AddressType.IPv4, client) == ipv4
+#
+#     @pytest.mark.parametrize("domainname", ["foo.com"])
+#     def it_should_successfully_read_domainname(client, domainname):
+#         encoded = domainname.encode("utf-8")
+#         client.recv.side_effect = [struct.pack("!B", len(encoded)), encoded]
+#         assert read_address(Socks5AddressType.DOMAINNAME, client) == domainname
+#
+#     @pytest.mark.parametrize("ipv6", ["::1"])
+#     def it_should_successfully_read_ipv6(client, ipv6):
+#         client.recv.return_value = socket.inet_pton(socket.AF_INET6, ipv6)
+#         assert read_address(Socks5AddressType.IPv6, client) == ipv6
 
 
-def describe_read_method_selection_request():
-    @pytest.mark.parametrize(
-        "version,methods",
-        [
-            (SOCKS_VERSION, []),
-            (SOCKS_VERSION, [1, 2, 3]),
-        ],
-    )
-    def it_should_correctly_read(client, version, methods):
-        client.recv.side_effect = [struct.pack("!BB", version, len(methods)), methods]
-        assert read_method_selection_request(client) == Socks5MethodSelectionRequest(version, methods)
+# def describe_read_request():
+#     @pytest.mark.parametrize(
+#         "version,command,address_type,address,port",
+#         [
+#             (
+#                 SOCKS_VERSION,
+#                 Socks5Command.CONNECT,
+#                 Socks5AddressType.IPv4,
+#                 "127.0.0.1",
+#                 1234,
+#             ),
+#         ],
+#     )
+#     def it_should_successfully_read(mocker, client, version, command, address_type, address, port):
+#         client.recv.side_effect = [
+#             struct.pack("!BBBB", version, command, 0, address_type),
+#             struct.pack("!H", port),
+#         ]
+#         mocker.patch("socks_router.router.read_address").return_value = address
+#         assert read_request(client) == Socks5Request(version, command, 0x00, address_type, address, port)
+
+
+# def describe_read_method_selection_request():
+#     @pytest.mark.parametrize(
+#         "version,methods",
+#         [
+#             (SOCKS_VERSION, []),
+#             (SOCKS_VERSION, [1, 2, 3]),
+#         ],
+#     )
+#     def it_should_correctly_read(client, version, methods):
+#         client.recv.side_effect = [struct.pack("!BB", version, len(methods)), methods]
+#         assert read_method_selection_request(client) == Socks5MethodSelectionRequest(version, methods)
 
 
 def describe_create_socket():
@@ -139,7 +136,7 @@ def describe_with_proxy():
     @pytest.mark.parametrize("proxy_server", [IPv4("8.8.8.8", 443)])
     def it_should_work_with_proxy_server(client, proxy_server):
         with_proxy(client, proxy_server)
-        client.set_proxy.assert_called_with(socks.SOCKS5, proxy_server.address, proxy_server.port)
+        client.set_proxy.assert_called_with(socks.SOCKS5, f"{proxy_server.address}", proxy_server.port)
 
     def it_should_work_without_proxy_server(client):
         with_proxy(client, None)
@@ -206,6 +203,8 @@ def describe_SocksRouter():
                     == mocked_response
                 )
 
+    # @pytest.mark.server(url="/", response=(mocked_response := {"foo": "bar"}), method="GET")
+    # @pytest.mark.server_settings(port=mock_server_port)
     def when_used_with_transparent_upstream():
         def it_should_relay_through_upstream(destination: Address):
             # we use a server without routing table to be a pass-through socks5 server
@@ -232,10 +231,14 @@ def describe_SocksRouter():
                         == mocked_response
                     )
 
+    # @pytest.mark.server(url="/", response=(mocked_response := {"foo": "bar"}), method="GET")
+    # @pytest.mark.server_settings(port=mock_server_port)
     def when_client_attempt_to_use_socks4():
         def it_should_close_socket(destination):
             with daemonize() as proxy:
-                with pytest.raises(requests.exceptions.ConnectionError, match=r".*Connection reset by peer.*"):
+                with pytest.raises(
+                    requests.exceptions.ConnectionError, match=r".*(Connection reset by peer|Connection closed unexpectedly).*"
+                ):
                     requests.get(
                         f"http://{destination}/", proxies={type: f"socks4://{proxy.address}" for type in ["http", "https"]}
                     ).json()
@@ -245,7 +248,7 @@ def describe_SocksRouter():
             with daemonize() as proxy:
                 # handshake
                 with connect_remote(proxy.address) as client:
-                    client.sendall(bytes(Socks5MethodSelectionRequest(SOCKS_VERSION, methods=[Socks5Method.USERNAME_PASSWORD])))
-                    assert bytes(
-                        Socks5MethodSelectionResponse(SOCKS_VERSION, method=Socks5Method.NO_ACCEPTABLE_METHODS)
-                    ) == client.recv(2)
+                    write_socket(client, Socks5MethodSelectionRequest(SOCKS_VERSION, methods=[Socks5Method.USERNAME_PASSWORD]))
+                    assert read_socket(client, Socks5MethodSelectionResponse) == Socks5MethodSelectionResponse(
+                        SOCKS_VERSION, method=Socks5Method.NO_ACCEPTABLE_METHODS
+                    )

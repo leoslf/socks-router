@@ -39,7 +39,10 @@ from socks_router.models import (
     RetryOptions,
     ApplicationContext,
     RoutingTable,
+    Socks5AddressTypes,
 )
+
+from socks_router.utils import read_socket, write_socket
 
 CHUNK_SIZE = 4096
 
@@ -52,48 +55,48 @@ def free_port(address: str = "") -> tuple[str, int]:
         return s.getsockname()
 
 
-def read_address(type: Socks5AddressType, connection: socket.socket) -> str:
-    match type:
-        case Socks5AddressType.IPv4:
-            return socket.inet_ntop(socket.AF_INET, connection.recv(4))
-        case Socks5AddressType.DOMAINNAME:
-            (address_length,) = connection.recv(1)
-            return connection.recv(address_length).decode("utf-8")
-        case Socks5AddressType.IPv6:
-            return socket.inet_ntop(socket.AF_INET6, connection.recv(6))
-        case _ as unreachable:
-            assert_never(unreachable)
+# def read_address(type: Socks5AddressType, connection: socket.socket) -> str:
+#     match type:
+#         case Socks5AddressType.IPv4:
+#             return socket.inet_ntop(socket.AF_INET, connection.recv(4))
+#         case Socks5AddressType.DOMAINNAME:
+#             (address_length,) = connection.recv(1)
+#             return connection.recv(address_length).decode("utf-8")
+#         case Socks5AddressType.IPv6:
+#             return socket.inet_ntop(socket.AF_INET6, connection.recv(6))
+#         case _ as unreachable:
+#             assert_never(unreachable)
 
 
-def read_method_selection_request(
-    connection: socket.socket,
-) -> Socks5MethodSelectionRequest:
-    """Read Socks5 Method Selection Request.
-    SEE: https://datatracker.ietf.org/doc/html/rfc1928#section-3
-    Method Selection Request
-    ------------------------
-    | version | method_count | methods              |
-    | 1 byte  | 1 byte       | [method_count] bytes |
-    """
-    version, method_count = struct.unpack("!BB", connection.recv(2))
-    # get available methods
-    methods = connection.recv(method_count)
+# def read_method_selection_request(
+#     connection: socket.socket,
+# ) -> Socks5MethodSelectionRequest:
+#     """Read Socks5 Method Selection Request.
+#     SEE: https://datatracker.ietf.org/doc/html/rfc1928#section-3
+#     Method Selection Request
+#     ------------------------
+#     | version | method_count | methods              |
+#     | 1 byte  | 1 byte       | [method_count] bytes |
+#     """
+#     version, method_count = struct.unpack("!BB", connection.recv(2))
+#     # get available methods
+#     methods = connection.recv(method_count)
+#
+#     return Socks5MethodSelectionRequest(version, list(map(int, methods)))
 
-    return Socks5MethodSelectionRequest(version, list(map(int, methods)))
 
-
-def read_request(connection: socket.socket) -> Socks5Request:
-    """Read Request.
-    SEE: https://datatracker.ietf.org/doc/html/rfc1928#section-4
-    Request
-    -------
-    | version | cmd    | rsv  | atyp   | dst.addr    | dst.port |
-    | 1 byte  | 1 byte | 0x00 | 1 byte | 4-255 bytes | 2 bytes  |
-    """
-    version, command, reserved, address_type = struct.unpack("!BBBB", connection.recv(4))
-    address = read_address(address_type, connection)
-    (port,) = struct.unpack("!H", connection.recv(2))
-    return Socks5Request(version, command, reserved, address_type, address, port)
+# def read_request(connection: socket.socket) -> Socks5Request:
+#     """Read Request.
+#     SEE: https://datatracker.ietf.org/doc/html/rfc1928#section-4
+#     Request
+#     -------
+#     | version | cmd    | rsv  | atyp   | dst.addr    | dst.port |
+#     | 1 byte  | 1 byte | 0x00 | 1 byte | 4-255 bytes | 2 bytes  |
+#     """
+#     version, command, reserved, address_type = struct.unpack("!BBBB", connection.recv(4))
+#     address = read_address(address_type, connection)
+#     (port,) = struct.unpack("!H", connection.recv(2))
+#     return Socks5Request(version, command, reserved, address_type, address, port)
 
 
 def create_socket(type: Socks5AddressType) -> socks.socksocket:
@@ -108,19 +111,20 @@ def create_socket(type: Socks5AddressType) -> socks.socksocket:
 
 def with_proxy(socket: socks.socksocket, proxy_server: Optional[Address] = None) -> socks.socksocket:
     if proxy_server is not None:
-        socket.set_proxy(socks.SOCKS5, proxy_server.address, proxy_server.port)
+        socket.set_proxy(socks.SOCKS5, f"{proxy_server.address}", proxy_server.port)
     return socket
 
 
 def poll_socket(destination: Address, timeout: float = 0.1):
-    with create_socket(destination.type) as socket:
+    with create_socket(Socks5AddressTypes[type(destination)]) as socket:
         socket.settimeout(timeout)
         socket.connect(destination.sockaddr)
         socket.close()
 
 
 def create_remote(address: Address, proxy_server: Optional[Address] = None) -> socks.socksocket:
-    return with_proxy(create_socket(address.type), proxy_server)
+    logger.error(f"address: {address}, proxy_server: {proxy_server}")
+    return with_proxy(create_socket(Socks5AddressTypes[type(address)]), proxy_server)
 
 
 def connect_remote(
@@ -147,7 +151,11 @@ def connect_remote(
     remote = create_remote(destination, proxy_server)
     remote.bind(("", 0))
     logger.debug(f"connecting to {destination.sockaddr}, binding client socket: {remote.getsockname()}")
-    remote.connect(destination.sockaddr)
+    logger.debug("destination.sockaddr: %r", destination.sockaddr)
+    ip, port = destination.sockaddr
+    # remote.connect(destination.sockaddr)
+    logger.error(f"(ip: {ip} (type: {type(ip)}), port: {port} (type: {type(port)}))")
+    remote.connect((ip, port))
     logger.debug(f"connected to {destination.sockaddr}, binding client socket: {remote.getsockname()}")
     return remote
 
@@ -296,7 +304,7 @@ class SocksRouterRequestHandler(StreamRequestHandler):
         return None
 
     def handshake(self):
-        request = read_method_selection_request(self.connection)
+        request = read_socket(self.connection, Socks5MethodSelectionRequest)
         if request.version != SOCKS_VERSION:
             self.logger.error(f"invalid request: version: {request.version}, methods: {request.methods}")
             self.state = Socks5State.CLOSED
@@ -306,8 +314,9 @@ class SocksRouterRequestHandler(StreamRequestHandler):
         for method in request.methods:
             match method:
                 case Socks5Method.NO_AUTHENTICATION_REQUIRED:
-                    self.connection.sendall(
-                        bytes(Socks5MethodSelectionResponse(SOCKS_VERSION, Socks5Method.NO_AUTHENTICATION_REQUIRED))
+                    self.logger.info("accept no authentication required")
+                    write_socket(
+                        self.connection, Socks5MethodSelectionResponse(SOCKS_VERSION, Socks5Method.NO_AUTHENTICATION_REQUIRED)
                     )
                     self.state = Socks5State.REQUEST
                     return
@@ -316,18 +325,19 @@ class SocksRouterRequestHandler(StreamRequestHandler):
 
         # none of the methods listed by the client are acceptable
         # notify the client
-        self.connection.sendall(bytes(Socks5MethodSelectionResponse(SOCKS_VERSION, Socks5Method.NO_ACCEPTABLE_METHODS)))
+        self.logger.info("notify client no Socks5Method.NO_ACCEPTABLE_METHODS")
+        write_socket(self.connection, Socks5MethodSelectionResponse(SOCKS_VERSION, Socks5Method.NO_ACCEPTABLE_METHODS))
         # the client MUST close the connection
         self.state = Socks5State.CLOSED
 
     def handle_request(self):
-        request = read_request(self.connection)
+        request = read_socket(self.connection, Socks5Request)
 
         try:
             match request.command:
                 case Socks5Command.CONNECT:
                     self.remote = connect_remote(
-                        request.destination,
+                        request.destination.sockaddr,
                         proxy_factory=self.acquire_proxy,
                         # poll_proxy_factory=lambda destination: (upstream := self.acquire_upstream(destination)) is not None and upstream.scheme == UpstreamScheme.SSH,
                         proxy_retry_options=self.server.context.proxy_retry_options,
@@ -337,22 +347,22 @@ class SocksRouterRequestHandler(StreamRequestHandler):
                     self.logger.info(
                         f"Connected to destination {request.destination}, binding client socket: {self.remote.getsockname()}"
                     )
-                    self.connection.sendall(bytes(Socks5Reply(SOCKS_VERSION, Socks5ReplyType.SUCCEEDED)))
+                    write_socket(self.connection, Socks5Reply(SOCKS_VERSION, Socks5ReplyType.SUCCEEDED))
                     self.state = Socks5State.ESTABLISHED
                     return
                 case _:
                     self.logger.warn(f"COMMAND_NOT_SUPPORTED: {request.command}")
-                    self.connection.sendall(bytes(Socks5Reply(Socks5ReplyType.COMMAND_NOT_SUPPORTED)))
+                    write_socket(self.connection, Socks5Reply(SOCKS_VERSION, Socks5ReplyType.COMMAND_NOT_SUPPORTED))
                     self.state = Socks5State.CLOSED
         except ConnectionRefusedError as e:
             self.logger.error(f"ConnectionRefused when connecting to request.destination: {request.destination}")
             self.logger.error(e)
-            self.connection.sendall(bytes(Socks5Reply(Socks5ReplyType.CONNECTION_REFUSED)))
+            write_socket(self.connection, Socks5Reply(SOCKS_VERSION, Socks5ReplyType.CONNECTION_REFUSED))
             self.state = Socks5State.CLOSED
             return
         except socks.ProxyConnectionError as e:
             self.logger.error(e)
-            self.connection.sendall(bytes(Socks5Reply(Socks5ReplyType.CONNECTION_REFUSED)))
+            write_socket(self.connection, Socks5Reply(SOCKS_VERSION, Socks5ReplyType.CONNECTION_REFUSED))
             self.state = Socks5State.CLOSED
         except socks.ProxyError as e:
             if isinstance(e.socket_err, socket.error):
@@ -360,14 +370,15 @@ class SocksRouterRequestHandler(StreamRequestHandler):
                 self.logger.error(e.socket_err)
             self.logger.error(type(e))
             self.logger.error(e)
-            self.connection.sendall(bytes(Socks5Reply(Socks5ReplyType.GENERAL_SOCKS_SERVER_FAILURE)))
+            write_socket(self.connection, Socks5Reply(SOCKS_VERSION, Socks5ReplyType.GENERAL_SOCKS_SERVER_FAILURE))
             self.state = Socks5State.CLOSED
         except Exception as e:
             traceback.print_exc()
             self.logger.error(type(e))
             self.logger.error(e)
-            self.connection.sendall(bytes(Socks5Reply(Socks5ReplyType.GENERAL_SOCKS_SERVER_FAILURE)))
+            write_socket(self.connection, Socks5Reply(SOCKS_VERSION, Socks5ReplyType.GENERAL_SOCKS_SERVER_FAILURE))
             self.state = Socks5State.CLOSED
+            raise e from None
 
     def exchange(self):
         exchange_loop(self.connection, self.remote, timeout=0)
@@ -401,9 +412,9 @@ class SocksRouterRequestHandler(StreamRequestHandler):
             except TimeoutError as e:
                 self.logger.warning(e)
                 self.state = Socks5State.CLOSED
-            except Exception as e:
-                self.logger.error(e)
-                self.state = Socks5State.CLOSED
+            # except Exception as e:
+            #     self.logger.error(e)
+            #     self.state = Socks5State.CLOSED
 
     def finish(self):
         if self.remote is not None:
