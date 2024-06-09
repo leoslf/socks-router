@@ -33,22 +33,6 @@ class SupportsUnbytes(Protocol):
     def __unbytes__(cls, input: bytes) -> Self: ...
 
 
-# class BytePackable(metaclass=ABCMeta):
-#     @classmethod
-#     def __pack_format__(cls) -> str:
-#         return "!B"
-
-# class ByteEnum(IntEnum):
-#     def __new__(cls, value: int) -> Self:
-#         if not 0 <= value < 256:
-#             raise ValueError("value must be 0 <= value < 256")
-#         return super().__new__(cls, value)
-#
-#     @classmethod
-#     def __pack_format__(cls) -> str:
-#         return "!B"
-
-
 @dataclass(frozen=True)
 class SocketAddress:
     address: Any = field()
@@ -221,16 +205,17 @@ class Socks5Address:
 
 @dataclass(frozen=True)
 class Socks5Request:
-    """SEE: https://datatracker.ietf.org/doc/html/rfc1928#section-4"""
+    """SEE: https://datatracker.ietf.org/doc/html/rfc1928#section-4
+    Request
+    -------
+    | version | cmd    | rsv  | atyp   | dst.addr    | dst.port |
+    | 1 byte  | 1 byte | 0x00 | 1 byte | 4-255 bytes | 2 bytes  |
+    """
 
     version: Annotated[int, "!B"]
     command: Socks5Command
     reserved: Annotated[int, "!B"]
     destination: Socks5Address
-
-    # @property
-    # def destination(self):
-    #     return Socks5Addresses[self.address_type](self.destination_address, self.destination_port)
 
 
 class Socks5ReplyType(IntEnum):

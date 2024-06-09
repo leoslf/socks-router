@@ -55,50 +55,6 @@ def free_port(address: str = "") -> tuple[str, int]:
         return s.getsockname()
 
 
-# def read_address(type: Socks5AddressType, connection: socket.socket) -> str:
-#     match type:
-#         case Socks5AddressType.IPv4:
-#             return socket.inet_ntop(socket.AF_INET, connection.recv(4))
-#         case Socks5AddressType.DOMAINNAME:
-#             (address_length,) = connection.recv(1)
-#             return connection.recv(address_length).decode("utf-8")
-#         case Socks5AddressType.IPv6:
-#             return socket.inet_ntop(socket.AF_INET6, connection.recv(6))
-#         case _ as unreachable:
-#             assert_never(unreachable)
-
-
-# def read_method_selection_request(
-#     connection: socket.socket,
-# ) -> Socks5MethodSelectionRequest:
-#     """Read Socks5 Method Selection Request.
-#     SEE: https://datatracker.ietf.org/doc/html/rfc1928#section-3
-#     Method Selection Request
-#     ------------------------
-#     | version | method_count | methods              |
-#     | 1 byte  | 1 byte       | [method_count] bytes |
-#     """
-#     version, method_count = struct.unpack("!BB", connection.recv(2))
-#     # get available methods
-#     methods = connection.recv(method_count)
-#
-#     return Socks5MethodSelectionRequest(version, list(map(int, methods)))
-
-
-# def read_request(connection: socket.socket) -> Socks5Request:
-#     """Read Request.
-#     SEE: https://datatracker.ietf.org/doc/html/rfc1928#section-4
-#     Request
-#     -------
-#     | version | cmd    | rsv  | atyp   | dst.addr    | dst.port |
-#     | 1 byte  | 1 byte | 0x00 | 1 byte | 4-255 bytes | 2 bytes  |
-#     """
-#     version, command, reserved, address_type = struct.unpack("!BBBB", connection.recv(4))
-#     address = read_address(address_type, connection)
-#     (port,) = struct.unpack("!H", connection.recv(2))
-#     return Socks5Request(version, command, reserved, address_type, address, port)
-
-
 def create_socket(type: Socks5AddressType) -> socks.socksocket:
     match type:
         case Socks5AddressType.IPv4 | Socks5AddressType.DOMAINNAME:

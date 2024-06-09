@@ -47,13 +47,3 @@ def test_Host(address, port, host):
     assert repr(host)
     assert str(host)
     assert host.pattern
-
-
-# @pytest.mark.parametrize(
-#     "method_selection_request",
-#     [
-#         Socks5MethodSelectionRequest(SOCKS_VERSION, [Socks5Method.NO_AUTHENTICATION_REQUIRED]),
-#     ],
-# )
-# def test_Socks5MethodSelectionRequest(method_selection_request):
-#     assert bytes(method_selection_request)
