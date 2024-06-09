@@ -334,7 +334,6 @@ class SocksRouterRequestHandler(StreamRequestHandler):
             self.logger.error(e)
             write_socket(self.connection, Socks5Reply(SOCKS_VERSION, Socks5ReplyType.GENERAL_SOCKS_SERVER_FAILURE))
             self.state = Socks5State.CLOSED
-            raise e from None
 
     def exchange(self):
         exchange_loop(self.connection, self.remote, timeout=0)
@@ -362,15 +361,18 @@ class SocksRouterRequestHandler(StreamRequestHandler):
                         break
                     case _ as unreachable:
                         assert_never(unreachable)
+            except ConnectionResetError:
+                self.state = Socks5State.CLOSED
             except struct.error:
                 # ignore: socket has nothing to read
                 self.state = Socks5State.CLOSED
             except TimeoutError as e:
                 self.logger.warning(e)
                 self.state = Socks5State.CLOSED
-            # except Exception as e:
-            #     self.logger.error(e)
-            #     self.state = Socks5State.CLOSED
+            except Exception as e:
+                traceback.print_exc()
+                self.logger.error(e)
+                self.state = Socks5State.CLOSED
 
     def finish(self):
         if self.remote is not None:
