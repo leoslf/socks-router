@@ -171,7 +171,7 @@ def read_socket[T](sock: socket.socket, type: type[T], format: Optional[str | tu
                     return type(content)  # type: ignore[call-arg]
 
                 if issubclass(type, str):
-                    return content.decode("utf-8")
+                    return content[0].decode("utf-8")
 
                 raise TypeError(f"cannot read variable-length format into type {type}")
             case _ as format:
