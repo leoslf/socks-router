@@ -118,7 +118,7 @@ def read_socket[T](sock: socket.socket, type: type[T], format: Optional[str | tu
         return struct.unpack(format, sock.recv(struct.calcsize(format)))
 
     if is_optional(type):
-        logger.info(f"get_args(type: {type}): {get_args(type)}")
+        logger.debug(f"get_args(type: {type}): {get_args(type)}")
         type = get_args(type)[0]
 
     if format is None and issubclass(type, Packable):
@@ -139,11 +139,11 @@ def read_socket[T](sock: socket.socket, type: type[T], format: Optional[str | tu
     if format is None and isclass(type) and issubclass(type, (list, str)):
         raise TypeError(f"cannot read {type} from socket without format")
 
-    logger.info(f"type: {type}, type(type): {builtins.type(type)}, get_origin(type): {get_origin(type)}")
-    # logger.info(f"issubclass(type, list): {issubclass(type, list)}, issubclass(type, str): {issubclass(type, str)}")
-    # # logger.info(f"issubclass(get_origin(type), list): {issubclass(get_origin(type), list)}, issubclass(type, str): {issubclass(type, str)}")
-    # logger.info(f"type == list: {type == list}, type == str: {type == str}")
-    # logger.info(f"get_origin(type: {type}): {get_origin(type)} == list: {get_origin(type) == list}, type == str: {type == str}")
+    logger.debug(f"type: {type}, type(type): {builtins.type(type)}, get_origin(type): {get_origin(type)}")
+    # logger.debug(f"issubclass(type, list): {issubclass(type, list)}, issubclass(type, str): {issubclass(type, str)}")
+    # # logger.debug(f"issubclass(get_origin(type), list): {issubclass(get_origin(type), list)}, issubclass(type, str): {issubclass(type, str)}")
+    # logger.debug(f"type == list: {type == list}, type == str: {type == str}")
+    # logger.debug(f"get_origin(type: {type}): {get_origin(type)} == list: {get_origin(type) == list}, type == str: {type == str}")
     if (isclass(type) and (issubclass(type, list) or issubclass(type, str))) or (
         isinstance(origin := get_origin(type), builtins.type) and issubclass(origin, list)
     ):
@@ -154,7 +154,7 @@ def read_socket[T](sock: socket.socket, type: type[T], format: Optional[str | tu
             raise ValueError(f"format cannot be anything other than str here, {format} given")
 
         sequence = list(tokenize_pack_format(format))
-        logger.info(f"sequence {sequence}")
+        logger.debug(f"sequence {sequence}")
 
         if not sequence:
             raise TypeError(f"no segments in format {format}")
@@ -181,18 +181,18 @@ def read_socket[T](sock: socket.socket, type: type[T], format: Optional[str | tu
         raise TypeError(f"cannot read non-dataclass, un-SupportsUnbytes type {type.__name__} from socket")
 
     field_descriptors = {field.name: field for field in dataclasses.fields(type)}
-    logger.info(f"field_descriptors: {field_descriptors}")
+    logger.debug(f"field_descriptors: {field_descriptors}")
     results: dict[str, Any] = {}
     for name, field in field_descriptors.items():
         if isinstance(field.type, str):
             field.type = resolve_type(field.type)
 
-        logger.info(f"type: {type}, field: {name}, type of field.type: {field.type}")
-        logger.info(
+        logger.debug(f"type: {type}, field: {name}, type of field.type: {field.type}")
+        logger.debug(
             f"type: {type}, field: {name}, get_origin(field.type): %r, get_origin(field.type) == Annotated: %r"
             % (get_origin(field.type), get_origin(field.type) == Annotated)
         )
-        logger.info(f"type: {type}, field: {name}, get_args(field.type): %r" % (get_args(field.type),))
+        logger.debug(f"type: {type}, field: {name}, get_args(field.type): %r" % (get_args(field.type),))
         if get_origin(field.type) == Annotated:
             match get_args(field.type):
                 case tuple([field_type_union, "&", discriminator, type_factory]):
@@ -215,14 +215,14 @@ def read_socket[T](sock: socket.socket, type: type[T], format: Optional[str | tu
                 case tuple([field_type, format]):
                     if isinstance(field_type, str):
                         field_type = type(field_type)  # type: ignore[call-arg,assignment]
-                    logger.info(f"name: {name}, field_type: {field_type}, format: {format}")
+                    logger.debug(f"name: {name}, field_type: {field_type}, format: {format}")
                     results[name] = read_socket(sock, field_type, format)
                 case tuple() as remaining:
                     raise TypeError(f"{remaining} given")
                 case _ as unreachable:
                     assert_never(unreachable)
         else:
-            logger.info(f'reading "{name}" with {field.type} without being annotated')
+            logger.debug(f'reading "{name}" with {field.type} without being annotated')
             results[name] = read_socket(sock, field.type)
 
     return cast(T, type(**results))
@@ -235,19 +235,6 @@ def write_socket[T](sock: socket.socket, instance: T, format: str) -> None: ...
 
 
 def write_socket[T](sock: socket.socket, instance: T, format: Optional[str] = None) -> None:
-    # def writer[V](sock: socket.socket, field: str | int, segment: str | tuple[str, str], value: V) -> None:
-    #     match segment:
-    #         # variable-length list/str
-    #         case (length_format, element_format):
-    #             if not isinstance(value, Iterable):
-    #                 raise TypeError(f"cannot get use variable-length sequence formatting on non-iterable field: {field} with value {value} of type {type(value)}")
-    #             content = value.encode("utf-8")
-    #             length = len(content)
-    #             sock.sendall(struct.pack(length_format, length))
-    #             sock.sendall(struct.pack(f"{length}{element_format}", content))
-    #         case format:
-    #             sock.sendall(struct.pack(format, value))
-
     if format is None and isinstance(instance, Packable):
         format = instance.__pack_format__()
 
@@ -258,16 +245,7 @@ def write_socket[T](sock: socket.socket, instance: T, format: Optional[str] = No
 
     if isinstance(instance, SupportsBytes):
         sock.sendall(bytes(instance))
-        #     return
-        # if format is None:
-        # else:
-        #     # ???
-        #     logger.info(f"format: {format}, instance: {instance}")
-        #     sock.sendall(struct.pack(format, instance))
         return
-
-    # if format is None and isinstance(instance, (int, float)):
-    #     raise TypeError(f"primitive type {type(instance)} cannot be written to socket without format {format}")
 
     if not dataclasses.is_dataclass(instance):
         if isinstance(instance, bool) or isinstance(instance, int) or isinstance(instance, float):
@@ -284,9 +262,9 @@ def write_socket[T](sock: socket.socket, instance: T, format: Optional[str] = No
             if format is None:
                 raise TypeError("format cannot be None with list or str")
 
-            logger.info(f"format: {format}, instance: {instance}")
+            logger.debug(f"format: {format}, instance: {instance}")
             sequence = list(tokenize_pack_format(format))
-            logger.info(f"sequence {sequence}")
+            logger.debug(f"sequence {sequence}")
 
             if not sequence:
                 raise TypeError(f"no segments in format {format}")
@@ -328,14 +306,14 @@ def write_socket[T](sock: socket.socket, instance: T, format: Optional[str] = No
         if isinstance(field.type, str):
             field.type = resolve_type(field.type)
 
-        logger.info(f"type of field.type: {field.type}")
-        logger.info(
+        logger.debug(f"type of field.type: {field.type}")
+        logger.debug(
             "get_origin(field.type): %r, get_origin(field.type) == Annotated: %r"
             % (get_origin(field.type), get_origin(field.type) == Annotated)
         )
-        logger.info("get_args(field.type): %r" % (get_args(field.type),))
+        logger.debug("get_args(field.type): %r" % (get_args(field.type),))
         if get_origin(field.type) == Annotated:
-            logger.info("annotated")
+            logger.debug("annotated")
             match get_args(field.type):
                 case tuple([_, "&", _, _]):
                     write_socket(sock, getattr(instance, name))
@@ -346,5 +324,5 @@ def write_socket[T](sock: socket.socket, instance: T, format: Optional[str] = No
                 case _ as unreachable:
                     assert_never(unreachable)
         else:
-            logger.info(f"instance: {instance} -> name: {name}")
+            logger.debug(f"instance: {instance} -> name: {name}")
             write_socket(sock, getattr(instance, name))
