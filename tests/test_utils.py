@@ -126,9 +126,20 @@ def describe_read_socket():
         assert read_socket(sock, Byte.__value__) == 0
         sock.recv.assert_called_with(1)
 
+    def it_should_throw_if_arguments_for_Annotated_type_are_invalid(mocker):
+        sock = mocker.Mock(socket.socket)
+        sock.recv.side_effect = lambda n: bytes([0 for _ in range(n)])
+
+        with pytest.raises(TypeError, match=r"Annotated\[.*\] given"):
+            read_socket(sock, Annotated[bool, "&", "", ""])  # type: ignore[arg-type]
+
     def it_should_throw_if_arguments_for_Annotated_are_invalid(mocker):
         sock = mocker.Mock(socket.socket)
         sock.recv.side_effect = lambda n: bytes([0 for _ in range(n)])
 
-        with pytest.raises(TypeError, match="invalid arguments for Annotated: .*"):
-            read_socket(sock, Annotated[bool, "&", "", ""])  # type: ignore[arg-type]
+        @dataclass
+        class Foo:
+            bar: Annotated[bool, ..., ...]
+
+        with pytest.raises(TypeError, match=r"Annotated\[.*\] given"):
+            read_socket(sock, Foo)

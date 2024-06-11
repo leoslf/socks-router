@@ -28,6 +28,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup sshd
+        uses: ./.github/actions/setup-sshd
+
+      - name: Setup ssh-agent
+        shell: bash
+        run: |
+          start-ssh-agent() {
+            # ensure agent is running
+            ssh-add -l &> /dev/null
+            if [ "$?" -eq 2 ]; then
+              # could not open a connection to your auth agent
+              # load stored agent connection info
+              test -r $HOME/.ssh-agent && eval "$(< $HOME/.ssh-agent)" > /dev/null
+
+              ssh-add -l &> /dev/null
+              if [ "$?" -eq 2 ]; then
+                # start agent and store agent connection info
+                eval "$(umask 066; ssh-agent | tee $HOME/.ssh-agent)" > /dev/null
+              fi
+            fi
+          }
+          start-ssh-agent
+
+
       - name: Setup poetry
         uses: ./.github/actions/setup-poetry
         with:

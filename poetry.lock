@@ -743,7 +743,7 @@ files = [
 
 [[package]]
 name = "mypy"
-version = "1.11.0+dev.8dd268ffd84ccf549b3aa9105dd35766a899b2bd"
+version = "1.11.0+dev.415d49f25b6315cf1b7a04046a942246a033498d"
 description = "Optional static typing for Python"
 optional = false
 python-versions = ">=3.8"
@@ -764,7 +764,7 @@ reports = ["lxml"]
 type = "git"
 url = "https://github.com/python/mypy"
 reference = "master"
-resolved_reference = "b8a026017de10969d35de9d1ea7951428b95dfbc"
+resolved_reference = "415d49f25b6315cf1b7a04046a942246a033498d"
 
 [[package]]
 name = "mypy-extensions"

@@ -5,7 +5,6 @@ from typing import (
     Any,
     ForwardRef,
     SupportsBytes,
-    Never,
     Optional,
     Union,
     get_args,
@@ -91,8 +90,8 @@ def read_socket[T](sock: socket.socket, type: builtins.type[T], format: Optional
         match get_args(type):
             case tuple([type, format]):
                 pass
-            case tuple(annotation):
-                raise TypeError(f"invalid arguments for Annotated: {annotation}")
+            case tuple(arguments):
+                raise TypeError(f"Annotated[{arguments}] given")
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -171,8 +170,10 @@ def read_socket[T](sock: socket.socket, type: builtins.type[T], format: Optional
                         results[name] = read_socket(sock, field_type)
                     case tuple([field_type, format]):
                         results[name] = read_socket(sock, field_type, format)
+                    case tuple(arguments):
+                        raise TypeError(f"Annotated[{arguments}] given")
                     case _ as unreachable:
-                        assert_never(cast(Never, unreachable))
+                        assert_never(unreachable)
             else:
                 results[name] = read_socket(sock, field.type)
 
@@ -258,8 +259,8 @@ def write_socket[T](sock: socket.socket, instance: T, format: Optional[str] = No
                     write_socket(sock, getattr(instance, name))
                 case tuple([_, format]):
                     write_socket(sock, getattr(instance, name), format)
-                case tuple() as remaining:
-                    raise TypeError(f"{remaining} given")
+                case tuple(arguments):
+                    raise TypeError(f"Annotated[{arguments}] given")
                 case _ as unreachable:
                     assert_never(unreachable)
         else:
