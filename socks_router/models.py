@@ -81,7 +81,7 @@ class IPv6(SocketAddress):
     class IPv6Address(ipaddress.IPv6Address):
         @classmethod
         def __pack_format__(cls) -> str:
-            return "!6B"
+            return "!16B"
 
         def __bytes__(self) -> bytes:
             return self.packed
@@ -201,6 +201,18 @@ class Socks5Address:
 
     type: Socks5AddressType
     sockaddr: Annotated[Address, "&", "type", "address_type"]
+
+    @classmethod
+    def from_address(cls, address: Address) -> Self:
+        match address:
+            case IPv4():
+                return cls(Socks5AddressType.IPv4, address)
+            case Host():
+                return cls(Socks5AddressType.DOMAINNAME, address)
+            case IPv6():
+                return cls(Socks5AddressType.IPv6, address)
+            case _ as unreachable:
+                assert_never(unreachable)
 
 
 @dataclass(frozen=True)

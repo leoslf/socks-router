@@ -14,7 +14,7 @@ from pyaml_env import parse_config
 
 
 from socks_router.parsers import routing_table
-from socks_router.models import ApplicationContext
+from socks_router.models import ApplicationContext, RetryOptions
 from socks_router.router import SocksRouter, SocksRouterRequestHandler
 
 logger = logging.getLogger(__name__)
@@ -45,6 +45,7 @@ logger = logging.getLogger(__name__)
     default=os.path.expanduser("~/.ssh/routes"),
     show_default=True,
 )
+@click.option("--retries", envvar="SOCKS_ROUTER_RETRIES", type=int, default=-1)
 @click.version_option()
 @click.pass_context
 def cli(
@@ -54,6 +55,7 @@ def cli(
     port: int,
     routes: Optional[str],
     routes_file: pathlib.Path,
+    retries: int,
 ):
     # load logging config
     if os.path.exists(logging_config):
@@ -67,6 +69,7 @@ def cli(
         SocksRouterRequestHandler,
         context=ApplicationContext(
             routing_table=routing_table.parse(routes or ""),
+            proxy_retry_options=RetryOptions(tries=retries),
         ),
     ) as server:
         server.serve_forever()

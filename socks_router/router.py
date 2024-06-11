@@ -42,17 +42,11 @@ from socks_router.models import (
     Socks5AddressTypes,
 )
 
-from socks_router.utils import read_socket, write_socket
+from socks_router.utils import read_socket, write_socket, free_port
 
 CHUNK_SIZE = 4096
 
 logger = logging.getLogger(__name__)
-
-
-def free_port(address: str = "") -> tuple[str, int]:
-    with socket.socket() as s:
-        s.bind((address, 0))
-        return s.getsockname()
 
 
 def create_socket(type: Socks5AddressType) -> socks.socksocket:
@@ -67,7 +61,7 @@ def create_socket(type: Socks5AddressType) -> socks.socksocket:
 
 def with_proxy(socket: socks.socksocket, proxy_server: Optional[Address] = None) -> socks.socksocket:
     if proxy_server is not None:
-        socket.set_proxy(socks.SOCKS5, f"{proxy_server.address}", proxy_server.port)
+        socket.set_proxy(socks.SOCKS5, *proxy_server.sockaddr)
     return socket
 
 
@@ -79,7 +73,6 @@ def poll_socket(destination: Address, timeout: float = 0.1):
 
 
 def create_remote(address: Address, proxy_server: Optional[Address] = None) -> socks.socksocket:
-    logger.error(f"address: {address}, proxy_server: {proxy_server}")
     return with_proxy(create_socket(Socks5AddressTypes[type(address)]), proxy_server)
 
 
@@ -107,11 +100,7 @@ def connect_remote(
     remote = create_remote(destination, proxy_server)
     remote.bind(("", 0))
     logger.debug(f"connecting to {destination.sockaddr}, binding client socket: {remote.getsockname()}")
-    logger.debug("destination.sockaddr: %r", destination.sockaddr)
-    ip, port = destination.sockaddr
-    # remote.connect(destination.sockaddr)
-    logger.error(f"(ip: {ip} (type: {type(ip)}), port: {port} (type: {type(port)}))")
-    remote.connect((ip, port))
+    remote.connect(destination.sockaddr)
     logger.debug(f"connected to {destination.sockaddr}, binding client socket: {remote.getsockname()}")
     return remote
 
@@ -156,8 +145,15 @@ class SocksRouter(ThreadingTCPServer):
     context: ApplicationContext
     logger: logging.Logger
 
-    def __init__(self, *argv, context: Optional[ApplicationContext] = None, **kwargs):
+    def __init__(
+        self,
+        *argv,
+        context: Optional[ApplicationContext] = None,
+        address_family: socket.AddressFamily = socket.AF_INET,
+        **kwargs,
+    ):
         self.context = context or ApplicationContext()
+        self.address_family = address_family
         self.logger = logging.getLogger(self.context.name)
         super().__init__(*argv, **kwargs)
 
@@ -166,12 +162,12 @@ class SocksRouter(ThreadingTCPServer):
         return parse_sockaddr(cast(tuple[str, int], self.server_address))
 
     def server_activate(self) -> None:
-        self.logger.info("Server started on %s:%d", *self.server_address)
+        self.logger.info("Server started on %s:%d", *self.server_address[:2])
         super().server_activate()
 
     def get_request(self) -> tuple[socket.socket, str]:
         conn, addr = super().get_request()
-        self.logger.info("Starting connection from client %s:%d", *addr)
+        self.logger.info("Starting connection from client %s:%d", *addr[:2])
         return conn, addr
 
     def shutdown_request(self, request: socket.socket | tuple[bytes, socket.socket]) -> None:
@@ -185,6 +181,14 @@ class SocksRouter(ThreadingTCPServer):
 
     def shutdown(self) -> None:
         self.logger.info("Server is shutting down")
+        for upstream_address, upstream in self.context.upstreams.items():
+            match upstream:
+                case SSHUpstream(ssh_client, _):
+                    if ssh_client.poll() is None:
+                        ssh_client.kill()
+                case _:
+                    pass
+        self.context.upstreams.clear()
         super().shutdown()
 
 
@@ -236,12 +240,14 @@ class SocksRouterRequestHandler(StreamRequestHandler):
                             "-D",
                             f"{proxy_server.port}",
                             "-o",
+                            "StrictHostKeyChecking=accept-new",
+                            "-o",
                             "ServerAliveInterval=240",
                             "-o",
                             "ExitOnForwardFailure=yes",
                             f"{upstream.address}",
                         ]
-                        + ([] if upstream.address.port is None else ["-p", f"{upstream.address.port}"])
+                        + ([] if upstream.address.port is None else ["-p", f"{upstream.address.port}"]),
                     )
 
                     self.server.context.upstreams[upstream] = SSHUpstream(ssh_client, proxy_server)
@@ -301,33 +307,28 @@ class SocksRouterRequestHandler(StreamRequestHandler):
                     )
 
                     self.logger.info(
-                        f"Connected to destination {request.destination}, binding client socket: {self.remote.getsockname()}"
+                        f"Connected to destination {request.destination.sockaddr}, binding client socket: {self.remote.getsockname()}"
                     )
                     write_socket(self.connection, Socks5Reply(SOCKS_VERSION, Socks5ReplyType.SUCCEEDED))
                     self.state = Socks5State.ESTABLISHED
                     return
                 case _:
-                    self.logger.warn(f"COMMAND_NOT_SUPPORTED: {request.command}")
+                    self.logger.warning(f"COMMAND_NOT_SUPPORTED: {request.command}")
                     write_socket(self.connection, Socks5Reply(SOCKS_VERSION, Socks5ReplyType.COMMAND_NOT_SUPPORTED))
                     self.state = Socks5State.CLOSED
+                    return
         except ConnectionRefusedError as e:
-            self.logger.error(f"ConnectionRefused when connecting to request.destination: {request.destination}")
+            self.logger.error(f"ConnectionRefused when connecting to request.destination: {request.destination.sockaddr}")
             self.logger.error(e)
             write_socket(self.connection, Socks5Reply(SOCKS_VERSION, Socks5ReplyType.CONNECTION_REFUSED))
             self.state = Socks5State.CLOSED
             return
-        except socks.ProxyConnectionError as e:
+        except socket.gaierror as e:
+            self.logger.error(f"socket.gaierror: request.destination: {request.destination.sockaddr}")
             self.logger.error(e)
-            write_socket(self.connection, Socks5Reply(SOCKS_VERSION, Socks5ReplyType.CONNECTION_REFUSED))
+            write_socket(self.connection, Socks5Reply(SOCKS_VERSION, Socks5ReplyType.NETWORK_UNREACHABLE))
             self.state = Socks5State.CLOSED
-        except socks.ProxyError as e:
-            if isinstance(e.socket_err, socket.error):
-                self.logger.error(type(e.socket_err))
-                self.logger.error(e.socket_err)
-            self.logger.error(type(e))
-            self.logger.error(e)
-            write_socket(self.connection, Socks5Reply(SOCKS_VERSION, Socks5ReplyType.GENERAL_SOCKS_SERVER_FAILURE))
-            self.state = Socks5State.CLOSED
+            return
         except Exception as e:
             traceback.print_exc()
             self.logger.error(type(e))
@@ -361,13 +362,11 @@ class SocksRouterRequestHandler(StreamRequestHandler):
                         break
                     case _ as unreachable:
                         assert_never(unreachable)
-            except ConnectionResetError:
-                self.state = Socks5State.CLOSED
             except struct.error:
                 # ignore: socket has nothing to read
                 self.state = Socks5State.CLOSED
-            except TimeoutError as e:
-                self.logger.warning(e)
+            except (ConnectionResetError, BrokenPipeError, TimeoutError) as e:
+                logger.error(e)
                 self.state = Socks5State.CLOSED
             except Exception as e:
                 traceback.print_exc()

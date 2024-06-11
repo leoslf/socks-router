@@ -1,4 +1,5 @@
 from __future__ import annotations
+from types import ModuleType
 from typing import (
     Annotated,
     Any,
@@ -14,11 +15,9 @@ from typing import (
     cast,
 )
 from collections.abc import Iterator
-from inspect import isclass
-
 
 import builtins
-import logging
+import inspect
 import re
 import struct
 import dataclasses
@@ -32,15 +31,13 @@ from socks_router.models import (
 
 import socks_router.models
 
-logger = logging.getLogger(__name__)
 
-
-def resolve_type(type: str):
+def resolve_type(type: str, module: Optional[ModuleType] = None) -> type:
     from typing import _eval_type  # type: ignore[attr-defined]
 
     return _eval_type(
         ForwardRef(type),
-        {**globals(), **{name: getattr(socks_router.models, name) for name in dir(socks_router.models)}},
+        {**globals(), **{name: getattr(module, name) for module in filter(None, [module]) for name in dir(module)}},
         globals(),
     )
 
@@ -61,9 +58,14 @@ def is_optional(field):
     return get_origin(field) is Union and type(None) in get_args(field)
 
 
+def is_list(type: builtins.type) -> bool:
+    return (
+        inspect.isclass(type) and issubclass(type, list) or inspect.isclass(origin := get_origin(type)) and issubclass(origin, list)
+    )
+
+
 def tokenize_pack_format(format: str) -> Iterator[PackingSequence]:
-    if matches := re.fullmatch(r"(?P<ordering>[@=<>!]?)(?P<format>.*)", format):
-        ordering, format = matches.groups()
+    ordering, format = cast(re.Match[str], re.fullmatch(r"(?P<ordering>[@=<>!]?)(?P<format>.*)", format or "")).groups()
 
     # unsigned integers
     length_pattern = r"[BHILQ]"
@@ -78,33 +80,8 @@ def tokenize_pack_format(format: str) -> Iterator[PackingSequence]:
             yield (ordering + matches["length"], ordering + "%d" + matches["element"])
             continue
 
-        for field in segment:
-            yield ordering + segment
-
-
-# def packing_sequence(packable: Packable) -> RecursiveMapping[dataclasses.Field, PackingSequence]:
-#     if not dataclasses.is_dataclass(packable):
-#         raise TypeError(f"Packable should only be used on dataclass, {type(packable).__name__} is given")
-#
-#     def generator():
-#         for field, format in zip(fields(packable), tokenize_pack_format(packable.__packing_format__()), strict=True):
-#             match format:
-#                 case socks_router.models.PACKABLE_DEFERRED_FORMAT:
-#                     if isinstance(field.type, type) and not issubclass(field.type, Packable):
-#                         raise TypeError(f"Cannot infer pack format for field {cls.__name__}.{name} of type {type.__name__} which is not a subclass of Packable")
-#                     yield (field, field.type.packing_sequence)
-#                 case _:
-#                     yield (field, format)
-#
-#     return dict(generator())
-
-# def pack_format(packable: Packable) -> str:
-#     if not dataclasses.is_dataclass(packable):
-#         return packable.__pack_format__()
-#
-#     def reducer(accumulation: list[str], format: str | tuple[str, str]
-#
-#     return "".join(reduce(lambda accumulation, format: accumulation + (list(format.values()) if isinstance(format, dict) else [format]), list(packing_sequence(packable).values()), []))
+        for field in re.findall(rf"\d*{element_format}", segment):
+            yield ordering + field
 
 
 @overload
@@ -118,17 +95,16 @@ def read_socket[T](sock: socket.socket, type: type[T], format: Optional[str | tu
         return struct.unpack(format, sock.recv(struct.calcsize(format)))
 
     if is_optional(type):
-        logger.debug(f"get_args(type: {type}): {get_args(type)}")
         type = get_args(type)[0]
 
-    if format is None and issubclass(type, Packable):
+    if format is None and inspect.isclass(type) and issubclass(type, Packable):
         format = type.__pack_format__()
 
-    if isclass(type) and issubclass(type, SupportsUnbytes):
+    if inspect.isclass(type) and issubclass(type, SupportsUnbytes):
         return cast(T, type.__unbytes__(sock.recv(struct.calcsize(cast(str, format)))))
 
     # primitives
-    if isclass(type) and issubclass(type, (bool, int, float)):
+    if inspect.isclass(type) and issubclass(type, (bool, int, float)):
         if format is None:
             raise TypeError(f"cannot read {type} from socket without format")
         if not isinstance(format, str):
@@ -136,17 +112,7 @@ def read_socket[T](sock: socket.socket, type: type[T], format: Optional[str | tu
         # NOTE: type is not an instance of SupportsUnbytes
         return cast(T, type(*read(sock, format)))
 
-    if format is None and isclass(type) and issubclass(type, (list, str)):
-        raise TypeError(f"cannot read {type} from socket without format")
-
-    logger.debug(f"type: {type}, type(type): {builtins.type(type)}, get_origin(type): {get_origin(type)}")
-    # logger.debug(f"issubclass(type, list): {issubclass(type, list)}, issubclass(type, str): {issubclass(type, str)}")
-    # # logger.debug(f"issubclass(get_origin(type), list): {issubclass(get_origin(type), list)}, issubclass(type, str): {issubclass(type, str)}")
-    # logger.debug(f"type == list: {type == list}, type == str: {type == str}")
-    # logger.debug(f"get_origin(type: {type}): {get_origin(type)} == list: {get_origin(type) == list}, type == str: {type == str}")
-    if (isclass(type) and (issubclass(type, list) or issubclass(type, str))) or (
-        isinstance(origin := get_origin(type), builtins.type) and issubclass(origin, list)
-    ):
+    if is_list(type) or inspect.isclass(type) and issubclass(type, str):
         if format is None:
             raise ValueError(f"format cannot be none with type: {type.__name__}")
 
@@ -154,7 +120,6 @@ def read_socket[T](sock: socket.socket, type: type[T], format: Optional[str | tu
             raise ValueError(f"format cannot be anything other than str here, {format} given")
 
         sequence = list(tokenize_pack_format(format))
-        logger.debug(f"sequence {sequence}")
 
         if not sequence:
             raise TypeError(f"no segments in format {format}")
@@ -181,23 +146,14 @@ def read_socket[T](sock: socket.socket, type: type[T], format: Optional[str | tu
         raise TypeError(f"cannot read non-dataclass, un-SupportsUnbytes type {type.__name__} from socket")
 
     field_descriptors = {field.name: field for field in dataclasses.fields(type)}
-    logger.debug(f"field_descriptors: {field_descriptors}")
     results: dict[str, Any] = {}
     for name, field in field_descriptors.items():
         if isinstance(field.type, str):
-            field.type = resolve_type(field.type)
+            field.type = resolve_type(field.type, module=inspect.getmodule(type))
 
-        logger.debug(f"type: {type}, field: {name}, type of field.type: {field.type}")
-        logger.debug(
-            f"type: {type}, field: {name}, get_origin(field.type): %r, get_origin(field.type) == Annotated: %r"
-            % (get_origin(field.type), get_origin(field.type) == Annotated)
-        )
-        logger.debug(f"type: {type}, field: {name}, get_args(field.type): %r" % (get_args(field.type),))
         if get_origin(field.type) == Annotated:
             match get_args(field.type):
                 case tuple([field_type_union, "&", discriminator, type_factory]):
-                    # if not isinstance(field_type_union, UnionType):
-                    #     raise TypeError(f"discriminated field {name} does not operate on a union field, {field_type_union.__name__} given instead")
                     if discriminator not in results:
                         if discriminator in field_descriptors:
                             raise TypeError(
@@ -215,14 +171,12 @@ def read_socket[T](sock: socket.socket, type: type[T], format: Optional[str | tu
                 case tuple([field_type, format]):
                     if isinstance(field_type, str):
                         field_type = type(field_type)  # type: ignore[call-arg,assignment]
-                    logger.debug(f"name: {name}, field_type: {field_type}, format: {format}")
                     results[name] = read_socket(sock, field_type, format)
                 case tuple() as remaining:
                     raise TypeError(f"{remaining} given")
                 case _ as unreachable:
                     assert_never(unreachable)
         else:
-            logger.debug(f'reading "{name}" with {field.type} without being annotated')
             results[name] = read_socket(sock, field.type)
 
     return cast(T, type(**results))
@@ -248,23 +202,17 @@ def write_socket[T](sock: socket.socket, instance: T, format: Optional[str] = No
         return
 
     if not dataclasses.is_dataclass(instance):
-        if isinstance(instance, bool) or isinstance(instance, int) or isinstance(instance, float):
+        if isinstance(instance, (bool, int, float)):
             if format is None:
                 raise ValueError(f"format cannot be None with instance {instance} of type {type(instance)}")
             sock.sendall(struct.pack(format, instance))
             return
 
-        if (
-            isinstance(instance, list)
-            or isinstance(instance, str)
-            or (isinstance(origin := get_origin(type(instance)), builtins.type) and issubclass(origin, list))
-        ):
+        if is_list(type(instance)) or isinstance(instance, str):
             if format is None:
                 raise TypeError("format cannot be None with list or str")
 
-            logger.debug(f"format: {format}, instance: {instance}")
             sequence = list(tokenize_pack_format(format))
-            logger.debug(f"sequence {sequence}")
 
             if not sequence:
                 raise TypeError(f"no segments in format {format}")
@@ -277,7 +225,7 @@ def write_socket[T](sock: socket.socket, instance: T, format: Optional[str] = No
                     if isinstance(instance, str):
                         content = instance.encode("utf-8")
                         content_length = len(content)
-                        sock.sendall(struct.pack(length_format, bytes(content_length)))
+                        sock.sendall(struct.pack(length_format, content_length))
                         sock.sendall(struct.pack(element_format % content_length, content))
                         return
 
@@ -299,21 +247,17 @@ def write_socket[T](sock: socket.socket, instance: T, format: Optional[str] = No
 
         raise TypeError(f"cannot write {instance} to socket with format {format}")
 
-    assert format is None
+    if format is not None:
+        raise TypeError(
+            f"instance {instance} of dataclass {type(instance)} should not have a format assigned to it, format: {format}"
+        )
 
     field_descriptors = {field.name: field for field in dataclasses.fields(instance)}
     for name, field in field_descriptors.items():
         if isinstance(field.type, str):
-            field.type = resolve_type(field.type)
+            field.type = resolve_type(field.type, module=inspect.getmodule(type(instance)))
 
-        logger.debug(f"type of field.type: {field.type}")
-        logger.debug(
-            "get_origin(field.type): %r, get_origin(field.type) == Annotated: %r"
-            % (get_origin(field.type), get_origin(field.type) == Annotated)
-        )
-        logger.debug("get_args(field.type): %r" % (get_args(field.type),))
         if get_origin(field.type) == Annotated:
-            logger.debug("annotated")
             match get_args(field.type):
                 case tuple([_, "&", _, _]):
                     write_socket(sock, getattr(instance, name))
@@ -324,5 +268,10 @@ def write_socket[T](sock: socket.socket, instance: T, format: Optional[str] = No
                 case _ as unreachable:
                     assert_never(unreachable)
         else:
-            logger.debug(f"instance: {instance} -> name: {name}")
             write_socket(sock, getattr(instance, name))
+
+
+def free_port(address: str = "") -> tuple[str, int]:
+    with socket.socket() as sock:
+        sock.bind((address, 0))
+        return sock.getsockname()
