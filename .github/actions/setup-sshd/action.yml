@@ -36,14 +36,13 @@ runs:
         export SSHD_CONFIG=${{ runner.os == 'macOS' && '/private' || '' }}/etc/ssh/sshd_config
         export USER="$(whoami)"
 
-        sed -i -E "s|(AuthorizedKeysFile).*|\1 %h/.ssh/authorized_keys|g" $SSHD_CONFIG
-        echo "PubkeyAcceptedKeyTypes=+ssh-rsa" >> $SSHD_CONFIG
+        sudo sed -i -E "s|(AuthorizedKeysFile).*|\1 %h/.ssh/authorized_keys|g" $SSHD_CONFIG
+        echo "PubkeyAcceptedKeyTypes=+ssh-rsa" | sudo tee -a $SSHD_CONFIG
+        echo "AllowUsers $USER" | sudo tee -a $SSHD_CONFIG
 
         if [ "$USER" = "root" ]; then
-          sed -i -E "s/#?(PermitRootLogin).*/\1 yes/g" $SSHD_CONFIG
+          sudo sed -i -E "s/#?(PermitRootLogin).*/\1 yes/g" $SSHD_CONFIG
         fi
-
-        echo "AllowUsers $USER" >> $SSHD_CONFIG
 
     - name: Generate key pairs
       if: inputs.ssh_keygen
