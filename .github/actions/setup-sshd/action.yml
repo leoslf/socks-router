@@ -48,7 +48,7 @@ runs:
       if: inputs.ssh_keygen
       shell: bash
       run: |
-        ssh-keygen -A $HOME/.ssh/id_rsa
+        ssh-keygen -q -t rsa -N '' -f $HOME/.ssh/id_rsa
 
     - name: Add id_rsa into authorized_keys
       if: inputs.ssh_add_id_rsa_into_authorized_keys
