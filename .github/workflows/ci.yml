@@ -35,6 +35,7 @@ jobs:
         shell: bash
         run: |
           start-ssh-agent() {
+            set +e
             # ensure agent is running
             ssh-add -l &> /dev/null
             if [ "$?" -eq 2 ]; then
