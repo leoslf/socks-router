@@ -33,7 +33,7 @@ runs:
     - name: Update sshd_config
       shell: bash
       run: |
-        export SSHD_CONFIG=${{ runner.os == 'macOS' && '/private' || '' }}/etc/ssh/sshd_config
+        export SSHD_CONFIG="${{ runner.os == 'macOS' && '/private' || '' }}/etc/ssh/sshd_config"
         export USER="$(whoami)"
 
         sudo sed -i "s|\(AuthorizedKeysFile\).*|\1 %h/.ssh/authorized_keys|g" $SSHD_CONFIG
