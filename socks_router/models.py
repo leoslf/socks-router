@@ -181,13 +181,17 @@ class Socks5MethodSelectionResponse:
 
 @dataclass(frozen=True)
 class Socks5Address:
+    @classmethod
     @overload
     def address_type(cls, type: Literal[Socks5AddressType.IPv4]) -> Type[IPv4]: ...
+    @classmethod
     @overload
     def address_type(cls, type: Literal[Socks5AddressType.DOMAINNAME]) -> Type[Host]: ...
+    @classmethod
     @overload
     def address_type(cls, type: Literal[Socks5AddressType.IPv6]) -> Type[IPv6]: ...
 
+    @classmethod
     def address_type(cls, type: Socks5AddressType) -> Type[IPv4] | Type[Host] | Type[IPv6]:
         match type:
             case Socks5AddressType.IPv4:
@@ -336,7 +340,7 @@ class RetryOptions:
 
     @classmethod
     def exponential_backoff(cls, *argv, backoff=2, **kwargs):
-        return cls(*argv, backoff=backoff, **kwargs)
+        return cls(*argv, **dict(backoff=backoff, **kwargs))
 
 
 @dataclass

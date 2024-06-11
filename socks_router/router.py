@@ -337,6 +337,7 @@ class SocksRouterRequestHandler(StreamRequestHandler):
             self.state = Socks5State.CLOSED
 
     def exchange(self):
+        assert self.remote is not None
         exchange_loop(self.connection, self.remote, timeout=0)
         self.state = Socks5State.CLOSED
 

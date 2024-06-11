@@ -5,12 +5,11 @@ from typing import (
     Any,
     ForwardRef,
     SupportsBytes,
+    Never,
     Optional,
     Union,
-    Type,
     get_args,
     get_origin,
-    overload,
     assert_never,
     cast,
 )
@@ -84,15 +83,18 @@ def tokenize_pack_format(format: str) -> Iterator[PackingSequence]:
             yield ordering + field
 
 
-@overload
-def read_socket[T: SupportsUnbytes](sock: socket.socket, type: type[T]) -> T: ...
-@overload
-def read_socket[T](sock: socket.socket, type: type[T], format: str) -> T: ...
-
-
-def read_socket[T](sock: socket.socket, type: type[T], format: Optional[str | tuple[str, str]] = None) -> T:
+def read_socket[T](sock: socket.socket, type: builtins.type[T], format: Optional[str] = None) -> T:
     def read(sock: socket.socket, format: str):
         return struct.unpack(format, sock.recv(struct.calcsize(format)))
+
+    if get_origin(type) == Annotated:
+        match get_args(type):
+            case tuple([type, format]):
+                pass
+            case tuple(annotation):
+                raise TypeError(f"invalid arguments for Annotated: {annotation}")
+            case _ as unreachable:
+                assert_never(unreachable)
 
     if is_optional(type):
         type = get_args(type)[0]
@@ -100,24 +102,17 @@ def read_socket[T](sock: socket.socket, type: type[T], format: Optional[str | tu
     if format is None and inspect.isclass(type) and issubclass(type, Packable):
         format = type.__pack_format__()
 
-    if inspect.isclass(type) and issubclass(type, SupportsUnbytes):
-        return cast(T, type.__unbytes__(sock.recv(struct.calcsize(cast(str, format)))))
-
     # primitives
-    if inspect.isclass(type) and issubclass(type, (bool, int, float)):
+    is_primitive = inspect.isclass(type) and issubclass(type, (bool, int, float))
+    is_list = (
+        inspect.isclass(type) and issubclass(type, list) or inspect.isclass(origin := get_origin(type)) and issubclass(origin, list)
+    )
+    is_str = inspect.isclass(type) and issubclass(type, str)
+    supports_unbytes = inspect.isclass(type) and issubclass(type, SupportsUnbytes)
+
+    if is_primitive or is_list or is_str or supports_unbytes:
         if format is None:
             raise TypeError(f"cannot read {type} from socket without format")
-        if not isinstance(format, str):
-            raise TypeError("cannot use variable-length format on primitives")
-        # NOTE: type is not an instance of SupportsUnbytes
-        return cast(T, type(*read(sock, format)))
-
-    if is_list(type) or inspect.isclass(type) and issubclass(type, str):
-        if format is None:
-            raise ValueError(f"format cannot be none with type: {type.__name__}")
-
-        if not isinstance(format, str):
-            raise ValueError(f"format cannot be anything other than str here, {format} given")
 
         sequence = list(tokenize_pack_format(format))
 
@@ -125,67 +120,68 @@ def read_socket[T](sock: socket.socket, type: type[T], format: Optional[str | tu
             raise TypeError(f"no segments in format {format}")
 
         if len(sequence) > 1:
-            raise TypeError(f"type is list or str but sequence has more than 1 segments: {sequence}")
+            raise TypeError(f"sequence has more than 1 segment: {sequence}")
+
+        if supports_unbytes:
+            return cast(T, cast(SupportsUnbytes, type).__unbytes__(sock.recv(struct.calcsize(format))))
 
         match sequence[0]:
             case tuple([length_format, element_format]):
+                if is_primitive:
+                    raise TypeError(f"variable-length format {format} is not allowed on primitive type, given type: {type}")
+
                 (length,) = read(sock, length_format)
                 content = read(sock, element_format % length)
 
-                if issubclass(type, list) or isinstance(origin := get_origin(type), builtins.type) and issubclass(origin, list):
-                    return type(content)  # type: ignore[call-arg]
-
-                if issubclass(type, str):
+                if is_str:
                     return content[0].decode("utf-8")
 
-                raise TypeError(f"cannot read variable-length format into type {type}")
-            case _ as format:
-                return type(*read(sock, cast(str, format)))
+                return type(content)  # type: ignore[call-arg]
+            case _ as fmt:
+                return type(*read(sock, cast(str, fmt)))
 
-    if not dataclasses.is_dataclass(type):
-        raise TypeError(f"cannot read non-dataclass, un-SupportsUnbytes type {type.__name__} from socket")
+    if dataclasses.is_dataclass(type):
+        field_descriptors = {field.name: field for field in dataclasses.fields(type)}
+        results: dict[str, Any] = {}
+        for name, field in field_descriptors.items():
+            if isinstance(field.type, str):
+                field.type = resolve_type(field.type, module=inspect.getmodule(type))
 
-    field_descriptors = {field.name: field for field in dataclasses.fields(type)}
-    results: dict[str, Any] = {}
-    for name, field in field_descriptors.items():
-        if isinstance(field.type, str):
-            field.type = resolve_type(field.type, module=inspect.getmodule(type))
+            if get_origin(field.type) == Annotated:
+                match get_args(field.type):
+                    case tuple([field_type, "&", discriminator, type_factory]):
+                        if discriminator not in results:
+                            if discriminator not in field_descriptors:
+                                raise TypeError(
+                                    f"discriminator {discriminator} for field {name} of type {field_type} not in fields of {type.__name__}"
+                                )
+                            raise TypeError(f"discriminator {discriminator} has to be declared before field {name}")
 
-        if get_origin(field.type) == Annotated:
-            match get_args(field.type):
-                case tuple([field_type_union, "&", discriminator, type_factory]):
-                    if discriminator not in results:
-                        if discriminator in field_descriptors:
-                            raise TypeError(
-                                f"discriminator for field {name} of type {field_type_union} not in fields of {type.__name__}"
-                            )
-                        raise TypeError(f"discriminator {discriminator} has to be declared before field {name}")
-                    if not (hasattr(type, type_factory) and callable(getattr(type, type_factory))):
-                        raise TypeError(
-                            f"type_factory {type_factory} for field {name} of type {field_type_union} not in {type.__name__}"
-                        )
-                    field_type: Type = getattr(type, type_factory)(type, results[discriminator])
-                    if isinstance(field_type, str):
-                        field_type = type(field_type)
-                    results[name] = read_socket(sock, field_type)
-                case tuple([field_type, format]):
-                    if isinstance(field_type, str):
-                        field_type = type(field_type)  # type: ignore[call-arg,assignment]
-                    results[name] = read_socket(sock, field_type, format)
-                case tuple() as remaining:
-                    raise TypeError(f"{remaining} given")
-                case _ as unreachable:
-                    assert_never(unreachable)
-        else:
-            results[name] = read_socket(sock, field.type)
+                        if isinstance(type_factory, str):
+                            if not hasattr(type, type_factory):
+                                raise TypeError(
+                                    f"type_factory {type_factory} for field {name} of type {field_type} not in {type.__name__}"
+                                )
+                            type_factory = getattr(type, type_factory)
 
-    return cast(T, type(**results))
+                        if not callable(type_factory):
+                            raise TypeError(f"type_factory not callable, given: {type_factory}")
 
+                        field_type = type_factory(results[discriminator])
+                        results[name] = read_socket(sock, field_type)
+                    case tuple([field_type, format]):
+                        results[name] = read_socket(sock, field_type, format)
+                    case _ as unreachable:
+                        assert_never(cast(Never, unreachable))
+            else:
+                results[name] = read_socket(sock, field.type)
 
-@overload
-def write_socket[T: (SupportsBytes, Packable)](sock: socket.socket, instance: T) -> None: ...
-@overload
-def write_socket[T](sock: socket.socket, instance: T, format: str) -> None: ...
+        return cast(T, type(**results))
+
+    # we have no way to deserialize
+    raise TypeError(
+        f"read_socket can only handle primitives, list, str, SupportsUnbytes or dataclasses, but type {type} ({builtins.type(type)}) given"
+    )
 
 
 def write_socket[T](sock: socket.socket, instance: T, format: Optional[str] = None) -> None:
@@ -205,8 +201,7 @@ def write_socket[T](sock: socket.socket, instance: T, format: Optional[str] = No
         if isinstance(instance, (bool, int, float)):
             if format is None:
                 raise ValueError(f"format cannot be None with instance {instance} of type {type(instance)}")
-            sock.sendall(struct.pack(format, instance))
-            return
+            return sock.sendall(struct.pack(format, instance))
 
         if is_list(type(instance)) or isinstance(instance, str):
             if format is None:
@@ -218,7 +213,7 @@ def write_socket[T](sock: socket.socket, instance: T, format: Optional[str] = No
                 raise TypeError(f"no segments in format {format}")
 
             if len(sequence) > 1:
-                raise TypeError(f"type is list or str but sequence has more than 1 segments: {sequence}")
+                raise TypeError(f"type is list or str but sequence has more than 1 segment: {sequence}")
 
             match sequence[0]:
                 case tuple([length_format, element_format]):

@@ -52,6 +52,7 @@ python-semantic-release = "^9.1.1"
 install_types = true
 ignore_missing_imports = true
 enable_incomplete_feature = ["NewGenericSyntax"]
+check_untyped_defs = true
 
 [tool.ruff]
 line-length = 132
