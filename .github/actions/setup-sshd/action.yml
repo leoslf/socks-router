@@ -18,12 +18,14 @@ runs:
   steps:
     - name: Install openssh on Ubuntu
       if: runner.os == "Linux"
+      shell: bash
       run: |
         sudo apt-get install -y openssh-server
         sudo systemctl enable --now ssh
 
     - name: Enable openssh on Mac OS
       if: runner.os == "macOS"
+      shell: bash
       run: |
         sudo systemsetup -setremotelogin on
         sudo dseditgroup -o edit -a $(whoami) -t user com.apple.access_ssh
@@ -45,14 +47,17 @@ runs:
 
     - name: Generate key pairs
       if: inputs.ssh_keygen
+      shell: bash
       run: |
         ssh-keygen -A
 
     - name: Add id_rsa into authorized_keys
       if: inputs.ssh_add_id_rsa_into_authorized_keys
+      shell: bash
       run: |
         cat $HOME/.ssh/id_rsa.pub >> $HOME/.ssh/authorized_keys
 
     - name: Ensure permissions for $HOME/.ssh/authorized_keys to be 0600
+      shell: bash
       run: |
         chmod 0600 $HOME/.ssh/authorized_keys
