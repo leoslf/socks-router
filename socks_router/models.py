@@ -144,6 +144,7 @@ class Socks5AddressType(IntEnum):
     """SEE: https://datatracker.ietf.org/doc/html/rfc1928#section-4"""
 
     IPv4 = 0x01
+    # A fully-qualified domain name.  The first octet of the address field contains the number of octets of name that follow, there is no terminating NUL octet.
     DOMAINNAME = 0x03
     IPv6 = 0x04
 
@@ -253,7 +254,7 @@ class Socks5ReplyType(IntEnum):
         return "!B"
 
 
-@dataclass
+@dataclass(frozen=True)
 class Socks5Reply:
     """Socks5 Reply
     Reply
@@ -265,7 +266,7 @@ class Socks5Reply:
     version: Annotated[int, "!B"]
     reply: Socks5ReplyType
     reserved: Annotated[int, "!B"] = 0x00
-    destination: Socks5Address = Socks5Address(Socks5AddressType.IPv4, IPv4("0.0.0.0", 0))
+    server_bound_address: Socks5Address = Socks5Address.from_address(IPv4("0.0.0.0", 0))
 
 
 class Socks5State(StrEnum):
@@ -316,13 +317,13 @@ Socks5AddressTypes = {
 }
 
 
-@dataclass
+@dataclass(frozen=True)
 class SSHUpstream:
     ssh_client: Popen
     proxy_server: Address
 
 
-@dataclass
+@dataclass(frozen=True)
 class ProxyUpstream:
     proxy_server: Address
 

@@ -298,20 +298,25 @@ class SocksRouterRequestHandler(StreamRequestHandler):
         try:
             match request.command:
                 case Socks5Command.CONNECT:
-                    self.remote = connect_remote(
-                        request.destination.sockaddr,
-                        proxy_factory=self.acquire_proxy,
-                        # poll_proxy_factory=lambda destination: (upstream := self.acquire_upstream(destination)) is not None and upstream.scheme == UpstreamScheme.SSH,
-                        proxy_retry_options=self.server.context.proxy_retry_options,
-                        logger=self.logger,
-                    )
+                    try:
+                        self.remote = connect_remote(
+                            request.destination.sockaddr,
+                            proxy_factory=self.acquire_proxy,
+                            # poll_proxy_factory=lambda destination: (upstream := self.acquire_upstream(destination)) is not None and upstream.scheme == UpstreamScheme.SSH,
+                            proxy_retry_options=self.server.context.proxy_retry_options,
+                            logger=self.logger,
+                        )
 
-                    self.logger.info(
-                        f"Connected to destination {request.destination.sockaddr}, binding client socket: {self.remote.getsockname()}"
-                    )
-                    write_socket(self.connection, Socks5Reply(SOCKS_VERSION, Socks5ReplyType.SUCCEEDED))
-                    self.state = Socks5State.ESTABLISHED
-                    return
+                        self.logger.info(
+                            f"Connected to destination {request.destination.sockaddr}, binding client socket: {self.remote.getsockname()}"
+                        )
+                        write_socket(self.connection, Socks5Reply(SOCKS_VERSION, Socks5ReplyType.SUCCEEDED))
+                        self.state = Socks5State.ESTABLISHED
+                        return
+                    except socks.ProxyError as e:
+                        if e.socket_err is not None:
+                            raise e.socket_err from None
+                        raise e from None
                 case _:
                     self.logger.warning(f"COMMAND_NOT_SUPPORTED: {request.command}")
                     write_socket(self.connection, Socks5Reply(SOCKS_VERSION, Socks5ReplyType.COMMAND_NOT_SUPPORTED))
@@ -336,6 +341,8 @@ class SocksRouterRequestHandler(StreamRequestHandler):
             write_socket(self.connection, Socks5Reply(SOCKS_VERSION, Socks5ReplyType.GENERAL_SOCKS_SERVER_FAILURE))
             self.state = Socks5State.CLOSED
 
+        # TODO: When a reply (REP value other than X'00') indicates a failure, the SOCKS server MUST terminate the TCP connection shortly after sending the reply.  This must be no more than 10 seconds after detecting the condition that caused a failure.
+
     def exchange(self):
         assert self.remote is not None
         exchange_loop(self.connection, self.remote, timeout=0)
@@ -355,7 +362,12 @@ class SocksRouterRequestHandler(StreamRequestHandler):
                         self.state = Socks5State.HANDSHAKE
                     case Socks5State.HANDSHAKE:
                         self.handshake()
+                        # TODO: The client and server then enter a method-specific sub-negotiation.
+                        # Descriptions of the method-dependent sub-negotiations appear in separate memos.
+                        # Compliant implementations MUST support GSSAPI and SHOULD support USERNAME/PASSWORD authentication methods.
                     case Socks5State.REQUEST:
+                        # Once the method-dependent subnegotiation has completed, the client sends the request details.  If the negotiated method includes encapsulation for purposes of integrity checking and/or confidentiality, these requests MUST be encapsulated in the method-dependent encapsulation.
+                        # The SOCKS server will typically evaluate the request based on source and destination addresses, and return one or more reply messages, as appropriate for the request type.
                         self.handle_request()
                     case Socks5State.ESTABLISHED:
                         self.exchange()
