@@ -17,14 +17,14 @@ runs:
   using: composite
   steps:
     - name: Install openssh on Ubuntu
-      if: runner.os == "Linux"
+      if: runner.os == 'Linux'
       shell: bash
       run: |
         sudo apt-get install -y openssh-server
         sudo systemctl enable --now ssh
 
     - name: Enable openssh on Mac OS
-      if: runner.os == "macOS"
+      if: runner.os == 'macOS'
       shell: bash
       run: |
         sudo systemsetup -setremotelogin on
@@ -33,7 +33,7 @@ runs:
     - name: Update sshd_config
       shell: bash
       run: |
-        export SSHD_CONFIG=${{ runner.os == "macOS" && "/private" || "" }}/etc/ssh/sshd_config
+        export SSHD_CONFIG=${{ runner.os == 'macOS' && '/private' || '' }}/etc/ssh/sshd_config
         export USER="$(whoami)"
 
         sed -i -E "s|(AuthorizedKeysFile).*|\1 %h/.ssh/authorized_keys|g" $SSHD_CONFIG
