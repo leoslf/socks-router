@@ -73,6 +73,7 @@ jobs:
       - name: Run the automated tests
         run: >-
           poetry run pytest
+          --color=yes
           -s
           --tb=long
           -o junit_suite_name=${{ matrix.os }}-python${{ matrix.python-version }}-poetry${{ matrix.poetry-version }}
