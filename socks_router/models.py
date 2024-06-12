@@ -9,6 +9,7 @@ from subprocess import Popen
 
 import threading
 import ipaddress
+import socks
 
 SOCKS_VERSION: Literal[5] = 5
 
@@ -50,6 +51,12 @@ class SocketAddress:
     @property
     def sockaddr(self) -> tuple[str, int]:
         return f"{self.address}", self.port or 0
+
+    def with_port(self, port: Optional[int]) -> Self:
+        return type(self)(self.address, port)
+
+    def with_default_port(self, port: int) -> Self:
+        return self.with_port(self.port or port)
 
 
 @dataclass(frozen=True)
@@ -253,6 +260,10 @@ class Socks5ReplyType(IntEnum):
     def __pack_format__(cls) -> str:
         return "!B"
 
+    @property
+    def message(self) -> str:
+        return socks.SOCKS5_ERRORS[self.value]
+
 
 @dataclass(frozen=True)
 class Socks5Reply:
@@ -289,6 +300,17 @@ class Pattern:
 class UpstreamScheme(StrEnum):
     SSH = auto()
     SOCKS5 = auto()
+    SOCKS5H = auto()
+
+    @property
+    def default_port(self):
+        match self:
+            case UpstreamScheme.SSH:
+                return 22
+            case UpstreamScheme.SOCKS5 | UpstreamScheme.SOCKS5H:
+                return 1080
+            case _ as unreachable:
+                assert_never(unreachable)
 
 
 @dataclass(frozen=True)
@@ -298,6 +320,9 @@ class UpstreamAddress(object):
 
     def __str__(self):
         return f"{self.scheme}://{self.address}"
+
+    def with_default_port(self, port: Optional[int] = None) -> Self:
+        return type(self)(self.scheme, self.address.with_default_port(port or self.scheme.default_port))
 
 
 type RoutingEntry = list[Pattern]
@@ -334,10 +359,10 @@ type Upstream = SSHUpstream | ProxyUpstream
 @dataclass(frozen=True)
 class RetryOptions:
     tries: int = -1
-    delay: int = 1
-    max_delay: Optional[int] = None
-    backoff: int = 1
-    jitter: int = 0
+    delay: float = 1
+    max_delay: Optional[float] = None
+    backoff: float = 1
+    jitter: float = 0
 
     @classmethod
     def exponential_backoff(cls, *argv, backoff=2, **kwargs):
@@ -349,7 +374,7 @@ class ApplicationContext:
     name: str = "socks-router"
     routing_table: RoutingTable = field(default_factory=dict)
     # seconds
-    request_timeout: Optional[float] = 1
+    ssh_connection_timeout: int = 10
     proxy_retry_options: RetryOptions = field(default_factory=RetryOptions.exponential_backoff)
     mutex: threading.Lock = field(default_factory=threading.Lock)
     upstreams: MutableMapping[UpstreamAddress, Upstream] = field(default_factory=dict)

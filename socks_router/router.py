@@ -5,6 +5,7 @@ import dataclasses
 import struct
 import fnmatch
 
+import errno
 import socket
 import socks
 
@@ -12,12 +13,12 @@ from typing import Optional, assert_never, cast
 from collections.abc import Callable
 from more_itertools import partition
 from select import select
-from subprocess import Popen
+from subprocess import Popen, PIPE
 from socketserver import ThreadingTCPServer, StreamRequestHandler
 
 from retry.api import retry_call
 
-from socks_router.parsers import parse_sockaddr
+from socks_router.parsers import parse_sockaddr, pysocks_socks5_error
 
 from socks_router.models import (
     SOCKS_VERSION,
@@ -27,11 +28,14 @@ from socks_router.models import (
     Socks5MethodSelectionRequest,
     Socks5MethodSelectionResponse,
     Socks5Request,
+    Socks5Address,
     Socks5ReplyType,
     Socks5Reply,
     Socks5State,
     Address,
     IPv4,
+    IPv6,
+    Host,
     UpstreamScheme,
     UpstreamAddress,
     SSHUpstream,
@@ -70,6 +74,17 @@ def poll_socket(destination: Address, timeout: float = 0.1):
         socket.settimeout(timeout)
         socket.connect(destination.sockaddr)
         socket.close()
+
+
+def resolve_address(address: Address, logger: logging.Logger = logger, **kwargs) -> Address:
+    match address:
+        case IPv4() | IPv6():
+            return address
+        case Host(hostname, port):
+            # TODO: consider using socket.getaddrinfo
+            return IPv4(socket.gethostbyname(hostname), port)
+        case _ as unreachable:
+            assert_never(unreachable)
 
 
 def create_remote(address: Address, proxy_server: Optional[Address] = None) -> socks.socksocket:
@@ -162,20 +177,20 @@ class SocksRouter(ThreadingTCPServer):
         return parse_sockaddr(cast(tuple[str, int], self.server_address))
 
     def server_activate(self) -> None:
-        self.logger.info("Server started on %s:%d", *self.server_address[:2])
+        self.logger.info("Server started on %r", self.server_address)
         super().server_activate()
 
-    def get_request(self) -> tuple[socket.socket, str]:
+    def get_request(self):
         conn, addr = super().get_request()
-        self.logger.info("Starting connection from client %s:%d", *addr[:2])
+        self.logger.info("Starting connection from client %r", addr)
         return conn, addr
 
     def shutdown_request(self, request: socket.socket | tuple[bytes, socket.socket]) -> None:
-        if isinstance(request, socket.socket):
-            try:
-                self.logger.info("Closing connection from client %s:%d", *request.getpeername())
-            except (OSError, TypeError):
-                self.logger.info("Closing connection from client, request: %r", request)
+        assert isinstance(request, socket.socket)
+        try:
+            self.logger.info("Closing connection from client %s:%d", *request.getpeername())
+        except (OSError, TypeError):
+            self.logger.info("Closing connection from client, request: %r", request)
 
         super().shutdown_request(request)
 
@@ -196,10 +211,6 @@ class SocksRouterRequestHandler(StreamRequestHandler):
     server: SocksRouter
     state: Socks5State = Socks5State.LISTEN
     remote: Optional[socks.socksocket] = None
-
-    @property
-    def timeout(self):
-        return self.server.context.request_timeout
 
     @property
     def logger(self):
@@ -231,6 +242,7 @@ class SocksRouterRequestHandler(StreamRequestHandler):
 
             match upstream.scheme:
                 case UpstreamScheme.SSH:
+                    # check if ssh is reachable
                     proxy_server = IPv4(*free_port("127.0.0.1"))
                     self.logger.debug(f"Free port: {proxy_server.port}")
                     ssh_client = Popen(
@@ -242,18 +254,27 @@ class SocksRouterRequestHandler(StreamRequestHandler):
                             "-o",
                             "StrictHostKeyChecking=accept-new",
                             "-o",
+                            f"ConnectTimeout={self.server.context.ssh_connection_timeout}",
+                            "-o",
                             "ServerAliveInterval=240",
                             "-o",
                             "ExitOnForwardFailure=yes",
                             f"{upstream.address}",
                         ]
                         + ([] if upstream.address.port is None else ["-p", f"{upstream.address.port}"]),
+                        shell=False,
+                        stdout=PIPE,
+                        stderr=PIPE,
                     )
 
                     self.server.context.upstreams[upstream] = SSHUpstream(ssh_client, proxy_server)
                     return upstream
                 case UpstreamScheme.SOCKS5:
-                    self.server.context.upstreams[upstream] = ProxyUpstream(upstream.address)
+                    # resolve hostname before passing to upstream
+                    self.server.context.upstreams[upstream] = ProxyUpstream(resolve_address(upstream.with_default_port().address))
+                    return upstream
+                case UpstreamScheme.SOCKS5H:
+                    self.server.context.upstreams[upstream] = ProxyUpstream(upstream.with_default_port().address)
                     return upstream
                 case _ as unreachable:  # type: ignore[misc]
                     assert_never(unreachable)
@@ -276,7 +297,7 @@ class SocksRouterRequestHandler(StreamRequestHandler):
         for method in request.methods:
             match method:
                 case Socks5Method.NO_AUTHENTICATION_REQUIRED:
-                    self.logger.info("accept no authentication required")
+                    self.logger.debug("accept no authentication required")
                     write_socket(
                         self.connection, Socks5MethodSelectionResponse(SOCKS_VERSION, Socks5Method.NO_AUTHENTICATION_REQUIRED)
                     )
@@ -287,10 +308,16 @@ class SocksRouterRequestHandler(StreamRequestHandler):
 
         # none of the methods listed by the client are acceptable
         # notify the client
-        self.logger.info("notify client no Socks5Method.NO_ACCEPTABLE_METHODS")
+        self.logger.debug("notify client no Socks5Method.NO_ACCEPTABLE_METHODS")
         write_socket(self.connection, Socks5MethodSelectionResponse(SOCKS_VERSION, Socks5Method.NO_ACCEPTABLE_METHODS))
         # the client MUST close the connection
         self.state = Socks5State.CLOSED
+
+    def reply(self, type: Socks5ReplyType):
+        self.logger.debug(f"Replying {type.name}")
+        write_socket(
+            self.connection, Socks5Reply(SOCKS_VERSION, type, server_bound_address=Socks5Address.from_address(self.server.address))
+        )
 
     def handle_request(self):
         request = read_socket(self.connection, Socks5Request)
@@ -310,36 +337,51 @@ class SocksRouterRequestHandler(StreamRequestHandler):
                         self.logger.info(
                             f"Connected to destination {request.destination.sockaddr}, binding client socket: {self.remote.getsockname()}"
                         )
-                        write_socket(self.connection, Socks5Reply(SOCKS_VERSION, Socks5ReplyType.SUCCEEDED))
+                        self.reply(Socks5ReplyType.SUCCEEDED)
                         self.state = Socks5State.ESTABLISHED
                         return
                     except socks.ProxyError as e:
-                        if e.socket_err is not None:
-                            raise e.socket_err from None
+                        while isinstance(e, socks.ProxyError) and e.socket_err is not None:
+                            self.logger.debug(f"Unwrapping {type(e).__name__}: {e}")
+                            e = e.socket_err
+                        # rethrow the inner-most socks.ProxyError
                         raise e from None
-                case _:
-                    self.logger.warning(f"COMMAND_NOT_SUPPORTED: {request.command}")
-                    write_socket(self.connection, Socks5Reply(SOCKS_VERSION, Socks5ReplyType.COMMAND_NOT_SUPPORTED))
+                case _ as command:
+                    self.logger.warning(f"COMMAND_NOT_SUPPORTED: {command}")
+                    self.reply(Socks5ReplyType.COMMAND_NOT_SUPPORTED)
                     self.state = Socks5State.CLOSED
                     return
-        except ConnectionRefusedError as e:
-            self.logger.error(f"ConnectionRefused when connecting to request.destination: {request.destination.sockaddr}")
-            self.logger.error(e)
-            write_socket(self.connection, Socks5Reply(SOCKS_VERSION, Socks5ReplyType.CONNECTION_REFUSED))
-            self.state = Socks5State.CLOSED
-            return
-        except socket.gaierror as e:
-            self.logger.error(f"socket.gaierror: request.destination: {request.destination.sockaddr}")
-            self.logger.error(e)
-            write_socket(self.connection, Socks5Reply(SOCKS_VERSION, Socks5ReplyType.NETWORK_UNREACHABLE))
-            self.state = Socks5State.CLOSED
-            return
+        except socks.SOCKS5Error as e:
+            # upstream server returned an error to our socks client
+            status, error_message = pysocks_socks5_error.parse(e.msg)
+            self.logger.debug(f"Upstream server returned error: {status:#04x}: {error_message}")
+            self.reply(status)
+        except socks.GeneralProxyError as e:
+            self.logger.warning(e)
+            self.reply(Socks5ReplyType.GENERAL_SOCKS_SERVER_FAILURE)
+        except TimeoutError:
+            self.reply(Socks5ReplyType.HOST_UNREACHABLE)
+        except OSError as e:
+            match e.errno:
+                case errno.ENETUNREACH | socket.EAI_NONAME:
+                    self.reply(Socks5ReplyType.NETWORK_UNREACHABLE)
+                case errno.EHOSTUNREACH | errno.ETIMEDOUT:
+                    self.reply(Socks5ReplyType.HOST_UNREACHABLE)
+                case errno.ECONNREFUSED:
+                    self.reply(Socks5ReplyType.CONNECTION_REFUSED)
+                case _:
+                    self.logger.error((e.errno, e.strerror))
+                    traceback.print_exc()
+                    self.logger.error(e)
+                    self.reply(Socks5ReplyType.GENERAL_SOCKS_SERVER_FAILURE)
         except Exception as e:
             traceback.print_exc()
             self.logger.error(type(e))
             self.logger.error(e)
-            write_socket(self.connection, Socks5Reply(SOCKS_VERSION, Socks5ReplyType.GENERAL_SOCKS_SERVER_FAILURE))
-            self.state = Socks5State.CLOSED
+            self.reply(Socks5ReplyType.GENERAL_SOCKS_SERVER_FAILURE)
+
+        self.state = Socks5State.CLOSED
+        return
 
         # TODO: When a reply (REP value other than X'00') indicates a failure, the SOCKS server MUST terminate the TCP connection shortly after sending the reply.  This must be no more than 10 seconds after detecting the condition that caused a failure.
 
@@ -377,9 +419,6 @@ class SocksRouterRequestHandler(StreamRequestHandler):
                         assert_never(unreachable)
             except struct.error:
                 # ignore: socket has nothing to read
-                self.state = Socks5State.CLOSED
-            except (ConnectionResetError, BrokenPipeError, TimeoutError) as e:
-                logger.error(e)
                 self.state = Socks5State.CLOSED
             except Exception as e:
                 traceback.print_exc()

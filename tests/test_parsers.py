@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import pytest
 
+from typing import cast
+
 from parsec import ParseError
 from socks_router.models import (
     Host,
     IPv4,
     IPv6,
+    Address,
     UpstreamScheme,
     UpstreamAddress,
     Pattern,
@@ -20,6 +23,8 @@ from socks_router.parsers import (
     ipv4_address,
     ipv6,
     ipv6_address,
+    scheme,
+    upstream_address,
     pattern,
     routing_rule,
     routing_table,
@@ -91,6 +96,26 @@ def test_ipv6_address(input: str, result: IPv6):
     assert ipv6_address.parse(input) == result
 
 
+@pytest.mark.parametrize("input,upstream_scheme", [(f"{scheme}://", scheme) for scheme in UpstreamScheme])
+def test_scheme(input: str, upstream_scheme: UpstreamScheme):
+    assert scheme.parse(input) == upstream_scheme
+
+
+@pytest.mark.parametrize(
+    "input,upstream",
+    [
+        (f"{scheme_string}{upstream_addr.address}", upstream_addr)
+        for (scheme_string, scheme) in ([("", UpstreamScheme.SSH)] + [(f"{scheme}://", scheme) for scheme in UpstreamScheme])
+        for address in [IPv4("127.0.0.1"), IPv6("::1"), Host("localhost")]
+        for use_default_port in [True, False]
+        if (upstream := UpstreamAddress(scheme, cast(Address, address)))
+        and (upstream_addr := upstream.with_default_port() if use_default_port else upstream)
+    ],
+)
+def test_upstream_address(input: str, upstream: UpstreamAddress):
+    assert upstream_address.parse(input) == upstream
+
+
 @pytest.mark.parametrize(
     "input,result",
     [
@@ -126,6 +151,55 @@ def test_pattern(input: str, result: Pattern):
             "foo *.bar foo-*.baz",
             (
                 UpstreamAddress(UpstreamScheme.SSH, Host("foo")),
+                [Pattern(Host("*.bar")), Pattern(Host("foo-*.baz"))],
+            ),
+        ),
+        (
+            "foo:22 *.bar foo-*.baz",
+            (
+                UpstreamAddress(UpstreamScheme.SSH, Host("foo", 22)),
+                [Pattern(Host("*.bar")), Pattern(Host("foo-*.baz"))],
+            ),
+        ),
+        (
+            "ssh://foo *.bar foo-*.baz",
+            (
+                UpstreamAddress(UpstreamScheme.SSH, Host("foo")),
+                [Pattern(Host("*.bar")), Pattern(Host("foo-*.baz"))],
+            ),
+        ),
+        (
+            "ssh://foo:22 *.bar foo-*.baz",
+            (
+                UpstreamAddress(UpstreamScheme.SSH, Host("foo", 22)),
+                [Pattern(Host("*.bar")), Pattern(Host("foo-*.baz"))],
+            ),
+        ),
+        (
+            "socks5://foo *.bar foo-*.baz",
+            (
+                UpstreamAddress(UpstreamScheme.SOCKS5, Host("foo")),
+                [Pattern(Host("*.bar")), Pattern(Host("foo-*.baz"))],
+            ),
+        ),
+        (
+            "socks5://foo:1080 *.bar foo-*.baz",
+            (
+                UpstreamAddress(UpstreamScheme.SOCKS5, Host("foo", 1080)),
+                [Pattern(Host("*.bar")), Pattern(Host("foo-*.baz"))],
+            ),
+        ),
+        (
+            "socks5h://foo *.bar foo-*.baz",
+            (
+                UpstreamAddress(UpstreamScheme.SOCKS5H, Host("foo")),
+                [Pattern(Host("*.bar")), Pattern(Host("foo-*.baz"))],
+            ),
+        ),
+        (
+            "socks5h://foo:1080 *.bar foo-*.baz",
+            (
+                UpstreamAddress(UpstreamScheme.SOCKS5H, Host("foo", 1080)),
                 [Pattern(Host("*.bar")), Pattern(Host("foo-*.baz"))],
             ),
         ),

@@ -13,6 +13,7 @@ from parsec import (
     optional,
     end_of_line,
     times,
+    any,
     many,
     one_of,
     sepBy,
@@ -24,8 +25,10 @@ from parsec import (
     validate,
     decimal_number,
     hexadecimal_number,
+    hexadecimal,
 )
 from socks_router.models import (
+    Socks5ReplyType,
     Address,
     IPv4,
     IPv6,
@@ -46,7 +49,8 @@ def trace[T](value: T) -> T:
     return value
 
 
-whitespace: Parser[list[str]] = many(one_of(" \t"))
+whitespace: Parser[str] = one_of(" \t")
+whitespaces: Parser[list[str]] = many(whitespace)
 
 ipv4_octet: Parser[int] = (decimal_number >= validate(lambda value: 0 <= value < (1 << 8))) | fail_with(
     f"ipv4_octet can only carry a value ranged from 0 to {1 << 8} exclusive"
@@ -100,9 +104,9 @@ wildcard_hostname = regex(
 
 wildcard_host_address: Parser[Host] = (wildcard_hostname + optional(string(":") > port)).map(Host, star=True)
 
-scheme: Parser[UpstreamScheme] = (
-    string("ssh").result(UpstreamScheme.SSH) ^ regex("socks5[h]?").result(UpstreamScheme.SOCKS5)
-) << string("://")
+scheme: Parser[UpstreamScheme] = try_choices_longest(*[string(f"{scheme}").result(scheme) for scheme in UpstreamScheme]) << string(
+    "://"
+)
 
 upstream_address: Parser[UpstreamAddress] = (optional(scheme, UpstreamScheme.SSH) + address).map(UpstreamAddress, star=True)
 
@@ -110,7 +114,7 @@ pattern: Parser[Pattern] = (optional(string("!").result(False), True) + wildcard
     lambda is_positive, address: Pattern(address, is_positive), star=True
 )
 
-routing_rule: Parser[tuple[UpstreamAddress, RoutingEntry]] = (upstream_address << whitespace) + sepBy(pattern, whitespace).desc(
+routing_rule: Parser[tuple[UpstreamAddress, RoutingEntry]] = (upstream_address << whitespaces) + sepBy(pattern, whitespaces).desc(
     "patterns"
 )
 
@@ -119,10 +123,15 @@ routing_table: Parser[RoutingTable] = many(routing_rule << end_of_line()).map(
 )
 
 
-def parse_sockaddr(sockaddr: tuple[str, int]) -> Address:
+def parse_sockaddr[S: (str, bytes, bytearray)](sockaddr: tuple[S, int]) -> Address:
     address = (
         ipv4.map(lambda ip: lambda port: IPv4(ip, port))
         ^ ipv6.map(lambda ip: lambda port: IPv6(ip, port))
         ^ hostname.map(lambda host: lambda port: Host(host, port))
     )
     return address.parse(sockaddr[0])(sockaddr[1])
+
+
+pysocks_socks5_error: Parser[tuple[Socks5ReplyType, str]] = (
+    (string("0") >> hexadecimal.map(Socks5ReplyType)) << string(":") << whitespaces
+) + any()
