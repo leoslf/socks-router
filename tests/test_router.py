@@ -204,7 +204,6 @@ def describe_SocksRouter():
         def it_should_successfully_return_and_resuse_ssh_upstream_in_second_pass(
             httpserver, address_type, address, proxy_address_type, proxy_address
         ):
-            # TODO: ensure we have sshd listening on port 22
             destination = address_type(address, httpserver.port)
             httpserver.expect_request("/").respond_with_json(mocked_response := {"foo": "bar"})
             context = ApplicationContext(
@@ -235,10 +234,9 @@ def describe_SocksRouter():
 
         @pytest.mark.parametrize("address_type,address", [(IPv4, "127.0.0.1"), (Host, "localhost"), (IPv6, "::1")])
         def it_should_recreate_ssh_upstream_if_subprocess_is_dead(mocker, httpserver, address_type, address):
-            # TODO: ensure we have sshd listening on port 22
             destination = address_type(address, httpserver.port)
             httpserver.expect_request("/").respond_with_json(mocked_response := {"foo": "bar"})
-            #
+
             ssh_client = mocker.Mock(subprocess.Popen)
             ssh_client.poll.return_value = False
 

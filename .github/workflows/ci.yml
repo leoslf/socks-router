@@ -93,6 +93,7 @@ jobs:
 
   consolidation:
     needs: ci
+    if: always()
     strategy:
       fail-fast: false
       matrix:
@@ -141,6 +142,7 @@ jobs:
 
   sonarqube:
     needs: consolidation
+    if: always()
     strategy:
       fail-fast: false
       matrix:
