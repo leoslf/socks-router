@@ -1,5 +1,4 @@
 import logging
-import traceback
 import dataclasses
 
 import struct
@@ -370,14 +369,10 @@ class SocksRouterRequestHandler(StreamRequestHandler):
                 case errno.ECONNREFUSED:
                     self.reply(Socks5ReplyType.CONNECTION_REFUSED)
                 case _:
-                    self.logger.error((e.errno, e.strerror))
-                    traceback.print_exc()
-                    self.logger.error(e)
+                    self.logger.exception(f"unexpected exception occured: {type(e)} {(e.errno, e.strerror)}")
                     self.reply(Socks5ReplyType.GENERAL_SOCKS_SERVER_FAILURE)
         except Exception as e:
-            traceback.print_exc()
-            self.logger.error(type(e))
-            self.logger.error(e)
+            self.logger.exception(f"unexpected exception occurred: {type(e)}")
             self.reply(Socks5ReplyType.GENERAL_SOCKS_SERVER_FAILURE)
 
         self.state = Socks5State.CLOSED
@@ -398,7 +393,7 @@ class SocksRouterRequestHandler(StreamRequestHandler):
         """Handle incoming connections"""
         while True:
             try:
-                self.logger.info(f"state: {self.state.upper()}")
+                self.logger.info(f"state: {self.state.name}")
                 match self.state:
                     case Socks5State.LISTEN:
                         self.state = Socks5State.HANDSHAKE
@@ -421,8 +416,7 @@ class SocksRouterRequestHandler(StreamRequestHandler):
                 # ignore: socket has nothing to read
                 self.state = Socks5State.CLOSED
             except Exception as e:
-                traceback.print_exc()
-                self.logger.error(e)
+                self.logger.exception(f"unexpected exception occurred: {type(e)}")
                 self.state = Socks5State.CLOSED
 
     def finish(self):
