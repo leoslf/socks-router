@@ -24,6 +24,8 @@ jobs:
 
     timeout-minutes: 15
     runs-on: ${{ matrix.os }}
+    env:
+      TERM: xterm-color
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -102,6 +104,8 @@ jobs:
         os: ["ubuntu-22.04"]
 
     runs-on: ${{ matrix.os }}
+    env:
+      TERM: xterm-color
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -151,6 +155,8 @@ jobs:
         os: ["ubuntu-22.04"]
 
     runs-on: ${{ matrix.os }}
+    env:
+      TERM: xterm-color
     steps:
       # NOTE: sonarqube doesn't like shallow checkout
       - name: Checkout code
@@ -209,6 +215,8 @@ jobs:
         os: ["ubuntu-22.04"]
 
     runs-on: ${{ matrix.os }}
+    env:
+      TERM: xterm-color
     steps:
       # NOTE: semantic-release requires tags
       - name: Checkout code
