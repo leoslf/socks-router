@@ -258,13 +258,21 @@ class SocksRouterRequestHandler(StreamRequestHandler):
                             "ServerAliveInterval=240",
                             "-o",
                             "ExitOnForwardFailure=yes",
-                            f"{upstream.address}",
+                            f"{upstream.address.address}",
                         ]
                         + ([] if upstream.address.port is None else ["-p", f"{upstream.address.port}"]),
                         shell=False,
                         stdout=PIPE,
                         stderr=PIPE,
                     )
+
+                    if (status := ssh_client.poll()) is not None:
+                        stdout, stderr = ssh_client.communicate()
+                        # seems we have trouble connecting to the upstream
+                        self.logger.warning(
+                            f"seems we cannot connect to {upstream.address}, exit status: {status}, stdout: {stdout.decode()}, stderr: {stderr.decode()}"
+                        )
+                        # TODO: raise exception
 
                     self.server.context.upstreams[upstream] = SSHUpstream(ssh_client, proxy_server)
                     return upstream
@@ -418,6 +426,10 @@ class SocksRouterRequestHandler(StreamRequestHandler):
                         assert_never(unreachable)
             except struct.error:
                 # ignore: socket has nothing to read
+                self.state = Socks5State.CLOSED
+            except BrokenPipeError:
+                self.logger.exception("seems the client closed the socket")
+                # we cannot send anything now
                 self.state = Socks5State.CLOSED
             except Exception as e:
                 self.logger.exception(f"unexpected exception occurred: {type(e)}")
