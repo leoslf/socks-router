@@ -362,6 +362,7 @@ class SocksRouterRequestHandler(StreamRequestHandler):
         except TimeoutError:
             self.reply(Socks5ReplyType.HOST_UNREACHABLE)
         except OSError as e:
+            self.logger.debug(e)
             match e.errno:
                 case errno.ENETUNREACH | socket.EAI_NODATA | socket.EAI_NONAME:
                     self.reply(Socks5ReplyType.NETWORK_UNREACHABLE)
