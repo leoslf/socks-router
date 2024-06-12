@@ -219,7 +219,7 @@ def describe_SocksRouter():
                 routing_table={
                     UpstreamAddress(UpstreamScheme.SSH, Host("localhost")): [Pattern(Host("*"))],
                 },
-                proxy_retry_options=RetryOptions(delay=0.2, tries=10),
+                proxy_retry_options=RetryOptions(delay=0.25, tries=20),
             )
             with daemonize(proxy_address, context=context, type=proxy_address_type) as proxy:
                 # using the proxy server from client
@@ -258,7 +258,7 @@ def describe_SocksRouter():
                 upstreams={
                     upstream_address: original_upstream,
                 },
-                proxy_retry_options=RetryOptions(delay=0.2, tries=10),
+                proxy_retry_options=RetryOptions(delay=0.25, tries=20),
             )
             with daemonize(address, type=address_type, context=context) as proxy:
                 # using the proxy server from client
