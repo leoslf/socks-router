@@ -44,6 +44,8 @@ runs:
           sudo sed -i.bak "s/#\?\(PermitRootLogin\).*/\1 yes/g" "$SSHD_CONFIG"
         fi
 
+        sudo sed -i.bak "s/#\?\(AddressFamily\).*/\1 any/g" "$SSHD_CONFIG"
+
         sudo sed -i.bak "s/#\?\(ListenAddress\).*/\1 ${{ inputs.host }}:${{ inputs.port }}/g" "$SSHD_CONFIG"
 
     - name: Generate key pairs
