@@ -142,12 +142,12 @@ def describe_write_socket():
         with pytest.raises(TypeError, match=r"Annotated\[.*\] given"):
             write_socket(sock, True, type=Annotated[bool, "&", "", ""])  # type: ignore[arg-type]
 
-    @pytest.mark.parametrize("type", [bool, int, float, list[int], list, str])
+    @pytest.mark.parametrize("type", [bool, int, float, list[int], list, str], ids=str)
     def it_should_throw_if_non_dataclass_type_has_a_format_without_any_segments(sock, type):
         with pytest.raises(TypeError, match="no segments in format.*"):
             write_socket(sock, type(), format="")
 
-    @pytest.mark.parametrize("type", [bool, int, float, list[int], list, str])
+    @pytest.mark.parametrize("type", [bool, int, float, list[int], list, str], ids=str)
     def it_should_throw_if_non_dataclass_type_has_a_longer_format(sock, type):
         with pytest.raises(TypeError, match="sequence has more than 1 segment.*"):
             write_socket(sock, type(), format="!BB")

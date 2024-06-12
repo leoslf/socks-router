@@ -339,12 +339,13 @@ class SocksRouterRequestHandler(StreamRequestHandler):
                         self.reply(Socks5ReplyType.SUCCEEDED)
                         self.state = Socks5State.ESTABLISHED
                         return
-                    except socks.ProxyError as e:
+                    except socks.ProxyError as exception:
+                        e = exception
                         while isinstance(e, socks.ProxyError) and e.socket_err is not None:
                             self.logger.debug(f"Unwrapping {type(e).__name__}: {e}")
                             e = e.socket_err
                         # rethrow the inner-most socks.ProxyError
-                        raise e from None
+                        raise e from exception
                 case _ as command:
                     self.logger.warning(f"COMMAND_NOT_SUPPORTED: {command}")
                     self.reply(Socks5ReplyType.COMMAND_NOT_SUPPORTED)
@@ -362,12 +363,14 @@ class SocksRouterRequestHandler(StreamRequestHandler):
             self.reply(Socks5ReplyType.HOST_UNREACHABLE)
         except OSError as e:
             match e.errno:
-                case errno.ENETUNREACH | socket.EAI_NONAME:
+                case errno.ENETUNREACH | socket.EAI_NODATA | socket.EAI_NONAME:
                     self.reply(Socks5ReplyType.NETWORK_UNREACHABLE)
                 case errno.EHOSTUNREACH | errno.ETIMEDOUT:
                     self.reply(Socks5ReplyType.HOST_UNREACHABLE)
                 case errno.ECONNREFUSED:
                     self.reply(Socks5ReplyType.CONNECTION_REFUSED)
+                case socket.EAI_ADDRFAMILY | socket.EAI_FAMILY:
+                    self.reply(Socks5ReplyType.ADDRESS_TYPE_NOT_SUPPORTED)
                 case _:
                     self.logger.exception(f"unexpected exception occured: {type(e)} {(e.errno, e.strerror)}")
                     self.reply(Socks5ReplyType.GENERAL_SOCKS_SERVER_FAILURE)
