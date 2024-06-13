@@ -75,6 +75,7 @@ jobs:
         shell: bash
         run: |
           ssh -NT -D 1080 127.0.0.1 -o ConnectTimeout=10 -o ServerAliveInterval=240 -o ExitOnForwardFailure=yes &
+          sleep 1
           HTTPS_PROXY=socks5h://127.0.0.1:1080 curl -f https://google.com
           kill $!
 
@@ -87,6 +88,7 @@ jobs:
         shell: bash
         run: |
           ssh -NT -D 1080 ::1 -o ConnectTimeout=10 -o ServerAliveInterval=240 -o ExitOnForwardFailure=yes &
+          sleep 1
           HTTPS_PROXY=socks5h://127.0.0.1:1080 curl -f https://google.com
           kill $!
 
@@ -99,6 +101,7 @@ jobs:
         shell: bash
         run: |
           ssh -NT -D 1080 localhost -o ConnectTimeout=10 -o ServerAliveInterval=240 -o ExitOnForwardFailure=yes &
+          sleep 1
           HTTPS_PROXY=socks5h://127.0.0.1:1080 curl -f https://google.com
           kill $!
 
