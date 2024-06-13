@@ -69,17 +69,17 @@ jobs:
       - name: Test ssh connection to sshd - 127.0.0.1
         shell: bash
         run: |
-          ssh -o StrictHostKeyChecking=accept-new 127.0.0.1 true
+          ssh -vvv -o StrictHostKeyChecking=accept-new 127.0.0.1 true
 
       - name: Test ssh connection to sshd - ::1
         shell: bash
         run: |
-          ssh -o StrictHostKeyChecking=accept-new ::1 true
+          ssh -vvv -o StrictHostKeyChecking=accept-new ::1 true
 
       - name: Test ssh connection to sshd - localhost
         shell: bash
         run: |
-          ssh -o StrictHostKeyChecking=accept-new localhost true
+          ssh -vvv -o StrictHostKeyChecking=accept-new localhost true
 
 
       - name: Setup poetry

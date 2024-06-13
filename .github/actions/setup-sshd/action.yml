@@ -32,9 +32,9 @@ runs:
 
     - name: Update sshd_config
       shell: bash
+      env:
+        SSHD_CONFIG: ${{ runner.os == 'macOS' && '/private' || '' }}/etc/ssh/sshd_config
       run: |
-        export SSHD_CONFIG="${{ runner.os == 'macOS' && '/private' || '' }}/etc/ssh/sshd_config"
-
         cat <<-EOF | sudo tee "$SSHD_CONFIG"
         Include /etc/ssh/sshd_config.d/*
         AddressFamily any
