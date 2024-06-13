@@ -67,7 +67,9 @@ runs:
       run: |
         cat $HOME/.ssh/id_rsa.pub >> $HOME/.ssh/authorized_keys
 
-    - name: Ensure permissions for $HOME/.ssh/authorized_keys to be 0600
+    - name: Ensure permissions on $HOME
       shell: bash
       run: |
-        chmod 0600 $HOME/.ssh/authorized_keys
+        sudo chown $(id -u):$(id -g) $HOME/{.,.ssh/,.ssh/authorized_keys}
+        sudo chmod u+rwX,go-rwX,-t $HOME/{.ssh/,.ssh/authorized_keys}
+        sudo chmod go-w $HOME/
