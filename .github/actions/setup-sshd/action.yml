@@ -36,7 +36,7 @@ runs:
         export SSHD_CONFIG="${{ runner.os == 'macOS' && '/private' || '' }}/etc/ssh/sshd_config"
         export USER="$(whoami)"
 
-        sudo sed -i.bak "s|\(AuthorizedKeysFile\).*|\1 %h/.ssh/authorized_keys|g" "$SSHD_CONFIG"
+        sudo sed -i.bak "s|#\?\(AuthorizedKeysFile\).*|\1 %h/.ssh/authorized_keys|g" "$SSHD_CONFIG"
         echo "PubkeyAcceptedKeyTypes=+ssh-rsa" | sudo tee -a "$SSHD_CONFIG"
         echo "AllowUsers $USER" | sudo tee -a "$SSHD_CONFIG"
 
@@ -46,7 +46,7 @@ runs:
 
         sudo sed -i.bak "s/#\?\(AddressFamily\).*/\1 any/g" "$SSHD_CONFIG"
 
-        sudo sed -i.bak "s/#\?\(ListenAddress\).*/\1 ${{ inputs.host }}:${{ inputs.port }}/g" "$SSHD_CONFIG"
+        sudo sed -i.bak "s/#\?\(ListenAddress\).*/\1 ${{ inputs.host }}:${{ inputs.port }}/" "$SSHD_CONFIG"
 
         cat "$SSHD_CONFIG"
 
