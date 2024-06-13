@@ -66,21 +66,20 @@ jobs:
           }
           start-ssh-agent
 
-      - name: Test ssh connection to sshd - 127.0.0.1
+      - name: Test ssh connection to sshd - IPv4 - 127.0.0.1
         shell: bash
         run: |
           ssh -vvv -o StrictHostKeyChecking=accept-new 127.0.0.1 true
 
-      - name: Test ssh connection to sshd - ::1
+      - name: Test ssh connection to sshd - IPv6 - ::1
         shell: bash
         run: |
           ssh -vvv -o StrictHostKeyChecking=accept-new ::1 true
 
-      - name: Test ssh connection to sshd - localhost
+      - name: Test ssh connection to sshd - Hostname - localhost
         shell: bash
         run: |
           ssh -vvv -o StrictHostKeyChecking=accept-new localhost true
-
 
       - name: Setup poetry
         uses: ./.github/actions/setup-poetry
@@ -102,6 +101,7 @@ jobs:
           poetry run pytest
           --color=yes
           -s
+          --tb=native
           -o junit_logging=all
           -o junit_suite_name=${{ matrix.os }}-python${{ matrix.python-version }}-poetry${{ matrix.poetry-version }}
           --junit-xml=.output/unittest/${{ matrix.os }}-python${{ matrix.python-version }}-poetry${{ matrix.poetry-version }}.xml
