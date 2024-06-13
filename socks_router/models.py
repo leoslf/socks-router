@@ -5,7 +5,8 @@ from abc import abstractmethod
 from collections.abc import Mapping, MutableMapping
 from enum import IntEnum, StrEnum, auto
 from dataclasses import dataclass, field
-from subprocess import Popen
+from subprocess import Popen, PIPE
+from more_itertools import collapse, zip_broadcast
 
 import threading
 import ipaddress
@@ -346,6 +347,25 @@ Socks5AddressTypes = {
 class SSHUpstream:
     ssh_client: Popen
     proxy_server: Address
+
+    @classmethod
+    def create(cls, upstream: Address, proxy_server: Address, ssh_options: Optional[dict] = None) -> Self:
+        return cls(
+            Popen(
+                [
+                    "ssh",
+                    "-NT",
+                    "-D",
+                    f"{proxy_server.port}",
+                    *collapse(zip_broadcast("-o", [f"{key}={value}" for key, value in (ssh_options or {}).items()])),
+                    f"{upstream.address}",
+                ]
+                + ([] if upstream.port is None else ["-p", f"{upstream.port}"]),
+                stdout=PIPE,
+                stderr=PIPE,
+            ),
+            proxy_server,
+        )
 
 
 @dataclass(frozen=True)

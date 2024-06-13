@@ -1,5 +1,7 @@
 import contextlib
 
+import io
+
 import logging
 import requests
 
@@ -246,7 +248,7 @@ def describe_SocksRouter():
             destination = address_type(address, httpserver.port)
             httpserver.expect_request("/").respond_with_json(mocked_response := {"foo": "bar"})
 
-            ssh_client = mocker.Mock(subprocess.Popen)
+            ssh_client = mocker.Mock(subprocess.Popen, stdout=io.StringIO(), stderr=io.StringIO())
             ssh_client.poll.return_value = 1
 
             upstream_address = UpstreamAddress(UpstreamScheme.SSH, Host("127.0.0.1"))
@@ -273,7 +275,7 @@ def describe_SocksRouter():
                 assert context.upstreams[upstream_address] != original_upstream
 
         def it_should_not_explicitly_kill_ssh_client_if_dead_on_shutdown(mocker):
-            ssh_client = mocker.Mock(subprocess.Popen)
+            ssh_client = mocker.Mock(subprocess.Popen, stdout=io.StringIO(), stderr=io.StringIO())
             upstream_address = UpstreamAddress(UpstreamScheme.SSH, Host("127.0.0.1", -1))
             upstream = SSHUpstream(ssh_client, upstream_address.address)
             # dead upstream

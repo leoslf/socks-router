@@ -12,7 +12,6 @@ from typing import Optional, assert_never, cast
 from collections.abc import Callable
 from more_itertools import partition
 from select import select
-from subprocess import Popen, PIPE
 from socketserver import ThreadingTCPServer, StreamRequestHandler
 
 from retry.api import retry_call
@@ -200,6 +199,9 @@ class SocksRouter(ThreadingTCPServer):
                 case SSHUpstream(ssh_client, _):
                     if ssh_client.poll() is None:
                         ssh_client.kill()
+
+                    self.logger.debug("ssh_client.stdout: %r" % ssh_client.stdout)
+                    self.logger.debug("ssh_client.stderr: %r" % ssh_client.stderr)
                 case _:
                     pass
         self.context.upstreams.clear()
@@ -228,7 +230,8 @@ class SocksRouterRequestHandler(StreamRequestHandler):
                         return upstream
 
                     self.logger.debug(
-                        f"upstream {upstream}, proxy_server: {proxy_server} connection is dead, removing from upstreams"
+                        f"upstream {upstream}, proxy_server: {proxy_server} connection is dead, removing from upstreams, stdout: %r, stderr: %r"
+                        % (ssh_client.stdout, ssh_client.stderr)
                     )
                     del self.server.context.upstreams[upstream]
                 case ProxyUpstream(proxy_server):
@@ -242,39 +245,17 @@ class SocksRouterRequestHandler(StreamRequestHandler):
             match upstream.scheme:
                 case UpstreamScheme.SSH:
                     # check if ssh is reachable
-                    proxy_server = IPv4(*free_port("127.0.0.1"))
-                    self.logger.debug(f"Free port: {proxy_server.port}")
-                    ssh_client = Popen(
-                        [
-                            "ssh",
-                            "-NT",
-                            "-D",
-                            f"{proxy_server.port}",
-                            "-o",
-                            "StrictHostKeyChecking=accept-new",
-                            "-o",
-                            f"ConnectTimeout={self.server.context.ssh_connection_timeout}",
-                            "-o",
-                            "ServerAliveInterval=240",
-                            "-o",
-                            "ExitOnForwardFailure=yes",
-                            f"{upstream.address.address}",
-                        ]
-                        + ([] if upstream.address.port is None else ["-p", f"{upstream.address.port}"]),
-                        shell=False,
-                        stdout=PIPE,
-                        stderr=PIPE,
+                    self.server.context.upstreams[upstream] = SSHUpstream.create(
+                        upstream.address,
+                        proxy_server := IPv4(*free_port("127.0.0.1")),
+                        ssh_options={
+                            "StrictHostKeyChecking": "accept-new",
+                            "ConnectTimeout": self.server.context.ssh_connection_timeout,
+                            "ServerAliveInterval": 240,
+                            "ExitOnForwardFailure": "yes",
+                        },
                     )
-
-                    if (status := ssh_client.poll()) is not None:
-                        stdout, stderr = ssh_client.communicate()
-                        # seems we have trouble connecting to the upstream
-                        self.logger.warning(
-                            f"seems we cannot connect to {upstream.address}, exit status: {status}, stdout: {stdout.decode()}, stderr: {stderr.decode()}"
-                        )
-                        # TODO: raise exception
-
-                    self.server.context.upstreams[upstream] = SSHUpstream(ssh_client, proxy_server)
+                    self.logger.debug(f"proxy_server: {proxy_server}")
                     return upstream
                 case UpstreamScheme.SOCKS5:
                     # resolve hostname before passing to upstream
