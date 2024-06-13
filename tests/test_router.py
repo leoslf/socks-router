@@ -414,8 +414,14 @@ def describe_SocksRouter():
                 (UpstreamAddress(UpstreamScheme.SOCKS5, blackholes[IPv4]), [Socks5ReplyType.HOST_UNREACHABLE]),
                 (UpstreamAddress(UpstreamScheme.SOCKS5H, blackholes[IPv4]), [Socks5ReplyType.HOST_UNREACHABLE]),
                 (UpstreamAddress(UpstreamScheme.SSH, blackholes[IPv6]), [Socks5ReplyType.CONNECTION_REFUSED]),
-                (UpstreamAddress(UpstreamScheme.SOCKS5, blackholes[IPv6]), [Socks5ReplyType.HOST_UNREACHABLE, Socks5ReplyType.NETWORK_UNREACHABLE]),
-                (UpstreamAddress(UpstreamScheme.SOCKS5H, blackholes[IPv6]), [Socks5ReplyType.HOST_UNREACHABLE, Socks5ReplyType.NETWORK_UNREACHABLE]),
+                (
+                    UpstreamAddress(UpstreamScheme.SOCKS5, blackholes[IPv6]),
+                    [Socks5ReplyType.HOST_UNREACHABLE, Socks5ReplyType.NETWORK_UNREACHABLE],
+                ),
+                (
+                    UpstreamAddress(UpstreamScheme.SOCKS5H, blackholes[IPv6]),
+                    [Socks5ReplyType.HOST_UNREACHABLE, Socks5ReplyType.NETWORK_UNREACHABLE],
+                ),
                 (
                     UpstreamAddress(UpstreamScheme.SSH, blackholes[Host]),
                     [Socks5ReplyType.CONNECTION_REFUSED, Socks5ReplyType.NETWORK_UNREACHABLE],
@@ -485,11 +491,6 @@ def describe_SocksRouter():
                     requests.get(httpserver.url_for("/"), proxies=proxies(proxy.address)).json()
 
     def when_upstream_server_does_not_behave():
-        @pytest.fixture()
-        def httpserver_listen_address():
-            # must listen on ipv6 to work for both ipv4 and ipv6
-            return ("127.0.0.1", 0)
-
         @pytest.mark.parametrize("scheme", [UpstreamScheme.SOCKS5, UpstreamScheme.SOCKS5H])
         def it_should_reply_with_GENERAL_SOCKS_SERVER_FAILURE(httpserver, scheme):
             httpserver.expect_request("/").respond_with_json({})
