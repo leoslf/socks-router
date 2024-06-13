@@ -71,15 +71,36 @@ jobs:
         run: |
           ssh -vvv -o StrictHostKeyChecking=accept-new 127.0.0.1 true
 
+      - name: Test socks5 proxy via IPv4 ssh
+        shell: bash
+        run: |
+          ssh -NT -D 1080 127.0.0.1 &
+          HTTPS_PROXY=socks5h://127.0.0.1:1080 curl -f https://google.com
+          kill $!
+
       - name: Test ssh connection to sshd - IPv6 - ::1
         shell: bash
         run: |
           ssh -vvv -o StrictHostKeyChecking=accept-new ::1 true
 
+      - name: Test socks5 proxy via IPv6 ssh
+        shell: bash
+        run: |
+          ssh -NT -D 1080 ::1 &
+          HTTPS_PROXY=socks5h://127.0.0.1:1080 curl -f https://google.com
+          kill $!
+
       - name: Test ssh connection to sshd - Hostname - localhost
         shell: bash
         run: |
           ssh -vvv -o StrictHostKeyChecking=accept-new localhost true
+
+      - name: Test socks5 proxy via hostname ssh
+        shell: bash
+        run: |
+          ssh -NT -D 1080 localhost &
+          HTTPS_PROXY=socks5h://127.0.0.1:1080 curl -f https://google.com
+          kill $!
 
       - name: Setup poetry
         uses: ./.github/actions/setup-poetry

@@ -119,12 +119,17 @@ def test_upstream_address(input: str, upstream: UpstreamAddress):
 @pytest.mark.parametrize(
     "input,result",
     [
-        ("foo", Pattern(Host("foo"))),
-        ("!bar", Pattern(Host("bar"), False)),
-        ("*.bar", Pattern(Host("*.bar"))),
-        ("foo-*.baz", Pattern(Host("foo-*.baz"))),
-        ("*", Pattern(Host("*"))),
+        ("foo", Pattern("foo")),
+        ("!bar", Pattern("bar", False)),
+        ("*.bar", Pattern("*.bar")),
+        ("foo-*.baz", Pattern("foo-*.baz")),
+        ("*", Pattern("*")),
+        ("::1", Pattern("::1")),
+        ("[::1]:12345", Pattern("[::1]:12345")),
+        ("[::1]:123?5", Pattern("[::1]:123?5")),
+        ("[*::1]:12345", Pattern("[*::1]:12345")),
     ],
+    ids=str,
 )
 def test_pattern(input: str, result: Pattern):
     assert pattern.parse(input) == result
@@ -137,70 +142,36 @@ def test_pattern(input: str, result: Pattern):
             "foo bar baz",
             (
                 UpstreamAddress(UpstreamScheme.SSH, Host("foo")),
-                [Pattern(Host("bar")), Pattern(Host("baz"))],
+                [Pattern("bar"), Pattern("baz")],
             ),
         ),
         (
             "foo !bar baz",
             (
                 UpstreamAddress(UpstreamScheme.SSH, Host("foo")),
-                [Pattern(Host("bar"), False), Pattern(Host("baz"))],
+                [Pattern("bar", False), Pattern("baz")],
             ),
         ),
         (
             "foo *.bar foo-*.baz",
             (
                 UpstreamAddress(UpstreamScheme.SSH, Host("foo")),
-                [Pattern(Host("*.bar")), Pattern(Host("foo-*.baz"))],
+                [Pattern("*.bar"), Pattern("foo-*.baz")],
             ),
         ),
         (
             "foo:22 *.bar foo-*.baz",
             (
                 UpstreamAddress(UpstreamScheme.SSH, Host("foo", 22)),
-                [Pattern(Host("*.bar")), Pattern(Host("foo-*.baz"))],
+                [Pattern("*.bar"), Pattern("foo-*.baz")],
             ),
         ),
+        # arbitrary spacing
         (
-            "ssh://foo *.bar foo-*.baz",
+            "foo  bar baz",
             (
                 UpstreamAddress(UpstreamScheme.SSH, Host("foo")),
-                [Pattern(Host("*.bar")), Pattern(Host("foo-*.baz"))],
-            ),
-        ),
-        (
-            "ssh://foo:22 *.bar foo-*.baz",
-            (
-                UpstreamAddress(UpstreamScheme.SSH, Host("foo", 22)),
-                [Pattern(Host("*.bar")), Pattern(Host("foo-*.baz"))],
-            ),
-        ),
-        (
-            "socks5://foo *.bar foo-*.baz",
-            (
-                UpstreamAddress(UpstreamScheme.SOCKS5, Host("foo")),
-                [Pattern(Host("*.bar")), Pattern(Host("foo-*.baz"))],
-            ),
-        ),
-        (
-            "socks5://foo:1080 *.bar foo-*.baz",
-            (
-                UpstreamAddress(UpstreamScheme.SOCKS5, Host("foo", 1080)),
-                [Pattern(Host("*.bar")), Pattern(Host("foo-*.baz"))],
-            ),
-        ),
-        (
-            "socks5h://foo *.bar foo-*.baz",
-            (
-                UpstreamAddress(UpstreamScheme.SOCKS5H, Host("foo")),
-                [Pattern(Host("*.bar")), Pattern(Host("foo-*.baz"))],
-            ),
-        ),
-        (
-            "socks5h://foo:1080 *.bar foo-*.baz",
-            (
-                UpstreamAddress(UpstreamScheme.SOCKS5H, Host("foo", 1080)),
-                [Pattern(Host("*.bar")), Pattern(Host("foo-*.baz"))],
+                [Pattern("bar"), Pattern("baz")],
             ),
         ),
     ],
@@ -223,12 +194,26 @@ def test_routing_entry_failures(input: str):
 @pytest.mark.parametrize(
     "input,routing",
     [
+        # empty routing file
+        (
+            "",
+            {},
+        ),
         (
             "test foo bar\n",
             {
                 UpstreamAddress(UpstreamScheme.SSH, Host("test")): [
-                    Pattern(Host("foo")),
-                    Pattern(Host("bar")),
+                    Pattern("foo"),
+                    Pattern("bar"),
+                ]
+            },
+        ),
+        (
+            "test foo bar\r\n",
+            {
+                UpstreamAddress(UpstreamScheme.SSH, Host("test")): [
+                    Pattern("foo"),
+                    Pattern("bar"),
                 ]
             },
         ),
@@ -236,14 +221,39 @@ def test_routing_entry_failures(input: str):
             "test foo bar\ntest2 f* !foo baz\n",
             {
                 UpstreamAddress(UpstreamScheme.SSH, Host("test")): [
-                    Pattern(Host("foo")),
-                    Pattern(Host("bar")),
+                    Pattern("foo"),
+                    Pattern("bar"),
                 ],
                 UpstreamAddress(UpstreamScheme.SSH, Host("test2")): [
-                    Pattern(Host("f*")),
-                    Pattern(Host("foo"), False),
-                    Pattern(Host("baz")),
+                    Pattern("f*"),
+                    Pattern("foo", False),
+                    Pattern("baz"),
                 ],
+            },
+        ),
+        # line-based comment
+        (
+            "test foo bar # this comment should be ignored \ntest2 f* !foo baz\n",
+            {
+                UpstreamAddress(UpstreamScheme.SSH, Host("test")): [
+                    Pattern("foo"),
+                    Pattern("bar"),
+                ],
+                UpstreamAddress(UpstreamScheme.SSH, Host("test2")): [
+                    Pattern("f*"),
+                    Pattern("foo", False),
+                    Pattern("baz"),
+                ],
+            },
+        ),
+        # arbitrary empty lines should be ignored
+        (
+            "test foo bar\n",
+            {
+                UpstreamAddress(UpstreamScheme.SSH, Host("test")): [
+                    Pattern("foo"),
+                    Pattern("bar"),
+                ]
             },
         ),
     ],

@@ -19,8 +19,8 @@ def test_IPv4(address, port, ipv4):
     assert IPv4(address, port) == ipv4
     assert repr(ipv4)
     assert str(ipv4)
-    assert ipv4.pattern
     assert bytes(ipv4.address)
+    assert ipv4.url_literal
     assert Socks5Address.from_address(ipv4).sockaddr == ipv4
 
 
@@ -35,8 +35,8 @@ def test_IPv6(address, port, ipv6):
     assert IPv6(address, port) == ipv6
     assert repr(ipv6)
     assert str(ipv6)
-    assert ipv6.pattern
     assert bytes(ipv6.address)
+    assert ipv6.url_literal
     assert Socks5Address.from_address(ipv6).sockaddr == ipv6
 
 
@@ -51,5 +51,5 @@ def test_Host(address, port, host):
     assert Host(address, port) == host
     assert repr(host)
     assert str(host)
-    assert host.pattern
+    assert host.url_literal
     assert Socks5Address.from_address(host).sockaddr == host

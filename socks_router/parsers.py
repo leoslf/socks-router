@@ -98,27 +98,23 @@ host_address: Parser[Host] = (hostname + optional(string(":") > port)).map(Host,
 
 address: Parser[Address] = ipv4_address ^ ipv6_address ^ host_address
 
-wildcard_hostname = regex(
-    r"(?:\S*[*]\S*)|(?:(?:[*]|(?:(?:[a-zA-Z0-9?*]|[a-zA-Z0-9?*][a-zA-Z0-9\-?*]*[a-zA-Z0-9?*]))\.)*(?:[*]|(?:[A-Za-z0-9?*]|[A-Za-z0-9?*][A-Za-z0-9\-?*]*[A-Za-z0-9?*]))\b)"
-)
-
-wildcard_host_address: Parser[Host] = (wildcard_hostname + optional(string(":") > port)).map(Host, star=True)
-
 scheme: Parser[UpstreamScheme] = try_choices_longest(*[string(f"{scheme}").result(scheme) for scheme in UpstreamScheme]) << string(
     "://"
 )
 
 upstream_address: Parser[UpstreamAddress] = (optional(scheme, UpstreamScheme.SSH) + address).map(UpstreamAddress, star=True)
 
-pattern: Parser[Pattern] = (optional(string("!").result(False), True) + wildcard_host_address).map(
-    lambda is_positive, address: Pattern(address, is_positive), star=True
-)
+comment: Parser[str] = regex(r"\s*#\s*.*")
+
+pattern: Parser[Pattern] = (
+    optional(string("!").result(False), True) + (regex(r"[^ \t\r\n]+") << optional(comment))  # type: ignore[arg-type]
+).map(lambda is_positive, address: Pattern(address, is_positive), star=True)
 
 routing_rule: Parser[tuple[UpstreamAddress, RoutingEntry]] = (upstream_address << whitespaces) + sepBy(pattern, whitespaces).desc(
     "patterns"
 )
 
-routing_table: Parser[RoutingTable] = many(routing_rule << end_of_line()).map(
+routing_table: Parser[RoutingTable] = sepBy(routing_rule, optional(comment) >> end_of_line()).map(
     cast(Callable[[list[tuple[UpstreamAddress, RoutingEntry]]], RoutingTable], dict)
 )
 
@@ -134,4 +130,4 @@ def parse_sockaddr[S: (str, bytes, bytearray)](sockaddr: tuple[S, int]) -> Addre
 
 pysocks_socks5_error: Parser[tuple[Socks5ReplyType, str]] = (
     (string("0") >> hexadecimal.map(Socks5ReplyType)) << string(":") << whitespaces
-) + any()
+) + many(any()).map("".join)

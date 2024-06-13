@@ -43,11 +43,7 @@ class SocketAddress:
     def __str__(self):
         if self.port is None:
             return f"{self.address}"
-        return f"{self.address}:{self.port}"
-
-    @property
-    def pattern(self) -> str:
-        return f"{self.address}:{self.port or '*'}"
+        return self.url_literal
 
     @property
     def sockaddr(self) -> tuple[str, int]:
@@ -58,6 +54,10 @@ class SocketAddress:
 
     def with_default_port(self, port: int) -> Self:
         return self.with_port(self.port or port)
+
+    @property
+    def url_literal(self) -> str:
+        return ":".join(map(str, filter(lambda x: x is not None, [self.address, self.port])))
 
 
 @dataclass(frozen=True)
@@ -103,14 +103,10 @@ class IPv6(SocketAddress):
             address = IPv6.IPv6Address(address)
         super().__init__(address, *argv, **kwargs)
 
-    def __str__(self):
-        if self.port is None:
-            return f"{self.address}"
-        return f"[{self.address}]:{self.port}"
-
     @property
-    def pattern(self):
-        return f"[{self.address}]:{self.port or '*'}"
+    def url_literal(self) -> str:
+        """SEE: https://www.ietf.org/rfc/rfc2732.txt"""
+        return ":".join(map(str, filter(lambda x: x is not None, [f"[{self.address}]", self.port])))
 
 
 @dataclass(frozen=True)
@@ -291,7 +287,7 @@ class Socks5State(StrEnum):
 
 @dataclass(frozen=True)
 class Pattern:
-    address: Address
+    address: str
     is_positive_match: bool = True
 
     def __str__(self):
@@ -395,6 +391,10 @@ class ApplicationContext:
     routing_table: RoutingTable = field(default_factory=dict)
     # seconds
     ssh_connection_timeout: int = 10
+    # seconds
+    remote_socket_timeout: Optional[float] = 10
+    # seconds
+    proxy_poll_socket_timeout: float = 0.1
     proxy_retry_options: RetryOptions = field(default_factory=RetryOptions.exponential_backoff)
     mutex: threading.Lock = field(default_factory=threading.Lock)
     upstreams: MutableMapping[UpstreamAddress, Upstream] = field(default_factory=dict)

@@ -9,7 +9,7 @@ import socket
 import socks
 
 from typing import Optional, assert_never, cast
-from collections.abc import Callable
+from collections.abc import Iterator
 from more_itertools import partition
 from select import select
 from socketserver import ThreadingTCPServer, StreamRequestHandler
@@ -34,6 +34,7 @@ from socks_router.models import (
     IPv4,
     IPv6,
     Host,
+    Pattern,
     UpstreamScheme,
     UpstreamAddress,
     SSHUpstream,
@@ -91,28 +92,33 @@ def create_remote(address: Address, proxy_server: Optional[Address] = None) -> s
 
 def connect_remote(
     destination: Address,
-    proxy_factory: Callable[[Address], Optional[Address]] = lambda _: None,
-    poll_proxy_factory: Callable[[Address], bool] = lambda _: True,
+    proxy_server: Optional[Address] = None,
+    remote_socket_timeout: Optional[float] = None,
+    proxy_poll_socket_timeout: float = 0.1,
     proxy_retry_options: Optional[RetryOptions] = None,
     logger: logging.Logger = logger,
 ) -> socks.socksocket:
-    if (proxy_server := proxy_factory(destination)) is not None and poll_proxy_factory(destination):
+    if proxy_server is not None:
         retry_options: RetryOptions = proxy_retry_options or RetryOptions.exponential_backoff()
         logger.debug(
-            f"polling proxy_server: {proxy_server} before connecting to destination {destination} with retry_options {retry_options}"
+            f"polling proxy_server: {proxy_server} before connecting to destination {destination} with retry_options {retry_options}, timeout: {proxy_poll_socket_timeout}s"
         )
         retry_call(
             poll_socket,
             (proxy_server,),
+            dict(timeout=proxy_poll_socket_timeout),
             exceptions=(ConnectionRefusedError,),
             **dataclasses.asdict(retry_options),
         )
         logger.debug(f"proxy_server {proxy_server} ready")
 
-    logger.debug(f"creating remote to destination {destination} with proxy_server {proxy_server}")
+    logger.debug(
+        f"creating remote to destination {destination} with proxy_server {proxy_server}, socket timeout: {remote_socket_timeout}"
+    )
     remote = create_remote(destination, proxy_server)
     remote.bind(("", 0))
     logger.debug(f"connecting to {destination.sockaddr}, binding client socket: {remote.getsockname()}")
+    remote.settimeout(remote_socket_timeout)
     remote.connect(destination.sockaddr)
     logger.debug(f"connected to {destination.sockaddr}, binding client socket: {remote.getsockname()}")
     return remote
@@ -138,12 +144,13 @@ def exchange_loop(
 
 
 def match_upstream(routing_table: RoutingTable, destination: Address) -> Optional[UpstreamAddress]:
+    def matches(patterns: Iterator[Pattern]) -> Iterator[list[str]]:
+        return (fnmatch.filter([f"{destination}", f"{destination.address}"], pattern.address) for pattern in patterns)
+
     for upstream, patterns in routing_table.items():
         logger.debug(f"matching upstream: {upstream}, patterns: {list(map(str, patterns))}, destination: {destination}")
         denied, allowed = partition(lambda pattern: pattern.is_positive_match, patterns)
-        if any(fnmatch.filter([str(destination)], pattern.address.pattern) for pattern in allowed) and not any(
-            fnmatch.filter([str(destination)], pattern.address.pattern) for pattern in denied
-        ):
+        if any(matches(allowed)) and not any(matches(denied)):
             logger.debug(f"matched upstream: {upstream}, patterns: {list(map(str, patterns))}, destination: {destination}")
             return upstream
     logger.debug(f"fallback upstream: {None}")
@@ -255,24 +262,13 @@ class SocksRouterRequestHandler(StreamRequestHandler):
                             "ExitOnForwardFailure": "yes",
                         },
                     )
-                    self.logger.debug(f"proxy_server: {proxy_server}")
+                    self.logger.debug("ssh: %r, proxy_server: %r" % (upstream.address, proxy_server))
                     return upstream
-                case UpstreamScheme.SOCKS5:
-                    # resolve hostname before passing to upstream
-                    self.server.context.upstreams[upstream] = ProxyUpstream(resolve_address(upstream.with_default_port().address))
-                    return upstream
-                case UpstreamScheme.SOCKS5H:
+                case UpstreamScheme.SOCKS5 | UpstreamScheme.SOCKS5H:
                     self.server.context.upstreams[upstream] = ProxyUpstream(upstream.with_default_port().address)
                     return upstream
                 case _ as unreachable:  # type: ignore[misc]
                     assert_never(unreachable)
-
-    def acquire_proxy(self, destination: Address) -> Optional[Address]:
-        if upstream := self.acquire_upstream(destination):
-            proxy_server = self.server.context.upstreams[upstream].proxy_server
-            self.logger.debug(f"acquired upstream {upstream} with proxy_server {proxy_server} for destination {destination}")
-            return proxy_server
-        return None
 
     def handshake(self):
         request = read_socket(self.connection, Socks5MethodSelectionRequest)
@@ -303,8 +299,29 @@ class SocksRouterRequestHandler(StreamRequestHandler):
 
     def reply(self, type: Socks5ReplyType):
         self.logger.debug(f"Replying {type.name}")
-        write_socket(
-            self.connection, Socks5Reply(SOCKS_VERSION, type, server_bound_address=Socks5Address.from_address(self.server.address))
+        try:
+            write_socket(
+                self.connection,
+                Socks5Reply(SOCKS_VERSION, type, server_bound_address=Socks5Address.from_address(self.server.address)),
+            )
+        except BrokenPipeError:
+            pass
+
+    def connect_remote(self, destination: Address) -> socks.socksocket:
+        proxy_server = None
+        if (upstream := self.acquire_upstream(destination)) is not None:
+            proxy_server = self.server.context.upstreams[upstream].proxy_server
+            if upstream.scheme == UpstreamScheme.SOCKS5:
+                destination = resolve_address(destination)
+            self.logger.debug(f"acquired upstream {upstream} with proxy_server {proxy_server} for destination {destination}")
+
+        return connect_remote(
+            destination,
+            proxy_server,
+            remote_socket_timeout=self.server.context.remote_socket_timeout,
+            proxy_poll_socket_timeout=self.server.context.proxy_poll_socket_timeout,
+            proxy_retry_options=self.server.context.proxy_retry_options,
+            logger=self.logger,
         )
 
     def handle_request(self):
@@ -314,13 +331,7 @@ class SocksRouterRequestHandler(StreamRequestHandler):
             match request.command:
                 case Socks5Command.CONNECT:
                     try:
-                        self.remote = connect_remote(
-                            request.destination.sockaddr,
-                            proxy_factory=self.acquire_proxy,
-                            # poll_proxy_factory=lambda destination: (upstream := self.acquire_upstream(destination)) is not None and upstream.scheme == UpstreamScheme.SSH,
-                            proxy_retry_options=self.server.context.proxy_retry_options,
-                            logger=self.logger,
-                        )
+                        self.remote = self.connect_remote(request.destination.sockaddr)
 
                         self.logger.info(
                             f"Connected to destination {request.destination.sockaddr}, binding client socket: {self.remote.getsockname()}"
@@ -407,10 +418,6 @@ class SocksRouterRequestHandler(StreamRequestHandler):
                         assert_never(unreachable)
             except struct.error:
                 # ignore: socket has nothing to read
-                self.state = Socks5State.CLOSED
-            except BrokenPipeError:
-                self.logger.exception("seems the client closed the socket")
-                # we cannot send anything now
                 self.state = Socks5State.CLOSED
             except Exception as e:
                 self.logger.exception(f"unexpected exception occurred: {type(e)}")

@@ -2,8 +2,13 @@
 name = "socks-router"
 version = "0.0.2"
 description = "A thin layer of facade over ssh dynamic proxies with more sophisticated routing"
+license = "MIT"
 authors = ["Leo Sin <leo.sin@my.cityu.edu.hk>"]
 readme = "README.md"
+homepage = "https://github.com/leoslf/socks-router"
+repository = "https://github.com/leoslf/socks-router"
+documentation = "https://leoslf.github.io/socks-router"
+keywords = ["openssh", "ssh", "socks", "socks5", "proxy", "proxy-server", "dynamic-proxy"]
 
 [tool.poetry.scripts]
 socks-router = "socks_router.cli:cli"

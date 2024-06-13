@@ -7,7 +7,7 @@ services:
       context: .
     restart: always
     ports:
-      - ${SOCKS_ROUTER_PORT:-1080}:1080
+      - ${PORT:-1080}:1080
     volumes:
       - ${HOME}/.ssh:/root/.ssh:ro
     environment:
@@ -21,4 +21,3 @@ services:
           target: /usr/src/app
         - action: rebuild
           path: pyproject.toml
-

@@ -1,8 +1,13 @@
-import contextlib
+import sys
+import logging
 
 import io
+import functools
+import contextlib
+import ipaddress
+import threading
+import subprocess
 
-import logging
 import requests
 
 from typing import Iterator
@@ -12,8 +17,6 @@ import pytest
 from mocket import Mocket, MocketEntry, mocketize
 from mocket.mocket import MocketSocket, true_gethostbyname
 
-import threading
-import subprocess
 import socket
 import socks
 
@@ -53,14 +56,34 @@ from socks_router.utils import read_socket, write_socket, free_port
 logger = logging.getLogger(__name__)
 
 
-def ids(value) -> str:
-    if isinstance(value, IntEnum):
-        return value.name
-    return f"{value}"
+def ids(value, depth: int = 0):
+    match value:
+        case IntEnum():
+            return value.name
+        case list() | dict() if depth == 0:
+            return f"{ids(value, 1)}"
+        case list():
+            return list(map(functools.partial(ids, depth=depth + 1), value))
+        case dict():
+            return {ids(k, depth + 1): ids(v, depth + 1) for k, v in value.items()}
+        case _:
+            return f"{value}"
 
 
 def proxies(proxy_server: Address, scheme: str = "socks5h") -> dict[str, str]:
     return dict.fromkeys(["http", "https"], f"{scheme}://{proxy_server}")
+
+
+# SEE: https://en.wikipedia.org/wiki/Reserved_IP_addresses
+blackholes: dict[type[IPv4] | type[IPv6] | type[Host], Address] = {
+    # IPv4: 198.51.100.0/24 is reserved for use in documentation and examples; while the RFC advises that the addresses in this range are not routed, this is not a requirement
+    IPv4: IPv4(str(next(ipaddress.IPv4Network("198.51.100.0/24").hosts()))),
+    # IPv6 discard prefix: 100::/64
+    IPv6: IPv6(str(next(ipaddress.IPv6Network("100::/64").hosts()))),
+    # TLD invalid. is guarenteed to be failing in DNS resolution
+    # SEE: https://www.rfc-editor.org/rfc/rfc6761#section-6.4
+    Host: Host("non-existent.invalid"),
+}
 
 
 @pytest.fixture
@@ -147,7 +170,7 @@ def describe_match_upstream():
             (
                 {
                     UpstreamAddress(UpstreamScheme.SSH, IPv4("127.0.0.1", 22)): [],
-                    UpstreamAddress(UpstreamScheme.SOCKS5, IPv4("127.0.0.1", 1080)): [Pattern(Host("*"))],
+                    UpstreamAddress(UpstreamScheme.SOCKS5, IPv4("127.0.0.1", 1080)): [Pattern("*")],
                     UpstreamAddress(UpstreamScheme.SOCKS5H, IPv4("127.0.0.1", 1080)): [],
                 },
                 IPv4("127.0.0.1", 443),
@@ -193,7 +216,7 @@ def describe_SocksRouter():
                 # using the passthrough as catch-all
                 context = ApplicationContext(
                     routing_table={
-                        UpstreamAddress(scheme, passthrough.address): [Pattern(Host("*"))],
+                        UpstreamAddress(scheme, passthrough.address): [Pattern("*")],
                     },
                 )
                 with daemonize(address, context=context, type=address_type) as proxy:
@@ -218,15 +241,19 @@ def describe_SocksRouter():
         @pytest.mark.parametrize("address_type,address", [(IPv4, "127.0.0.1"), (Host, "localhost"), (IPv6, "::1")])
         @pytest.mark.parametrize("proxy_address_type,proxy_address", [(IPv4, "127.0.0.1"), (Host, "localhost"), (IPv6, "::1")])
         def it_should_successfully_return_and_resuse_ssh_upstream_in_second_pass(
-            httpserver, address_type, address, proxy_address_type, proxy_address
+            mocker, httpserver, address_type, address, proxy_address_type, proxy_address
         ):
+            if sys.platform == "linux" and any(type == IPv6 for type in [address_type, proxy_address_type]):
+                return pytest.skip("skip IPv6 tests on linux to avoid address family not supported")
+
+            create = mocker.spy(SSHUpstream, "create")
             destination = address_type(address, httpserver.port)
             httpserver.expect_request("/").respond_with_json(mocked_response := {"foo": "bar"})
             context = ApplicationContext(
                 routing_table={
-                    UpstreamAddress(UpstreamScheme.SSH, Host("localhost")): [Pattern(Host("*"))],
+                    UpstreamAddress(UpstreamScheme.SSH, Host("localhost")): [Pattern("*")],
                 },
-                proxy_retry_options=RetryOptions(tries=10),
+                proxy_retry_options=RetryOptions(delay=0.25, tries=10),
             )
             with daemonize(proxy_address, context=context, type=proxy_address_type) as proxy:
                 # using the proxy server from client
@@ -238,6 +265,7 @@ def describe_SocksRouter():
                     ).json()
                     == mocked_response
                 )
+                create.assert_called_once()
                 # re-request it to trigger reusing the upstream
                 assert (
                     requests.get(
@@ -247,9 +275,13 @@ def describe_SocksRouter():
                     ).json()
                     == mocked_response
                 )
+                create.assert_called_once()
 
         @pytest.mark.parametrize("address_type,address", [(IPv4, "127.0.0.1"), (Host, "localhost"), (IPv6, "::1")])
         def it_should_recreate_ssh_upstream_if_subprocess_is_dead(mocker, httpserver, address_type, address):
+            if sys.platform == "linux" and address_type == IPv6:
+                return pytest.skip("skip IPv6 tests on linux to avoid address family not supported")
+
             destination = address_type(address, httpserver.port)
             httpserver.expect_request("/").respond_with_json(mocked_response := {"foo": "bar"})
 
@@ -260,12 +292,12 @@ def describe_SocksRouter():
             original_upstream = SSHUpstream(ssh_client, upstream_address.address.with_port(-1))
             context = ApplicationContext(
                 routing_table={
-                    upstream_address: [Pattern(Host("*"))],
+                    upstream_address: [Pattern("*")],
                 },
                 upstreams={
                     upstream_address: original_upstream,
                 },
-                proxy_retry_options=RetryOptions(tries=10),
+                proxy_retry_options=RetryOptions(delay=0.25, tries=10),
             )
             with daemonize(address, type=address_type, context=context) as proxy:
                 # using the proxy server from client
@@ -347,66 +379,70 @@ def describe_SocksRouter():
 
     def when_client_attempt_to_access_unreachable_destination():
         @pytest.mark.parametrize(
-            "url,reply",
+            "scheme,destination,reply",
             [
-                # TLD invalid. is guarenteed to be failing in DNS resolution
-                # SEE: https://www.rfc-editor.org/rfc/rfc6761#section-6.4
-                (
-                    "http://non-existent.invalid",
-                    Socks5ReplyType.NETWORK_UNREACHABLE,
-                ),
-                (
-                    "http://127.0.0.1:65535",
-                    Socks5ReplyType.CONNECTION_REFUSED,
-                ),
+                (UpstreamScheme.SOCKS5, blackholes[IPv4], Socks5ReplyType.HOST_UNREACHABLE),
+                (UpstreamScheme.SOCKS5H, blackholes[IPv4], Socks5ReplyType.HOST_UNREACHABLE),
+                (UpstreamScheme.SOCKS5, blackholes[IPv6], Socks5ReplyType.HOST_UNREACHABLE),
+                (UpstreamScheme.SOCKS5H, blackholes[IPv6], Socks5ReplyType.HOST_UNREACHABLE),
+                (UpstreamScheme.SOCKS5, blackholes[Host], Socks5ReplyType.CONNECTION_REFUSED),
+                (UpstreamScheme.SOCKS5H, blackholes[Host], Socks5ReplyType.NETWORK_UNREACHABLE),
             ],
             ids=ids,
         )
-        @pytest.mark.parametrize("scheme", [UpstreamScheme.SOCKS5, UpstreamScheme.SOCKS5H])
-        def it_should_fail_gracefully(scheme, url, reply):
+        def it_should_fail_gracefully(scheme, destination, reply):
             with daemonize(context=ApplicationContext("passthrough")) as passthrough:
                 context = ApplicationContext(
                     routing_table={
-                        UpstreamAddress(scheme, passthrough.address): [Pattern(Host("*"))],
+                        UpstreamAddress(scheme, passthrough.address): [Pattern("*")],
                     },
-                    proxy_retry_options=RetryOptions(tries=1),
+                    remote_socket_timeout=0.1,
+                    proxy_retry_options=RetryOptions(delay=0.1, tries=1),
                 )
                 with daemonize(context=context) as proxy:
                     with pytest.raises(requests.exceptions.ConnectionError, match=f".*{reply.message}.*"):
-                        requests.get(url, proxies=proxies(proxy.address))
+                        requests.get(f"http://{destination.url_literal}", proxies=proxies(proxy.address))
 
     def when_routing_table_contains_unreachable_upstream():
         @pytest.mark.parametrize(
-            "upstream_address,reply",
+            "upstream_address,replies",
             [
-                # blackholes
-                # IPv4: 198.51.100.0/24
-                (UpstreamAddress(UpstreamScheme.SSH, IPv4("198.51.100.1")), Socks5ReplyType.CONNECTION_REFUSED),
-                (UpstreamAddress(UpstreamScheme.SOCKS5, IPv4("198.51.100.1")), Socks5ReplyType.HOST_UNREACHABLE),
-                (UpstreamAddress(UpstreamScheme.SOCKS5H, IPv4("198.51.100.1")), Socks5ReplyType.HOST_UNREACHABLE),
-                # IPv6: 100::/64
-                (UpstreamAddress(UpstreamScheme.SSH, IPv6("100::")), Socks5ReplyType.CONNECTION_REFUSED),
-                (UpstreamAddress(UpstreamScheme.SOCKS5, IPv6("100::")), Socks5ReplyType.HOST_UNREACHABLE),
-                (UpstreamAddress(UpstreamScheme.SOCKS5H, IPv6("100::")), Socks5ReplyType.HOST_UNREACHABLE),
-                # DNS: invalid. TLD
-                (UpstreamAddress(UpstreamScheme.SSH, Host("non-existent.invalid")), Socks5ReplyType.CONNECTION_REFUSED),
-                (UpstreamAddress(UpstreamScheme.SOCKS5, Host("non-existent.invalid")), Socks5ReplyType.CONNECTION_REFUSED),
-                (UpstreamAddress(UpstreamScheme.SOCKS5H, Host("non-existent.invalid")), Socks5ReplyType.NETWORK_UNREACHABLE),
+                (UpstreamAddress(UpstreamScheme.SSH, blackholes[IPv4]), [Socks5ReplyType.CONNECTION_REFUSED]),
+                (UpstreamAddress(UpstreamScheme.SOCKS5, blackholes[IPv4]), [Socks5ReplyType.HOST_UNREACHABLE]),
+                (UpstreamAddress(UpstreamScheme.SOCKS5H, blackholes[IPv4]), [Socks5ReplyType.HOST_UNREACHABLE]),
+                (UpstreamAddress(UpstreamScheme.SSH, blackholes[IPv6]), [Socks5ReplyType.CONNECTION_REFUSED]),
+                (UpstreamAddress(UpstreamScheme.SOCKS5, blackholes[IPv6]), [Socks5ReplyType.HOST_UNREACHABLE]),
+                (UpstreamAddress(UpstreamScheme.SOCKS5H, blackholes[IPv6]), [Socks5ReplyType.HOST_UNREACHABLE]),
+                (
+                    UpstreamAddress(UpstreamScheme.SSH, blackholes[Host]),
+                    [Socks5ReplyType.CONNECTION_REFUSED, Socks5ReplyType.NETWORK_UNREACHABLE],
+                ),
+                (
+                    UpstreamAddress(UpstreamScheme.SOCKS5, blackholes[Host]),
+                    [Socks5ReplyType.CONNECTION_REFUSED, Socks5ReplyType.NETWORK_UNREACHABLE],
+                ),
+                (
+                    UpstreamAddress(UpstreamScheme.SOCKS5H, blackholes[Host]),
+                    [Socks5ReplyType.CONNECTION_REFUSED, Socks5ReplyType.NETWORK_UNREACHABLE],
+                ),
             ],
             ids=ids,
         )
-        def it_should_fail_gracefully(httpserver, upstream_address, reply):
+        def it_should_fail_gracefully(httpserver, upstream_address, replies):
             httpserver.expect_request("/").respond_with_json({})
 
             context = ApplicationContext(
                 routing_table={
-                    upstream_address: [Pattern(Host("*"))],
+                    upstream_address: [Pattern("*")],
                 },
-                proxy_retry_options=RetryOptions(tries=1),
+                ssh_connection_timeout=1,
+                proxy_retry_options=RetryOptions(delay=0.1, tries=1),
             )
             with daemonize(context=context) as proxy:
-                with pytest.raises(requests.exceptions.ConnectionError, match=f".*{reply.message}.*"):
-                    requests.get(httpserver.url_for("/"), proxies=proxies(proxy.address))
+                with pytest.raises(
+                    requests.exceptions.ConnectionError, match=f".*{'|'.join(map(lambda reply: reply.message, replies))}.*"
+                ):
+                    requests.get(httpserver.url_for("/"), proxies=proxies(proxy.address)).json()
 
     def when_an_unrecognized_exception_raised_during_handle_request():
         @pytest.mark.parametrize("exception", [Exception, OSError])
@@ -417,18 +453,33 @@ def describe_SocksRouter():
                 with pytest.raises(
                     requests.exceptions.ConnectionError, match=f".*{Socks5ReplyType.GENERAL_SOCKS_SERVER_FAILURE.message}.*"
                 ):
-                    requests.get(httpserver.url_for("/"), proxies=proxies(proxy.address))
+                    requests.get(httpserver.url_for("/"), proxies=proxies(proxy.address)).json()
 
     def when_socket_exceptions_raised_during_handle_request():
         @pytest.mark.parametrize("errno", ["EAI_NODATA", "EAI_NONAME", "EAI_ADDRFAMILY", "EAI_FAMILY"])
         def it_should_reply_other_than_GENERAL_SOCKS_SERVER_FAILURE(mocker, httpserver, errno):
             mocker.patch("socks_router.router.connect_remote", side_effect=OSError(getattr(socket, errno), ""))
+            httpserver.expect_request("/").respond_with_json({})
             with daemonize() as proxy:
                 # NOTE: do not remove the .* after the negative look ahead
                 with pytest.raises(
                     requests.exceptions.ConnectionError, match=f"(?!{Socks5ReplyType.GENERAL_SOCKS_SERVER_FAILURE.message}).*"
                 ):
-                    requests.get(httpserver.url_for("/"), proxies=proxies(proxy.address))
+                    requests.get(httpserver.url_for("/"), proxies=proxies(proxy.address)).json()
+
+    def when_an_unrecognized_exception_raised_elsewhere():
+        def it_should_handle_it_gracefully(httpserver):
+            httpserver.expect_request("/").respond_with_json({})
+
+            class ExceptionRaisingRequestHandler(SocksRouterRequestHandler):
+                def handshake(self):
+                    raise NotImplementedError
+
+            with daemonize(handler=ExceptionRaisingRequestHandler) as proxy:
+                with pytest.raises(
+                    requests.exceptions.ConnectionError, match=".*(?:Connection closed unexpectedly|Connection reset by peer).*"
+                ):
+                    requests.get(httpserver.url_for("/"), proxies=proxies(proxy.address)).json()
 
     def when_upstream_server_does_not_behave():
         @pytest.mark.parametrize("scheme", [UpstreamScheme.SOCKS5, UpstreamScheme.SOCKS5H])
@@ -445,7 +496,7 @@ def describe_SocksRouter():
             with daemonize(handler=MalformedRequestHandler) as passthrough:
                 context = ApplicationContext(
                     routing_table={
-                        UpstreamAddress(scheme, passthrough.address): [Pattern(Host("*"))],
+                        UpstreamAddress(scheme, passthrough.address): [Pattern("*")],
                     },
                 )
                 with daemonize(context=context) as proxy:
