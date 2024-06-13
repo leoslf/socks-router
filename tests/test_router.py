@@ -493,13 +493,14 @@ def describe_SocksRouter():
     def when_upstream_server_does_not_behave():
         @pytest.mark.parametrize("scheme", [UpstreamScheme.SOCKS5, UpstreamScheme.SOCKS5H])
         def it_should_reply_with_GENERAL_SOCKS_SERVER_FAILURE(httpserver, scheme):
+            destination = IPv4("127.0.0.1", httpserver.port)
             httpserver.expect_request("/").respond_with_json({})
 
             class MalformedRequestHandler(SocksRouterRequestHandler):
                 def handle_request(self):
                     _ = read_socket(self.connection, Socks5Request)
                     # reply something doesn't make sense
-                    self.connection.sendall(b"\x04")
+                    self.connection.sendall(b"\xff")
                     self.state = Socks5State.CLOSED
 
             with daemonize(handler=MalformedRequestHandler) as passthrough:
@@ -512,4 +513,7 @@ def describe_SocksRouter():
                     with pytest.raises(
                         requests.exceptions.ConnectionError, match=f".*{Socks5ReplyType.GENERAL_SOCKS_SERVER_FAILURE.message}.*"
                     ):
-                        requests.get(httpserver.url_for("/"), proxies=proxies(proxy.address))
+                        requests.get(
+                            f"http://{destination}/",
+                            proxies=proxies(proxy.address),
+                        ).json()
