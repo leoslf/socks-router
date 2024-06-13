@@ -75,7 +75,6 @@ jobs:
           poetry run pytest
           --color=yes
           -s
-          --capture=tee-sys
           -o junit_logging=all
           -o junit_suite_name=${{ matrix.os }}-python${{ matrix.python-version }}-poetry${{ matrix.poetry-version }}
           --junit-xml=.output/unittest/${{ matrix.os }}-python${{ matrix.python-version }}-poetry${{ matrix.poetry-version }}.xml

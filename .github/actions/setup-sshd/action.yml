@@ -48,6 +48,8 @@ runs:
 
         sudo sed -i.bak "s/#\?\(ListenAddress\).*/\1 ${{ inputs.host }}:${{ inputs.port }}/g" "$SSHD_CONFIG"
 
+        cat "$SSHD_CONFIG"
+
     - name: Generate key pairs
       if: inputs.ssh_keygen
       shell: bash
