@@ -44,8 +44,8 @@ runs:
           sudo sed -i.bak "s/#\?\(PermitRootLogin\).*/\1 yes/g" "$SSHD_CONFIG"
         fi
 
-        sudo sed -i.bak "s/#\?\(AddressFamily\).*/\1 any/g" "$SSHD_CONFIG"
-        sudo sed -i.bak "s/#\?\(MaxAuthTries\).*/\1 100/g" "$SSHD_CONFIG"
+        # sudo sed -i.bak "s/#\?\(AddressFamily\).*/\1 any/g" "$SSHD_CONFIG"
+        echo "MaxAuthTries 100" | sudo tee -a "$SSHD_CONFIG"
 
         # sudo sed -i.bak "s/#\?\(ListenAddress\).*/\1 ${{ inputs.host }}:${{ inputs.port }}/" "$SSHD_CONFIG"
 
