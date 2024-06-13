@@ -31,6 +31,7 @@ from socks_router.models import (
     IPv4,
     IPv6,
     Host,
+    Address,
     UpstreamAddress,
     UpstreamScheme,
     Socks5State,
@@ -56,6 +57,10 @@ def ids(value) -> str:
     if isinstance(value, IntEnum):
         return value.name
     return f"{value}"
+
+
+def proxies(proxy_server: Address, scheme: str = "socks5h") -> dict[str, str]:
+    return dict.fromkeys(["http", "https"], f"{scheme}://{proxy_server}")
 
 
 @pytest.fixture
@@ -172,7 +177,7 @@ def describe_SocksRouter():
                 assert (
                     requests.get(
                         f"http://{destination}/",
-                        proxies=dict.fromkeys(["http", "https"], f"socks5h://{passthrough.address}"),
+                        proxies=proxies(passthrough.address),
                     ).json()
                     == mocked_response
                 )
@@ -196,7 +201,7 @@ def describe_SocksRouter():
                     assert (
                         requests.get(
                             f"http://{destination}/",
-                            proxies=dict.fromkeys(["http", "https"], f"socks5h://{proxy.address}"),
+                            proxies=proxies(proxy.address),
                         ).json()
                         == mocked_response
                     )
@@ -204,7 +209,7 @@ def describe_SocksRouter():
                     assert (
                         requests.get(
                             f"http://{destination}/",
-                            proxies=dict.fromkeys(["http", "https"], f"socks5h://{proxy.address}"),
+                            proxies=proxies(proxy.address),
                         ).json()
                         == mocked_response
                     )
@@ -228,7 +233,7 @@ def describe_SocksRouter():
                 assert (
                     requests.get(
                         f"http://{destination}/",
-                        proxies=dict.fromkeys(["http", "https"], f"socks5h://{proxy.address}"),
+                        proxies=proxies(proxy.address),
                         timeout=10,
                     ).json()
                     == mocked_response
@@ -237,7 +242,7 @@ def describe_SocksRouter():
                 assert (
                     requests.get(
                         f"http://{destination}/",
-                        proxies=dict.fromkeys(["http", "https"], f"socks5h://{proxy.address}"),
+                        proxies=proxies(proxy.address),
                         timeout=10,
                     ).json()
                     == mocked_response
@@ -267,7 +272,7 @@ def describe_SocksRouter():
                 assert (
                     requests.get(
                         f"http://{destination}/",
-                        proxies=dict.fromkeys(["http", "https"], f"socks5h://{proxy.address}"),
+                        proxies=proxies(proxy.address),
                     ).json()
                     == mocked_response
                 )
@@ -304,7 +309,7 @@ def describe_SocksRouter():
                 ):
                     requests.get(
                         f"http://{destination}/",
-                        proxies=dict.fromkeys(["http", "https"], f"socks4://{proxy.address}"),
+                        proxies=proxies(proxy.address, scheme="socks4"),
                     ).json()
 
     def when_client_attempt_to_use_unacceptable_methods():
@@ -368,7 +373,7 @@ def describe_SocksRouter():
                 )
                 with daemonize(context=context) as proxy:
                     with pytest.raises(requests.exceptions.ConnectionError, match=f".*{reply.message}.*"):
-                        requests.get(url, proxies=dict.fromkeys(["http", "https"], f"socks5h://{proxy.address}"))
+                        requests.get(url, proxies=proxies(proxy.address))
 
     def when_routing_table_contains_unreachable_upstream():
         @pytest.mark.parametrize(
@@ -401,7 +406,7 @@ def describe_SocksRouter():
             )
             with daemonize(context=context) as proxy:
                 with pytest.raises(requests.exceptions.ConnectionError, match=f".*{reply.message}.*"):
-                    requests.get(httpserver.url_for("/"), proxies=dict.fromkeys(["http", "https"], f"socks5h://{proxy.address}"))
+                    requests.get(httpserver.url_for("/"), proxies=proxies(proxy.address))
 
     def when_an_unrecognized_exception_raised_during_handle_request():
         @pytest.mark.parametrize("exception", [Exception, OSError])
@@ -412,7 +417,7 @@ def describe_SocksRouter():
                 with pytest.raises(
                     requests.exceptions.ConnectionError, match=f".*{Socks5ReplyType.GENERAL_SOCKS_SERVER_FAILURE.message}.*"
                 ):
-                    requests.get(httpserver.url_for("/"), proxies=dict.fromkeys(["http", "https"], f"socks5h://{proxy.address}"))
+                    requests.get(httpserver.url_for("/"), proxies=proxies(proxy.address))
 
     def when_socket_exceptions_raised_during_handle_request():
         @pytest.mark.parametrize("errno", ["EAI_NODATA", "EAI_NONAME", "EAI_ADDRFAMILY", "EAI_FAMILY"])
@@ -423,7 +428,7 @@ def describe_SocksRouter():
                 with pytest.raises(
                     requests.exceptions.ConnectionError, match=f"(?!{Socks5ReplyType.GENERAL_SOCKS_SERVER_FAILURE.message}).*"
                 ):
-                    requests.get(httpserver.url_for("/"), proxies=dict.fromkeys(["http", "https"], f"socks5h://{proxy.address}"))
+                    requests.get(httpserver.url_for("/"), proxies=proxies(proxy.address))
 
     def when_upstream_server_does_not_behave():
         @pytest.mark.parametrize("scheme", [UpstreamScheme.SOCKS5, UpstreamScheme.SOCKS5H])
@@ -447,6 +452,4 @@ def describe_SocksRouter():
                     with pytest.raises(
                         requests.exceptions.ConnectionError, match=f".*{Socks5ReplyType.GENERAL_SOCKS_SERVER_FAILURE.message}.*"
                     ):
-                        requests.get(
-                            httpserver.url_for("/"), proxies=dict.fromkeys(["http", "https"], f"socks5h://{proxy.address}")
-                        )
+                        requests.get(httpserver.url_for("/"), proxies=proxies(proxy.address))
