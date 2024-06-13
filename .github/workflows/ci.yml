@@ -39,6 +39,9 @@ jobs:
           cat <<- EOF > ~/.ssh/config
           Host *
             AddKeysToAgent yes
+
+          Host localhost 127.0.0.1 ::1
+            IdentitiesOnly yes
           EOF
 
       - name: Setup ssh-agent
