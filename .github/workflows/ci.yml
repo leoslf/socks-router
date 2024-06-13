@@ -36,17 +36,17 @@ jobs:
       - name: Test ssh connection to sshd - 127.0.0.1
         shell: bash
         run: |
-          ssh -q 127.0.0.1 exit
+          ssh 127.0.0.1 true
 
       - name: Test ssh connection to sshd - ::1
         shell: bash
         run: |
-          ssh -q ::1 exit
+          ssh ::1 true
 
       - name: Test ssh connection to sshd - localhost
         shell: bash
         run: |
-          ssh -q localhost exit
+          ssh localhost true
 
       - name: Setup ssh-agent
         shell: bash
