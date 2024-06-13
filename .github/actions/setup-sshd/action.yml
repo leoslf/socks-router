@@ -39,12 +39,14 @@ runs:
         sudo sed -i.bak "s|#\?\(AuthorizedKeysFile\).*|\1 %h/.ssh/authorized_keys|g" "$SSHD_CONFIG"
         echo "PubkeyAcceptedKeyTypes=+ssh-rsa" | sudo tee -a "$SSHD_CONFIG"
         echo "AllowUsers $USER" | sudo tee -a "$SSHD_CONFIG"
+        echo "ChallengeResponseAuthentication no" | sudo tee -a "$SSHD_CONFIG"
 
         if [ "$USER" = "root" ]; then
           sudo sed -i.bak "s/#\?\(PermitRootLogin\).*/\1 yes/g" "$SSHD_CONFIG"
         fi
 
         # sudo sed -i.bak "s/#\?\(AddressFamily\).*/\1 any/g" "$SSHD_CONFIG"
+        echo "AddressFamily any" | sudo tee -a "$SSHD_CONFIG"
         echo "MaxAuthTries 100" | sudo tee -a "$SSHD_CONFIG"
 
         # sudo sed -i.bak "s/#\?\(ListenAddress\).*/\1 ${{ inputs.host }}:${{ inputs.port }}/" "$SSHD_CONFIG"
