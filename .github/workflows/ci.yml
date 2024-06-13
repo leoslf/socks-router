@@ -33,6 +33,21 @@ jobs:
       - name: Setup sshd
         uses: ./.github/actions/setup-sshd
 
+      - name: Test ssh connection to sshd - 127.0.0.1
+        shell: bash
+        run: |
+          ssh -q 127.0.0.1 exit
+
+      - name: Test ssh connection to sshd - ::1
+        shell: bash
+        run: |
+          ssh -q ::1 exit
+
+      - name: Test ssh connection to sshd - localhost
+        shell: bash
+        run: |
+          ssh -q localhost exit
+
       - name: Setup ssh-agent
         shell: bash
         run: |
