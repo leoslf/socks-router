@@ -74,7 +74,7 @@ jobs:
       - name: Test socks5 proxy via IPv4 ssh
         shell: bash
         run: |
-          ssh -NT -D 1080 127.0.0.1 &
+          ssh -NT -D 1080 127.0.0.1 -o ConnectTimeout=10 -o ServerAliveInterval=240 -o ExitOnForwardFailure=yes &
           HTTPS_PROXY=socks5h://127.0.0.1:1080 curl -f https://google.com
           kill $!
 
@@ -86,7 +86,7 @@ jobs:
       - name: Test socks5 proxy via IPv6 ssh
         shell: bash
         run: |
-          ssh -NT -D 1080 ::1 &
+          ssh -NT -D 1080 ::1 -o ConnectTimeout=10 -o ServerAliveInterval=240 -o ExitOnForwardFailure=yes &
           HTTPS_PROXY=socks5h://127.0.0.1:1080 curl -f https://google.com
           kill $!
 
@@ -98,7 +98,7 @@ jobs:
       - name: Test socks5 proxy via hostname ssh
         shell: bash
         run: |
-          ssh -NT -D 1080 localhost &
+          ssh -NT -D 1080 localhost -o ConnectTimeout=10 -o ServerAliveInterval=240 -o ExitOnForwardFailure=yes &
           HTTPS_PROXY=socks5h://127.0.0.1:1080 curl -f https://google.com
           kill $!
 
