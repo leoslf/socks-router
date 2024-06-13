@@ -52,11 +52,13 @@ runs:
 
     - name: Restart sshd - Linux
       if: runner.os == 'Linux'
+      shell: bash
       run: |
         sudo systemctl restart ssh
 
     - name: Restart sshd - Mac
       if: runner.os == 'macOS'
+      shell: bash
       run: |
         sudo launchctl unload /System/Library/LaunchDaemons/ssh.plist
         sudo launchctl load -w /System/Library/LaunchDaemons/ssh.plist
