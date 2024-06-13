@@ -46,7 +46,7 @@ runs:
 
         sudo sed -i.bak "s/#\?\(AddressFamily\).*/\1 any/g" "$SSHD_CONFIG"
 
-        sudo sed -i.bak "s/#\?\(ListenAddress\).*/\1 ${{ inputs.host }}:${{ inputs.port }}/" "$SSHD_CONFIG"
+        # sudo sed -i.bak "s/#\?\(ListenAddress\).*/\1 ${{ inputs.host }}:${{ inputs.port }}/" "$SSHD_CONFIG"
 
         cat "$SSHD_CONFIG"
 
