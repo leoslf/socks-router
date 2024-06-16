@@ -285,6 +285,12 @@ jobs:
       - name: Install the project dependencies
         run: poetry install --with=release -E docs
 
+      - name: Semantic Release
+        uses: ./.github/actions/semantic-release
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # pypi-token: ${{ secrets.PYPI_TOKEN }}
+
       - name: Build docs
         run: poetry run make -C docs html
 
@@ -296,12 +302,6 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: docs/build/html
           force_orphan: true
-
-      - name: Semantic Release
-        uses: ./.github/actions/semantic-release
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          # pypi-token: ${{ secrets.PYPI_TOKEN }}
 
       - name: Read pyproject.toml
         id: read-package
