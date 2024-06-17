@@ -38,7 +38,7 @@ pytest = "^8.1.1"
 pytest-cov = ">=4.1,<6.0"
 pytest-mock = "^3.12.0"
 freezegun = "^1.4.0"
-ruff = "^0.3.2"
+ruff = "^0.4.9"
 mypy = { git = "https://github.com/python/mypy", rev = "415d49f25b6315cf1b7a04046a942246a033498d" }
 junitparser = "^3.1.2"
 pytest-describe = "^2.2.0"
