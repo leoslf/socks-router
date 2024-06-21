@@ -1,0 +1,154 @@
+socks_router.utils
+==================
+
+.. py:module:: socks_router.utils
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   socks_router.utils.PackingSequence
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   socks_router.utils.SupportsUnbytes
+   socks_router.utils.Packable
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   socks_router.utils.resolve_type
+   socks_router.utils.to_bin
+   socks_router.utils.to_oct
+   socks_router.utils.to_hex
+   socks_router.utils.is_optional
+   socks_router.utils.is_list
+   socks_router.utils.tokenize_pack_format
+   socks_router.utils.read_socket
+   socks_router.utils.write_socket
+   socks_router.utils.free_port
+
+
+Module Contents
+---------------
+
+.. py:class:: SupportsUnbytes
+
+   Bases: :py:obj:`Protocol`
+
+
+   Base class for protocol classes.
+
+   Protocol classes are defined as::
+
+       class Proto(Protocol):
+           def meth(self) -> int:
+               ...
+
+   Such classes are primarily used with static type checkers that recognize
+   structural subtyping (static duck-typing).
+
+   For example::
+
+       class C:
+           def meth(self) -> int:
+               return 0
+
+       def func(x: Proto) -> int:
+           return x.meth()
+
+       func(C())  # Passes static type check
+
+   See PEP 544 for details. Protocol classes decorated with
+   @typing.runtime_checkable act as simple-minded runtime protocols that check
+   only the presence of given attributes, ignoring their type signatures.
+   Protocol classes can be generic, they are defined as::
+
+       class GenProto[T](Protocol):
+           def meth(self) -> T:
+               ...
+
+
+   .. py:method:: __unbytes__(input: bytes) -> Self
+      :classmethod:
+
+      :abstractmethod:
+
+
+
+.. py:class:: Packable
+
+   Bases: :py:obj:`Protocol`
+
+
+   Base class for protocol classes.
+
+   Protocol classes are defined as::
+
+       class Proto(Protocol):
+           def meth(self) -> int:
+               ...
+
+   Such classes are primarily used with static type checkers that recognize
+   structural subtyping (static duck-typing).
+
+   For example::
+
+       class C:
+           def meth(self) -> int:
+               return 0
+
+       def func(x: Proto) -> int:
+           return x.meth()
+
+       func(C())  # Passes static type check
+
+   See PEP 544 for details. Protocol classes decorated with
+   @typing.runtime_checkable act as simple-minded runtime protocols that check
+   only the presence of given attributes, ignoring their type signatures.
+   Protocol classes can be generic, they are defined as::
+
+       class GenProto[T](Protocol):
+           def meth(self) -> T:
+               ...
+
+
+   .. py:method:: __pack_format__() -> str
+      :classmethod:
+
+
+
+.. py:data:: PackingSequence
+   :type:  TypeAlias
+   :value: str | tuple[str, str]
+
+
+.. py:function:: resolve_type(type: str, module: Optional[types.ModuleType] = None) -> resolve_type.type
+
+.. py:function:: to_bin(value: int) -> str
+
+.. py:function:: to_oct(value: int) -> str
+
+.. py:function:: to_hex(value: int) -> str
+
+.. py:function:: is_optional(field)
+
+.. py:function:: is_list(type: type) -> TypeGuard[list[is_list.T]]
+
+.. py:function:: tokenize_pack_format(format: str) -> collections.abc.Iterator[socks_router.models.PackingSequence]
+
+.. py:function:: read_socket(sock: socket.socket, type: type[read_socket.T], format: Optional[str] = None) -> read_socket.T
+
+.. py:function:: write_socket(sock: socket.socket, instance: write_socket.T, format: Optional[str] = None, type: Optional[type[write_socket.T]] = None) -> None
+
+.. py:function:: free_port(address: str = '') -> tuple[str, int]
+

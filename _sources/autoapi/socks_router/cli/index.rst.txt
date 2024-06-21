@@ -1,0 +1,252 @@
+socks_router.cli
+================
+
+.. py:module:: socks_router.cli
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   socks_router.cli.routing_table
+   socks_router.cli.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   socks_router.cli.ApplicationContext
+   socks_router.cli.RetryOptions
+   socks_router.cli.SocksRouter
+   socks_router.cli.SocksRouterRequestHandler
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   socks_router.cli.cli
+
+
+Module Contents
+---------------
+
+.. py:data:: routing_table
+   :type:  parsec.Parser[socks_router.models.RoutingTable]
+
+.. py:class:: ApplicationContext
+
+   .. py:attribute:: name
+      :type:  str
+      :value: 'socks-router'
+
+
+
+   .. py:attribute:: routing_table
+      :type:  RoutingTable
+
+
+   .. py:attribute:: ssh_connection_timeout
+      :type:  int
+      :value: 10
+
+
+
+   .. py:attribute:: remote_socket_timeout
+      :type:  Optional[float]
+      :value: 10
+
+
+
+   .. py:attribute:: proxy_poll_socket_timeout
+      :type:  float
+      :value: 0.1
+
+
+
+   .. py:attribute:: proxy_retry_options
+      :type:  RetryOptions
+
+
+   .. py:attribute:: mutex
+      :type:  threading.Lock
+
+
+   .. py:attribute:: upstreams
+      :type:  collections.abc.MutableMapping[UpstreamAddress, Upstream]
+
+
+   .. py:attribute:: is_terminating
+      :type:  bool
+      :value: False
+
+
+
+.. py:class:: RetryOptions
+
+   .. py:attribute:: tries
+      :type:  int
+
+
+   .. py:attribute:: delay
+      :type:  float
+      :value: 1
+
+
+
+   .. py:attribute:: max_delay
+      :type:  Optional[float]
+      :value: None
+
+
+
+   .. py:attribute:: backoff
+      :type:  float
+      :value: 1
+
+
+
+   .. py:attribute:: jitter
+      :type:  float
+      :value: 0
+
+
+
+   .. py:method:: exponential_backoff(*argv, backoff=2, **kwargs)
+      :classmethod:
+
+
+
+.. py:class:: SocksRouter(*argv, context: Optional[socks_router.models.ApplicationContext] = None, address_family: socket.AddressFamily = socket.AF_INET, **kwargs)
+
+   Bases: :py:obj:`socketserver.ThreadingTCPServer`
+
+
+   Mix-in class to handle each request in a new thread.
+
+
+   .. py:attribute:: allow_reuse_address
+      :value: True
+
+
+
+   .. py:attribute:: daemon_threads
+      :value: True
+
+
+
+   .. py:attribute:: block_on_close
+      :value: True
+
+
+
+   .. py:attribute:: context
+      :type:  socks_router.models.ApplicationContext
+
+
+   .. py:attribute:: logger
+      :type:  logging.Logger
+
+
+   .. py:property:: address
+      :type: socks_router.models.Address
+
+
+
+   .. py:method:: server_activate() -> None
+
+      Called by constructor to activate the server.
+
+      May be overridden.
+
+
+
+
+   .. py:method:: get_request()
+
+      Get the request and client address from the socket.
+
+      May be overridden.
+
+
+
+
+   .. py:method:: shutdown_request(request: socket.socket | tuple[bytes, socket.socket]) -> None
+
+      Called to shutdown and close an individual request.
+
+
+
+   .. py:method:: shutdown() -> None
+
+      Stops the serve_forever loop.
+
+      Blocks until the loop has finished. This must be called while
+      serve_forever() is running in another thread, or it will
+      deadlock.
+
+
+
+.. py:class:: SocksRouterRequestHandler(request, client_address, server)
+
+   Bases: :py:obj:`socketserver.StreamRequestHandler`
+
+
+   Define self.rfile and self.wfile for stream sockets.
+
+
+   .. py:attribute:: server
+      :type:  SocksRouter
+
+
+   .. py:attribute:: state
+      :type:  socks_router.models.Socks5State
+
+
+   .. py:attribute:: remote
+      :type:  Optional[socks.socksocket]
+      :value: None
+
+
+
+   .. py:property:: logger
+
+
+   .. py:method:: acquire_upstream(destination: socks_router.models.Address) -> Optional[socks_router.models.UpstreamAddress]
+
+
+   .. py:method:: handshake()
+
+
+   .. py:method:: reply(type: socks_router.models.Socks5ReplyType)
+
+
+   .. py:method:: connect_remote(destination: socks_router.models.Address) -> socks.socksocket
+
+
+   .. py:method:: handle_request()
+
+
+   .. py:method:: exchange()
+
+
+   .. py:method:: setup()
+
+
+   .. py:method:: handle()
+
+      Handle incoming connections
+
+
+
+   .. py:method:: finish()
+
+
+.. py:data:: logger
+
+.. py:function:: cli(ctx: click.Context, logging_config: str, hostname: str, port: int, routes: Optional[str], routes_file: pathlib.Path, retries: int)
+

@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>socks_router.router &mdash; Python  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=fd3f3429" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="socks_router.utils" href="../utils/index.html" />
+    <link rel="prev" title="socks_router.parsers" href="../parsers/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Python
+          </a>
+              <div class="version">
+                0.1.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">socks_router</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../cli/index.html">socks_router.cli</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../models/index.html">socks_router.models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../parsers/index.html">socks_router.parsers</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">socks_router.router</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../utils/index.html">socks_router.utils</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Python</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">API Reference</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">socks_router</a></li>
+      <li class="breadcrumb-item active">socks_router.router</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/autoapi/socks_router/router/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-socks_router.router">
+<span id="socks-router-router"></span><h1>socks_router.router<a class="headerlink" href="#module-socks_router.router" title="Link to this heading"></a></h1>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#socks_router.router.pysocks_socks5_error" title="socks_router.router.pysocks_socks5_error"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pysocks_socks5_error</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#socks_router.router.SOCKS_VERSION" title="socks_router.router.SOCKS_VERSION"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SOCKS_VERSION</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#socks_router.router.Address" title="socks_router.router.Address"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Address</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#socks_router.router.RoutingTable" title="socks_router.router.RoutingTable"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RoutingTable</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#socks_router.router.Socks5AddressTypes" title="socks_router.router.Socks5AddressTypes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Socks5AddressTypes</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#socks_router.router.CHUNK_SIZE" title="socks_router.router.CHUNK_SIZE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CHUNK_SIZE</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#socks_router.router.logger" title="socks_router.router.logger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logger</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#socks_router.router.Socks5Method" title="socks_router.router.Socks5Method"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Socks5Method</span></code></a></p></td>
+<td><p>SEE: <a class="reference external" href="https://datatracker.ietf.org/doc/html/rfc1928#section-3">https://datatracker.ietf.org/doc/html/rfc1928#section-3</a></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#socks_router.router.Socks5Command" title="socks_router.router.Socks5Command"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Socks5Command</span></code></a></p></td>
+<td><p>SEE: <a class="reference external" href="https://datatracker.ietf.org/doc/html/rfc1928#section-4">https://datatracker.ietf.org/doc/html/rfc1928#section-4</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#socks_router.router.Socks5AddressType" title="socks_router.router.Socks5AddressType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Socks5AddressType</span></code></a></p></td>
+<td><p>SEE: <a class="reference external" href="https://datatracker.ietf.org/doc/html/rfc1928#section-4">https://datatracker.ietf.org/doc/html/rfc1928#section-4</a></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#socks_router.router.Socks5MethodSelectionRequest" title="socks_router.router.Socks5MethodSelectionRequest"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Socks5MethodSelectionRequest</span></code></a></p></td>
+<td><p>Socks5 Header.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#socks_router.router.Socks5MethodSelectionResponse" title="socks_router.router.Socks5MethodSelectionResponse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Socks5MethodSelectionResponse</span></code></a></p></td>
+<td><p>Socks5 Method Selection Response</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#socks_router.router.Socks5Request" title="socks_router.router.Socks5Request"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Socks5Request</span></code></a></p></td>
+<td><p>SEE: <a class="reference external" href="https://datatracker.ietf.org/doc/html/rfc1928#section-4">https://datatracker.ietf.org/doc/html/rfc1928#section-4</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#socks_router.router.Socks5Address" title="socks_router.router.Socks5Address"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Socks5Address</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#socks_router.router.Socks5ReplyType" title="socks_router.router.Socks5ReplyType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Socks5ReplyType</span></code></a></p></td>
+<td><p>SEE: <a class="reference external" href="https://datatracker.ietf.org/doc/html/rfc1928#section-6">https://datatracker.ietf.org/doc/html/rfc1928#section-6</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#socks_router.router.Socks5Reply" title="socks_router.router.Socks5Reply"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Socks5Reply</span></code></a></p></td>
+<td><p>Socks5 Reply</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#socks_router.router.Socks5State" title="socks_router.router.Socks5State"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Socks5State</span></code></a></p></td>
+<td><p>Enum where members are also (and must be) strings</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#socks_router.router.IPv4" title="socks_router.router.IPv4"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IPv4</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#socks_router.router.IPv6" title="socks_router.router.IPv6"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IPv6</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#socks_router.router.Host" title="socks_router.router.Host"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Host</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#socks_router.router.Pattern" title="socks_router.router.Pattern"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Pattern</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#socks_router.router.UpstreamScheme" title="socks_router.router.UpstreamScheme"><code class="xref py py-obj docutils literal notranslate"><span class="pre">UpstreamScheme</span></code></a></p></td>
+<td><p>Enum where members are also (and must be) strings</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#socks_router.router.UpstreamAddress" title="socks_router.router.UpstreamAddress"><code class="xref py py-obj docutils literal notranslate"><span class="pre">UpstreamAddress</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#socks_router.router.SSHUpstream" title="socks_router.router.SSHUpstream"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SSHUpstream</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#socks_router.router.ProxyUpstream" title="socks_router.router.ProxyUpstream"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProxyUpstream</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#socks_router.router.RetryOptions" title="socks_router.router.RetryOptions"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RetryOptions</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#socks_router.router.ApplicationContext" title="socks_router.router.ApplicationContext"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ApplicationContext</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#socks_router.router.SocksRouter" title="socks_router.router.SocksRouter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SocksRouter</span></code></a></p></td>
+<td><p>Mix-in class to handle each request in a new thread.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#socks_router.router.SocksRouterRequestHandler" title="socks_router.router.SocksRouterRequestHandler"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SocksRouterRequestHandler</span></code></a></p></td>
+<td><p>Define self.rfile and self.wfile for stream sockets.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#socks_router.router.parse_sockaddr" title="socks_router.router.parse_sockaddr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_sockaddr</span></code></a>(→ socks_router.models.Address)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#socks_router.router.read_socket" title="socks_router.router.read_socket"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_socket</span></code></a>(→ read_socket.T)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#socks_router.router.write_socket" title="socks_router.router.write_socket"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_socket</span></code></a>(→ None)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#socks_router.router.free_port" title="socks_router.router.free_port"><code class="xref py py-obj docutils literal notranslate"><span class="pre">free_port</span></code></a>(→ tuple[str, int])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#socks_router.router.create_socket" title="socks_router.router.create_socket"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_socket</span></code></a>(→ socks.socksocket)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#socks_router.router.with_proxy" title="socks_router.router.with_proxy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">with_proxy</span></code></a>(→ socks.socksocket)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#socks_router.router.poll_socket" title="socks_router.router.poll_socket"><code class="xref py py-obj docutils literal notranslate"><span class="pre">poll_socket</span></code></a>(destination[, timeout])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#socks_router.router.resolve_address" title="socks_router.router.resolve_address"><code class="xref py py-obj docutils literal notranslate"><span class="pre">resolve_address</span></code></a>(→ socks_router.models.Address)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#socks_router.router.create_remote" title="socks_router.router.create_remote"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_remote</span></code></a>(→ socks.socksocket)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#socks_router.router.connect_remote" title="socks_router.router.connect_remote"><code class="xref py py-obj docutils literal notranslate"><span class="pre">connect_remote</span></code></a>(→ socks.socksocket)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#socks_router.router.exchange_loop" title="socks_router.router.exchange_loop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">exchange_loop</span></code></a>(client, remote[, chunk_size, timeout])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#socks_router.router.match_upstream" title="socks_router.router.match_upstream"><code class="xref py py-obj docutils literal notranslate"><span class="pre">match_upstream</span></code></a>(...)</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="socks_router.router.parse_sockaddr">
+<span class="sig-name descname"><span class="pre">parse_sockaddr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sockaddr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.12)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><span class="pre">parse_sockaddr.S</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">socks_router.models.Address</span></span></span><a class="reference internal" href="../../../_modules/socks_router/parsers.html#parse_sockaddr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.parse_sockaddr" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="socks_router.router.pysocks_socks5_error">
+<span class="sig-name descname"><span class="pre">pysocks_socks5_error</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">parsec.Parser</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.12)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../models/index.html#socks_router.models.Socks5ReplyType" title="socks_router.models.Socks5ReplyType"><span class="pre">socks_router.models.Socks5ReplyType</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#socks_router.router.pysocks_socks5_error" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="socks_router.router.SOCKS_VERSION">
+<span class="sig-name descname"><span class="pre">SOCKS_VERSION</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="m"><span class="pre">5</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5</span></em><a class="headerlink" href="#socks_router.router.SOCKS_VERSION" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="socks_router.router.Socks5Method">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Socks5Method</span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#Socks5Method"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.Socks5Method" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/enum.html#enum.IntEnum" title="(in Python v3.12)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">enum.IntEnum</span></code></a></p>
+<p>SEE: <a class="reference external" href="https://datatracker.ietf.org/doc/html/rfc1928#section-3">https://datatracker.ietf.org/doc/html/rfc1928#section-3</a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5Method.NO_AUTHENTICATION_REQUIRED">
+<span class="sig-name descname"><span class="pre">NO_AUTHENTICATION_REQUIRED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#socks_router.router.Socks5Method.NO_AUTHENTICATION_REQUIRED" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5Method.GSSAPI">
+<span class="sig-name descname"><span class="pre">GSSAPI</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#socks_router.router.Socks5Method.GSSAPI" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5Method.USERNAME_PASSWORD">
+<span class="sig-name descname"><span class="pre">USERNAME_PASSWORD</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#socks_router.router.Socks5Method.USERNAME_PASSWORD" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5Method.NO_ACCEPTABLE_METHODS">
+<span class="sig-name descname"><span class="pre">NO_ACCEPTABLE_METHODS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">255</span></em><a class="headerlink" href="#socks_router.router.Socks5Method.NO_ACCEPTABLE_METHODS" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.Socks5Method.__pack_format__">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__pack_format__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#Socks5Method.__pack_format__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.Socks5Method.__pack_format__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="socks_router.router.Socks5Command">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Socks5Command</span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#Socks5Command"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.Socks5Command" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/enum.html#enum.IntEnum" title="(in Python v3.12)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">enum.IntEnum</span></code></a></p>
+<p>SEE: <a class="reference external" href="https://datatracker.ietf.org/doc/html/rfc1928#section-4">https://datatracker.ietf.org/doc/html/rfc1928#section-4</a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5Command.CONNECT">
+<span class="sig-name descname"><span class="pre">CONNECT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#socks_router.router.Socks5Command.CONNECT" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5Command.BIND">
+<span class="sig-name descname"><span class="pre">BIND</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#socks_router.router.Socks5Command.BIND" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5Command.UDP_ASSOCIATE">
+<span class="sig-name descname"><span class="pre">UDP_ASSOCIATE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#socks_router.router.Socks5Command.UDP_ASSOCIATE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.Socks5Command.__pack_format__">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__pack_format__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#Socks5Command.__pack_format__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.Socks5Command.__pack_format__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="socks_router.router.Socks5AddressType">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Socks5AddressType</span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#Socks5AddressType"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.Socks5AddressType" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/enum.html#enum.IntEnum" title="(in Python v3.12)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">enum.IntEnum</span></code></a></p>
+<p>SEE: <a class="reference external" href="https://datatracker.ietf.org/doc/html/rfc1928#section-4">https://datatracker.ietf.org/doc/html/rfc1928#section-4</a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5AddressType.IPv4">
+<span class="sig-name descname"><span class="pre">IPv4</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#socks_router.router.Socks5AddressType.IPv4" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5AddressType.DOMAINNAME">
+<span class="sig-name descname"><span class="pre">DOMAINNAME</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#socks_router.router.Socks5AddressType.DOMAINNAME" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5AddressType.IPv6">
+<span class="sig-name descname"><span class="pre">IPv6</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></em><a class="headerlink" href="#socks_router.router.Socks5AddressType.IPv6" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.Socks5AddressType.__pack_format__">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__pack_format__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#Socks5AddressType.__pack_format__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.Socks5AddressType.__pack_format__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="socks_router.router.Socks5MethodSelectionRequest">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Socks5MethodSelectionRequest</span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#Socks5MethodSelectionRequest"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.Socks5MethodSelectionRequest" title="Link to this definition"></a></dt>
+<dd><p>Socks5 Header.
+SEE: <a class="reference external" href="https://datatracker.ietf.org/doc/html/rfc1928#section-3">https://datatracker.ietf.org/doc/html/rfc1928#section-3</a>
+Header
+——
+| version | method_count | methods              |
+| 1 byte  | 1 byte       | [method_count] bytes |</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5MethodSelectionRequest.version">
+<span class="sig-name descname"><span class="pre">version</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Annotated[int,</span> <span class="pre">!B]</span></em><a class="headerlink" href="#socks_router.router.Socks5MethodSelectionRequest.version" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5MethodSelectionRequest.methods">
+<span class="sig-name descname"><span class="pre">methods</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Annotated[list[int],</span> <span class="pre">!B%*B]</span></em><a class="headerlink" href="#socks_router.router.Socks5MethodSelectionRequest.methods" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="socks_router.router.Socks5MethodSelectionResponse">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Socks5MethodSelectionResponse</span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#Socks5MethodSelectionResponse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.Socks5MethodSelectionResponse" title="Link to this definition"></a></dt>
+<dd><p>Socks5 Method Selection Response
+Method Selection Response
+————————-
+| version | method |
+| 1 byte  | 1 byte |</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5MethodSelectionResponse.version">
+<span class="sig-name descname"><span class="pre">version</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Annotated[int,</span> <span class="pre">!B]</span></em><a class="headerlink" href="#socks_router.router.Socks5MethodSelectionResponse.version" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5MethodSelectionResponse.method">
+<span class="sig-name descname"><span class="pre">method</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#socks_router.router.Socks5Method" title="socks_router.router.Socks5Method"><span class="pre">Socks5Method</span></a></em><a class="headerlink" href="#socks_router.router.Socks5MethodSelectionResponse.method" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="socks_router.router.Socks5Request">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Socks5Request</span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#Socks5Request"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.Socks5Request" title="Link to this definition"></a></dt>
+<dd><p>SEE: <a class="reference external" href="https://datatracker.ietf.org/doc/html/rfc1928#section-4">https://datatracker.ietf.org/doc/html/rfc1928#section-4</a>
+Request
+——-
+| version | cmd    | rsv  | atyp   | dst.addr    | dst.port |
+| 1 byte  | 1 byte | 0x00 | 1 byte | 4-255 bytes | 2 bytes  |</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5Request.version">
+<span class="sig-name descname"><span class="pre">version</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Annotated[int,</span> <span class="pre">!B]</span></em><a class="headerlink" href="#socks_router.router.Socks5Request.version" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5Request.command">
+<span class="sig-name descname"><span class="pre">command</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#socks_router.router.Socks5Command" title="socks_router.router.Socks5Command"><span class="pre">Socks5Command</span></a></em><a class="headerlink" href="#socks_router.router.Socks5Request.command" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5Request.reserved">
+<span class="sig-name descname"><span class="pre">reserved</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Annotated[int,</span> <span class="pre">!B]</span></em><a class="headerlink" href="#socks_router.router.Socks5Request.reserved" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5Request.destination">
+<span class="sig-name descname"><span class="pre">destination</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#socks_router.router.Socks5Address" title="socks_router.router.Socks5Address"><span class="pre">Socks5Address</span></a></em><a class="headerlink" href="#socks_router.router.Socks5Request.destination" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="socks_router.router.Socks5Address">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Socks5Address</span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#Socks5Address"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.Socks5Address" title="Link to this definition"></a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.Socks5Address.address_type">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">address_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="pre">Socks5AddressType</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#socks_router.router.IPv4" title="socks_router.router.IPv4"><span class="pre">IPv4</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#Socks5Address.address_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.Socks5Address.address_type" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">address_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="pre">Socks5AddressType</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#socks_router.router.Host" title="socks_router.router.Host"><span class="pre">Host</span></a><span class="p"><span class="pre">]</span></span></span></span></dt>
+<dt class="sig sig-object py">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">address_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="pre">Socks5AddressType</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#socks_router.router.IPv6" title="socks_router.router.IPv6"><span class="pre">IPv6</span></a><span class="p"><span class="pre">]</span></span></span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5Address.type">
+<span class="sig-name descname"><span class="pre">type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#socks_router.router.Socks5AddressType" title="socks_router.router.Socks5AddressType"><span class="pre">Socks5AddressType</span></a></em><a class="headerlink" href="#socks_router.router.Socks5Address.type" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5Address.sockaddr">
+<span class="sig-name descname"><span class="pre">sockaddr</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Annotated[Address,</span> <span class="pre">&amp;,</span> <span class="pre">Socks5Address.type,</span> <span class="pre">address_type]</span></em><a class="headerlink" href="#socks_router.router.Socks5Address.sockaddr" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.Socks5Address.from_address">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_address</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Address</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#Socks5Address.from_address"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.Socks5Address.from_address" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="socks_router.router.Socks5ReplyType">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Socks5ReplyType</span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#Socks5ReplyType"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.Socks5ReplyType" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/enum.html#enum.IntEnum" title="(in Python v3.12)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">enum.IntEnum</span></code></a></p>
+<p>SEE: <a class="reference external" href="https://datatracker.ietf.org/doc/html/rfc1928#section-6">https://datatracker.ietf.org/doc/html/rfc1928#section-6</a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5ReplyType.SUCCEEDED">
+<span class="sig-name descname"><span class="pre">SUCCEEDED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#socks_router.router.Socks5ReplyType.SUCCEEDED" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5ReplyType.GENERAL_SOCKS_SERVER_FAILURE">
+<span class="sig-name descname"><span class="pre">GENERAL_SOCKS_SERVER_FAILURE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#socks_router.router.Socks5ReplyType.GENERAL_SOCKS_SERVER_FAILURE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5ReplyType.CONNECTION_NOT_ALLOWED_BY_RULESET">
+<span class="sig-name descname"><span class="pre">CONNECTION_NOT_ALLOWED_BY_RULESET</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#socks_router.router.Socks5ReplyType.CONNECTION_NOT_ALLOWED_BY_RULESET" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5ReplyType.NETWORK_UNREACHABLE">
+<span class="sig-name descname"><span class="pre">NETWORK_UNREACHABLE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#socks_router.router.Socks5ReplyType.NETWORK_UNREACHABLE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5ReplyType.HOST_UNREACHABLE">
+<span class="sig-name descname"><span class="pre">HOST_UNREACHABLE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></em><a class="headerlink" href="#socks_router.router.Socks5ReplyType.HOST_UNREACHABLE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5ReplyType.CONNECTION_REFUSED">
+<span class="sig-name descname"><span class="pre">CONNECTION_REFUSED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5</span></em><a class="headerlink" href="#socks_router.router.Socks5ReplyType.CONNECTION_REFUSED" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5ReplyType.TTL_EXPIRED">
+<span class="sig-name descname"><span class="pre">TTL_EXPIRED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">6</span></em><a class="headerlink" href="#socks_router.router.Socks5ReplyType.TTL_EXPIRED" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5ReplyType.COMMAND_NOT_SUPPORTED">
+<span class="sig-name descname"><span class="pre">COMMAND_NOT_SUPPORTED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">7</span></em><a class="headerlink" href="#socks_router.router.Socks5ReplyType.COMMAND_NOT_SUPPORTED" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5ReplyType.ADDRESS_TYPE_NOT_SUPPORTED">
+<span class="sig-name descname"><span class="pre">ADDRESS_TYPE_NOT_SUPPORTED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">8</span></em><a class="headerlink" href="#socks_router.router.Socks5ReplyType.ADDRESS_TYPE_NOT_SUPPORTED" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.Socks5ReplyType.__pack_format__">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__pack_format__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#Socks5ReplyType.__pack_format__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.Socks5ReplyType.__pack_format__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="socks_router.router.Socks5ReplyType.message">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">message</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></em><a class="headerlink" href="#socks_router.router.Socks5ReplyType.message" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="socks_router.router.Socks5Reply">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Socks5Reply</span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#Socks5Reply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.Socks5Reply" title="Link to this definition"></a></dt>
+<dd><p>Socks5 Reply
+Reply
+—–
+| version | reply  | rsv  | atyp   | dst.addr    | dst.port |
+| 1 byte  | 1 byte | 0x00 | 1 byte | 4-255 bytes | 2 bytes  |</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5Reply.version">
+<span class="sig-name descname"><span class="pre">version</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Annotated[int,</span> <span class="pre">!B]</span></em><a class="headerlink" href="#socks_router.router.Socks5Reply.version" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5Reply.reply">
+<span class="sig-name descname"><span class="pre">reply</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#socks_router.router.Socks5ReplyType" title="socks_router.router.Socks5ReplyType"><span class="pre">Socks5ReplyType</span></a></em><a class="headerlink" href="#socks_router.router.Socks5Reply.reply" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5Reply.reserved">
+<span class="sig-name descname"><span class="pre">reserved</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Annotated[int,</span> <span class="pre">!B]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#socks_router.router.Socks5Reply.reserved" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5Reply.server_bound_address">
+<span class="sig-name descname"><span class="pre">server_bound_address</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#socks_router.router.Socks5Address" title="socks_router.router.Socks5Address"><span class="pre">Socks5Address</span></a></em><a class="headerlink" href="#socks_router.router.Socks5Reply.server_bound_address" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="socks_router.router.Socks5State">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Socks5State</span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#Socks5State"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.Socks5State" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/enum.html#enum.StrEnum" title="(in Python v3.12)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">enum.StrEnum</span></code></a></p>
+<p>Enum where members are also (and must be) strings</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5State.LISTEN">
+<span class="sig-name descname"><span class="pre">LISTEN</span></span><a class="headerlink" href="#socks_router.router.Socks5State.LISTEN" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5State.HANDSHAKE">
+<span class="sig-name descname"><span class="pre">HANDSHAKE</span></span><a class="headerlink" href="#socks_router.router.Socks5State.HANDSHAKE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5State.REQUEST">
+<span class="sig-name descname"><span class="pre">REQUEST</span></span><a class="headerlink" href="#socks_router.router.Socks5State.REQUEST" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5State.ESTABLISHED">
+<span class="sig-name descname"><span class="pre">ESTABLISHED</span></span><a class="headerlink" href="#socks_router.router.Socks5State.ESTABLISHED" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Socks5State.CLOSED">
+<span class="sig-name descname"><span class="pre">CLOSED</span></span><a class="headerlink" href="#socks_router.router.Socks5State.CLOSED" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="socks_router.router.Address">
+<span class="sig-name descname"><span class="pre">Address</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">TypeAlias</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">IPv4</span> <span class="pre">|</span> <span class="pre">IPv6</span> <span class="pre">|</span> <span class="pre">Host</span></em><a class="headerlink" href="#socks_router.router.Address" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="socks_router.router.IPv4">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IPv4</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#socks_router.router.IPv4" title="socks_router.router.IPv4"><span class="pre">IPv4</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">argv</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/socks_router/models.html#IPv4"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.IPv4" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">SocketAddress</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.IPv4.address">
+<span class="sig-name descname"><span class="pre">address</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#socks_router.router.IPv4" title="socks_router.router.IPv4"><span class="pre">IPv4</span></a></em><a class="headerlink" href="#socks_router.router.IPv4.address" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="socks_router.router.IPv4.IPv4Address">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IPv4Address</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">address</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/socks_router/models.html#IPv4.IPv4Address"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.IPv4.IPv4Address" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv4Address" title="(in Python v3.12)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ipaddress.IPv4Address</span></code></a></p>
+<p>Represent and manipulate single IPv4 Addresses.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.IPv4.IPv4Address.__pack_format__">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__pack_format__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#IPv4.IPv4Address.__pack_format__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.IPv4.IPv4Address.__pack_format__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.IPv4.IPv4Address.__bytes__">
+<span class="sig-name descname"><span class="pre">__bytes__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.12)"><span class="pre">bytes</span></a></span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#IPv4.IPv4Address.__bytes__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.IPv4.IPv4Address.__bytes__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.IPv4.IPv4Address.__unbytes__">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__unbytes__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.12)"><span class="pre">bytes</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#IPv4.IPv4Address.__unbytes__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.IPv4.IPv4Address.__unbytes__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="socks_router.router.IPv6">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IPv6</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#socks_router.router.IPv6" title="socks_router.router.IPv6"><span class="pre">IPv6</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">argv</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/socks_router/models.html#IPv6"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.IPv6" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">SocketAddress</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.IPv6.address">
+<span class="sig-name descname"><span class="pre">address</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#socks_router.router.IPv6" title="socks_router.router.IPv6"><span class="pre">IPv6</span></a></em><a class="headerlink" href="#socks_router.router.IPv6.address" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="socks_router.router.IPv6.IPv6Address">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IPv6Address</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">address</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/socks_router/models.html#IPv6.IPv6Address"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.IPv6.IPv6Address" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv6Address" title="(in Python v3.12)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ipaddress.IPv6Address</span></code></a></p>
+<p>Represent and manipulate single IPv6 Addresses.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.IPv6.IPv6Address.__pack_format__">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__pack_format__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#IPv6.IPv6Address.__pack_format__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.IPv6.IPv6Address.__pack_format__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.IPv6.IPv6Address.__bytes__">
+<span class="sig-name descname"><span class="pre">__bytes__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.12)"><span class="pre">bytes</span></a></span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#IPv6.IPv6Address.__bytes__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.IPv6.IPv6Address.__bytes__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.IPv6.IPv6Address.__unbytes__">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__unbytes__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.12)"><span class="pre">bytes</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#IPv6.IPv6Address.__unbytes__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.IPv6.IPv6Address.__unbytes__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="socks_router.router.IPv6.url_literal">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">url_literal</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></em><a class="headerlink" href="#socks_router.router.IPv6.url_literal" title="Link to this definition"></a></dt>
+<dd><p>//www.ietf.org/rfc/rfc2732.txt</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>SEE</p>
+</dd>
+<dt class="field-even">Type<span class="colon">:</span></dt>
+<dd class="field-even"><p>https</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="socks_router.router.Host">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Host</span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#Host"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.Host" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">SocketAddress</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Host.address">
+<span class="sig-name descname"><span class="pre">address</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Annotated[str,</span> <span class="pre">!B%*s]</span></em><a class="headerlink" href="#socks_router.router.Host.address" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="socks_router.router.Pattern">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Pattern</span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#Pattern"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.Pattern" title="Link to this definition"></a></dt>
+<dd><dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Pattern.address">
+<span class="sig-name descname"><span class="pre">address</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></em><a class="headerlink" href="#socks_router.router.Pattern.address" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.Pattern.is_positive_match">
+<span class="sig-name descname"><span class="pre">is_positive_match</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#socks_router.router.Pattern.is_positive_match" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.Pattern.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/socks_router/models.html#Pattern.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.Pattern.__str__" title="Link to this definition"></a></dt>
+<dd><p>Return str(self).</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="socks_router.router.UpstreamScheme">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">UpstreamScheme</span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#UpstreamScheme"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.UpstreamScheme" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/enum.html#enum.StrEnum" title="(in Python v3.12)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">enum.StrEnum</span></code></a></p>
+<p>Enum where members are also (and must be) strings</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.UpstreamScheme.SSH">
+<span class="sig-name descname"><span class="pre">SSH</span></span><a class="headerlink" href="#socks_router.router.UpstreamScheme.SSH" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.UpstreamScheme.SOCKS5">
+<span class="sig-name descname"><span class="pre">SOCKS5</span></span><a class="headerlink" href="#socks_router.router.UpstreamScheme.SOCKS5" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.UpstreamScheme.SOCKS5H">
+<span class="sig-name descname"><span class="pre">SOCKS5H</span></span><a class="headerlink" href="#socks_router.router.UpstreamScheme.SOCKS5H" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="socks_router.router.UpstreamScheme.default_port">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">default_port</span></span><a class="headerlink" href="#socks_router.router.UpstreamScheme.default_port" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="socks_router.router.UpstreamAddress">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">UpstreamAddress</span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#UpstreamAddress"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.UpstreamAddress" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.12)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.UpstreamAddress.scheme">
+<span class="sig-name descname"><span class="pre">scheme</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#socks_router.router.UpstreamScheme" title="socks_router.router.UpstreamScheme"><span class="pre">UpstreamScheme</span></a></em><a class="headerlink" href="#socks_router.router.UpstreamAddress.scheme" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.UpstreamAddress.address">
+<span class="sig-name descname"><span class="pre">address</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Address</span></em><a class="headerlink" href="#socks_router.router.UpstreamAddress.address" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.UpstreamAddress.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/socks_router/models.html#UpstreamAddress.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.UpstreamAddress.__str__" title="Link to this definition"></a></dt>
+<dd><p>Return str(self).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.UpstreamAddress.with_default_port">
+<span class="sig-name descname"><span class="pre">with_default_port</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#UpstreamAddress.with_default_port"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.UpstreamAddress.with_default_port" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="socks_router.router.SSHUpstream">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SSHUpstream</span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#SSHUpstream"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.SSHUpstream" title="Link to this definition"></a></dt>
+<dd><dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.SSHUpstream.ssh_client">
+<span class="sig-name descname"><span class="pre">ssh_client</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/subprocess.html#subprocess.Popen" title="(in Python v3.12)"><span class="pre">subprocess.Popen</span></a></em><a class="headerlink" href="#socks_router.router.SSHUpstream.ssh_client" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.SSHUpstream.proxy_server">
+<span class="sig-name descname"><span class="pre">proxy_server</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Address</span></em><a class="headerlink" href="#socks_router.router.SSHUpstream.proxy_server" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.SSHUpstream.create">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">upstream</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Address</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proxy_server</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Address</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ssh_options</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><span class="pre">dict</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#SSHUpstream.create"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.SSHUpstream.create" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="socks_router.router.ProxyUpstream">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ProxyUpstream</span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#ProxyUpstream"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.ProxyUpstream" title="Link to this definition"></a></dt>
+<dd><dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.ProxyUpstream.proxy_server">
+<span class="sig-name descname"><span class="pre">proxy_server</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Address</span></em><a class="headerlink" href="#socks_router.router.ProxyUpstream.proxy_server" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="socks_router.router.RetryOptions">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RetryOptions</span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#RetryOptions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.RetryOptions" title="Link to this definition"></a></dt>
+<dd><dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.RetryOptions.tries">
+<span class="sig-name descname"><span class="pre">tries</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></em><a class="headerlink" href="#socks_router.router.RetryOptions.tries" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.RetryOptions.delay">
+<span class="sig-name descname"><span class="pre">delay</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#socks_router.router.RetryOptions.delay" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.RetryOptions.max_delay">
+<span class="sig-name descname"><span class="pre">max_delay</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#socks_router.router.RetryOptions.max_delay" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.RetryOptions.backoff">
+<span class="sig-name descname"><span class="pre">backoff</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#socks_router.router.RetryOptions.backoff" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.RetryOptions.jitter">
+<span class="sig-name descname"><span class="pre">jitter</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#socks_router.router.RetryOptions.jitter" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.RetryOptions.exponential_backoff">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">exponential_backoff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">argv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/socks_router/models.html#RetryOptions.exponential_backoff"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.RetryOptions.exponential_backoff" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="socks_router.router.ApplicationContext">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ApplicationContext</span></span><a class="reference internal" href="../../../_modules/socks_router/models.html#ApplicationContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.ApplicationContext" title="Link to this definition"></a></dt>
+<dd><dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.ApplicationContext.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'socks-router'</span></em><a class="headerlink" href="#socks_router.router.ApplicationContext.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.ApplicationContext.routing_table">
+<span class="sig-name descname"><span class="pre">routing_table</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">RoutingTable</span></em><a class="headerlink" href="#socks_router.router.ApplicationContext.routing_table" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.ApplicationContext.ssh_connection_timeout">
+<span class="sig-name descname"><span class="pre">ssh_connection_timeout</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">10</span></em><a class="headerlink" href="#socks_router.router.ApplicationContext.ssh_connection_timeout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.ApplicationContext.remote_socket_timeout">
+<span class="sig-name descname"><span class="pre">remote_socket_timeout</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">10</span></em><a class="headerlink" href="#socks_router.router.ApplicationContext.remote_socket_timeout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.ApplicationContext.proxy_poll_socket_timeout">
+<span class="sig-name descname"><span class="pre">proxy_poll_socket_timeout</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.1</span></em><a class="headerlink" href="#socks_router.router.ApplicationContext.proxy_poll_socket_timeout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.ApplicationContext.proxy_retry_options">
+<span class="sig-name descname"><span class="pre">proxy_retry_options</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#socks_router.router.RetryOptions" title="socks_router.router.RetryOptions"><span class="pre">RetryOptions</span></a></em><a class="headerlink" href="#socks_router.router.ApplicationContext.proxy_retry_options" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.ApplicationContext.mutex">
+<span class="sig-name descname"><span class="pre">mutex</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/threading.html#threading.Lock" title="(in Python v3.12)"><span class="pre">threading.Lock</span></a></em><a class="headerlink" href="#socks_router.router.ApplicationContext.mutex" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.ApplicationContext.upstreams">
+<span class="sig-name descname"><span class="pre">upstreams</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping" title="(in Python v3.12)"><span class="pre">collections.abc.MutableMapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#socks_router.router.UpstreamAddress" title="socks_router.router.UpstreamAddress"><span class="pre">UpstreamAddress</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Upstream</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#socks_router.router.ApplicationContext.upstreams" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.ApplicationContext.is_terminating">
+<span class="sig-name descname"><span class="pre">is_terminating</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#socks_router.router.ApplicationContext.is_terminating" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="socks_router.router.RoutingTable">
+<span class="sig-name descname"><span class="pre">RoutingTable</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">TypeAlias</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Mapping[UpstreamAddress,</span> <span class="pre">RoutingEntry]</span></em><a class="headerlink" href="#socks_router.router.RoutingTable" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="socks_router.router.Socks5AddressTypes">
+<span class="sig-name descname"><span class="pre">Socks5AddressTypes</span></span><a class="headerlink" href="#socks_router.router.Socks5AddressTypes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="socks_router.router.read_socket">
+<span class="sig-name descname"><span class="pre">read_socket</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sock</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/socket.html#socket.socket" title="(in Python v3.12)"><span class="pre">socket.socket</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#type" title="(in Python v3.12)"><span class="pre">type</span></a><span class="p"><span class="pre">[</span></span><span class="pre">read_socket.T</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">read_socket.T</span></span></span><a class="reference internal" href="../../../_modules/socks_router/utils.html#read_socket"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.read_socket" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="socks_router.router.write_socket">
+<span class="sig-name descname"><span class="pre">write_socket</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sock</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/socket.html#socket.socket" title="(in Python v3.12)"><span class="pre">socket.socket</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">instance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">write_socket.T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#type" title="(in Python v3.12)"><span class="pre">type</span></a><span class="p"><span class="pre">[</span></span><span class="pre">write_socket.T</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../_modules/socks_router/utils.html#write_socket"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.write_socket" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="socks_router.router.free_port">
+<span class="sig-name descname"><span class="pre">free_port</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.12)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/socks_router/utils.html#free_port"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.free_port" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="socks_router.router.CHUNK_SIZE">
+<span class="sig-name descname"><span class="pre">CHUNK_SIZE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4096</span></em><a class="headerlink" href="#socks_router.router.CHUNK_SIZE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="socks_router.router.logger">
+<span class="sig-name descname"><span class="pre">logger</span></span><a class="headerlink" href="#socks_router.router.logger" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="socks_router.router.create_socket">
+<span class="sig-name descname"><span class="pre">create_socket</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../models/index.html#socks_router.models.Socks5AddressType" title="socks_router.models.Socks5AddressType"><span class="pre">socks_router.models.Socks5AddressType</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">socks.socksocket</span></span></span><a class="reference internal" href="../../../_modules/socks_router/router.html#create_socket"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.create_socket" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="socks_router.router.with_proxy">
+<span class="sig-name descname"><span class="pre">with_proxy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">socket</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">socks.socksocket</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proxy_server</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">socks_router.models.Address</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">socks.socksocket</span></span></span><a class="reference internal" href="../../../_modules/socks_router/router.html#with_proxy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.with_proxy" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="socks_router.router.poll_socket">
+<span class="sig-name descname"><span class="pre">poll_socket</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">destination</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">socks_router.models.Address</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/socks_router/router.html#poll_socket"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.poll_socket" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="socks_router.router.resolve_address">
+<span class="sig-name descname"><span class="pre">resolve_address</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">socks_router.models.Address</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.12)"><span class="pre">logging.Logger</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">logger</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">socks_router.models.Address</span></span></span><a class="reference internal" href="../../../_modules/socks_router/router.html#resolve_address"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.resolve_address" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="socks_router.router.create_remote">
+<span class="sig-name descname"><span class="pre">create_remote</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">socks_router.models.Address</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proxy_server</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">socks_router.models.Address</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">socks.socksocket</span></span></span><a class="reference internal" href="../../../_modules/socks_router/router.html#create_remote"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.create_remote" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="socks_router.router.connect_remote">
+<span class="sig-name descname"><span class="pre">connect_remote</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">destination</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">socks_router.models.Address</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proxy_server</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">socks_router.models.Address</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remote_socket_timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proxy_poll_socket_timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proxy_retry_options</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../models/index.html#socks_router.models.RetryOptions" title="socks_router.models.RetryOptions"><span class="pre">socks_router.models.RetryOptions</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.12)"><span class="pre">logging.Logger</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">logger</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">socks.socksocket</span></span></span><a class="reference internal" href="../../../_modules/socks_router/router.html#connect_remote"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.connect_remote" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="socks_router.router.exchange_loop">
+<span class="sig-name descname"><span class="pre">exchange_loop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/socket.html#socket.socket" title="(in Python v3.12)"><span class="pre">socket.socket</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">remote</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/socket.html#socket.socket" title="(in Python v3.12)"><span class="pre">socket.socket</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">CHUNK_SIZE</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/socks_router/router.html#exchange_loop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.exchange_loop" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="socks_router.router.match_upstream">
+<span class="sig-name descname"><span class="pre">match_upstream</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">routing_table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">socks_router.models.RoutingTable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">socks_router.models.Address</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../models/index.html#socks_router.models.UpstreamAddress" title="socks_router.models.UpstreamAddress"><span class="pre">socks_router.models.UpstreamAddress</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../_modules/socks_router/router.html#match_upstream"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.match_upstream" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="socks_router.router.SocksRouter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SocksRouter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">argv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../models/index.html#socks_router.models.ApplicationContext" title="socks_router.models.ApplicationContext"><span class="pre">socks_router.models.ApplicationContext</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">address_family</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">socket.AddressFamily</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">socket.AF_INET</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/socks_router/router.html#SocksRouter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.SocksRouter" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/socketserver.html#socketserver.ThreadingTCPServer" title="(in Python v3.12)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">socketserver.ThreadingTCPServer</span></code></a></p>
+<p>Mix-in class to handle each request in a new thread.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.SocksRouter.allow_reuse_address">
+<span class="sig-name descname"><span class="pre">allow_reuse_address</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#socks_router.router.SocksRouter.allow_reuse_address" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.SocksRouter.daemon_threads">
+<span class="sig-name descname"><span class="pre">daemon_threads</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#socks_router.router.SocksRouter.daemon_threads" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.SocksRouter.block_on_close">
+<span class="sig-name descname"><span class="pre">block_on_close</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#socks_router.router.SocksRouter.block_on_close" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.SocksRouter.context">
+<span class="sig-name descname"><span class="pre">context</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../models/index.html#socks_router.models.ApplicationContext" title="socks_router.models.ApplicationContext"><span class="pre">socks_router.models.ApplicationContext</span></a></em><a class="headerlink" href="#socks_router.router.SocksRouter.context" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.SocksRouter.logger">
+<span class="sig-name descname"><span class="pre">logger</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.12)"><span class="pre">logging.Logger</span></a></em><a class="headerlink" href="#socks_router.router.SocksRouter.logger" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="socks_router.router.SocksRouter.address">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">address</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">socks_router.models.Address</span></em><a class="headerlink" href="#socks_router.router.SocksRouter.address" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.SocksRouter.server_activate">
+<span class="sig-name descname"><span class="pre">server_activate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../_modules/socks_router/router.html#SocksRouter.server_activate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.SocksRouter.server_activate" title="Link to this definition"></a></dt>
+<dd><p>Called by constructor to activate the server.</p>
+<p>May be overridden.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.SocksRouter.get_request">
+<span class="sig-name descname"><span class="pre">get_request</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/socks_router/router.html#SocksRouter.get_request"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.SocksRouter.get_request" title="Link to this definition"></a></dt>
+<dd><p>Get the request and client address from the socket.</p>
+<p>May be overridden.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.SocksRouter.shutdown_request">
+<span class="sig-name descname"><span class="pre">shutdown_request</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/socket.html#socket.socket" title="(in Python v3.12)"><span class="pre">socket.socket</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.12)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.12)"><span class="pre">bytes</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/socket.html#socket.socket" title="(in Python v3.12)"><span class="pre">socket.socket</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../_modules/socks_router/router.html#SocksRouter.shutdown_request"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.SocksRouter.shutdown_request" title="Link to this definition"></a></dt>
+<dd><p>Called to shutdown and close an individual request.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.SocksRouter.shutdown">
+<span class="sig-name descname"><span class="pre">shutdown</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../_modules/socks_router/router.html#SocksRouter.shutdown"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.SocksRouter.shutdown" title="Link to this definition"></a></dt>
+<dd><p>Stops the serve_forever loop.</p>
+<p>Blocks until the loop has finished. This must be called while
+serve_forever() is running in another thread, or it will
+deadlock.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="socks_router.router.SocksRouterRequestHandler">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SocksRouterRequestHandler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">client_address</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">server</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/socks_router/router.html#SocksRouterRequestHandler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.SocksRouterRequestHandler" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/socketserver.html#socketserver.StreamRequestHandler" title="(in Python v3.12)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">socketserver.StreamRequestHandler</span></code></a></p>
+<p>Define self.rfile and self.wfile for stream sockets.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.SocksRouterRequestHandler.server">
+<span class="sig-name descname"><span class="pre">server</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#socks_router.router.SocksRouter" title="socks_router.router.SocksRouter"><span class="pre">SocksRouter</span></a></em><a class="headerlink" href="#socks_router.router.SocksRouterRequestHandler.server" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.SocksRouterRequestHandler.state">
+<span class="sig-name descname"><span class="pre">state</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../models/index.html#socks_router.models.Socks5State" title="socks_router.models.Socks5State"><span class="pre">socks_router.models.Socks5State</span></a></em><a class="headerlink" href="#socks_router.router.SocksRouterRequestHandler.state" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.router.SocksRouterRequestHandler.remote">
+<span class="sig-name descname"><span class="pre">remote</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">socks.socksocket</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#socks_router.router.SocksRouterRequestHandler.remote" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="socks_router.router.SocksRouterRequestHandler.logger">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">logger</span></span><a class="headerlink" href="#socks_router.router.SocksRouterRequestHandler.logger" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.SocksRouterRequestHandler.acquire_upstream">
+<span class="sig-name descname"><span class="pre">acquire_upstream</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">destination</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">socks_router.models.Address</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../models/index.html#socks_router.models.UpstreamAddress" title="socks_router.models.UpstreamAddress"><span class="pre">socks_router.models.UpstreamAddress</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../_modules/socks_router/router.html#SocksRouterRequestHandler.acquire_upstream"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.SocksRouterRequestHandler.acquire_upstream" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.SocksRouterRequestHandler.handshake">
+<span class="sig-name descname"><span class="pre">handshake</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/socks_router/router.html#SocksRouterRequestHandler.handshake"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.SocksRouterRequestHandler.handshake" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.SocksRouterRequestHandler.reply">
+<span class="sig-name descname"><span class="pre">reply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../models/index.html#socks_router.models.Socks5ReplyType" title="socks_router.models.Socks5ReplyType"><span class="pre">socks_router.models.Socks5ReplyType</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/socks_router/router.html#SocksRouterRequestHandler.reply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.SocksRouterRequestHandler.reply" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.SocksRouterRequestHandler.connect_remote">
+<span class="sig-name descname"><span class="pre">connect_remote</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">destination</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">socks_router.models.Address</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">socks.socksocket</span></span></span><a class="reference internal" href="../../../_modules/socks_router/router.html#SocksRouterRequestHandler.connect_remote"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.SocksRouterRequestHandler.connect_remote" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.SocksRouterRequestHandler.handle_request">
+<span class="sig-name descname"><span class="pre">handle_request</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/socks_router/router.html#SocksRouterRequestHandler.handle_request"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.SocksRouterRequestHandler.handle_request" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.SocksRouterRequestHandler.exchange">
+<span class="sig-name descname"><span class="pre">exchange</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/socks_router/router.html#SocksRouterRequestHandler.exchange"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.SocksRouterRequestHandler.exchange" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.SocksRouterRequestHandler.setup">
+<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/socks_router/router.html#SocksRouterRequestHandler.setup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.SocksRouterRequestHandler.setup" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.SocksRouterRequestHandler.handle">
+<span class="sig-name descname"><span class="pre">handle</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/socks_router/router.html#SocksRouterRequestHandler.handle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.SocksRouterRequestHandler.handle" title="Link to this definition"></a></dt>
+<dd><p>Handle incoming connections</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.router.SocksRouterRequestHandler.finish">
+<span class="sig-name descname"><span class="pre">finish</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/socks_router/router.html#SocksRouterRequestHandler.finish"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.router.SocksRouterRequestHandler.finish" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../parsers/index.html" class="btn btn-neutral float-left" title="socks_router.parsers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../utils/index.html" class="btn btn-neutral float-right" title="socks_router.utils" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
