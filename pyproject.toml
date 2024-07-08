@@ -51,7 +51,7 @@ pre-commit = "^3.7.1"
 pytest-httpserver = "^1.0.10"
 
 [tool.poetry.group.release.dependencies]
-python-semantic-release = "^9.1.1"
+python-semantic-release = "^9.8.5"
 
 [tool.mypy]
 install_types = true
