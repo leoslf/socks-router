@@ -1,6 +1,16 @@
 # CHANGELOG
 
+## v0.1.1 (2024-08-05)
 
+### Ci
+
+* ci: switch to sonarcloud ([`bba275f`](https://github.com/leoslf/socks-router/commit/bba275fc166b1dcd887634d7f668f131642e0e0e))
+
+* ci: build docs after release ([`a4a9d35`](https://github.com/leoslf/socks-router/commit/a4a9d356852a6fbd8cbf7c1b743e19b9151ee146))
+
+### Fix
+
+* fix(exchange-loop): fixed filedescriptor out of range in select() (#22) ([`a89f59d`](https://github.com/leoslf/socks-router/commit/a89f59d59890ddfe2722cf6cd5a05acf9efe583b))
 
 ## v0.1.0 (2024-06-13)
 
