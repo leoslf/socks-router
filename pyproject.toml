@@ -49,6 +49,7 @@ pytest-env = "^1.1.3"
 werkzeug = "2.0.0"
 pre-commit = "^3.7.1"
 pytest-httpserver = "^1.0.10"
+pytest-reraise = "^2.1.2"
 
 [tool.poetry.group.release.dependencies]
 python-semantic-release = "^9.1.1"

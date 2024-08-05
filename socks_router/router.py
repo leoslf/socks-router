@@ -6,12 +6,12 @@ import fnmatch
 
 import errno
 import socket
+import selectors
 import socks
 
 from typing import Optional, assert_never, cast
 from collections.abc import Iterator
 from more_itertools import partition
-from select import select
 from socketserver import ThreadingTCPServer, StreamRequestHandler
 
 from retry.api import retry_call
@@ -52,12 +52,13 @@ CHUNK_SIZE = 4096
 logger = logging.getLogger(__name__)
 
 
-def create_socket(type: Socks5AddressType) -> socks.socksocket:
+def create_socket[**P](type: Socks5AddressType, *args: P.args, **kwargs: P.kwargs) -> socks.socksocket:
+    logger.info("create_socket")
     match type:
         case Socks5AddressType.IPv4 | Socks5AddressType.DOMAINNAME:
-            return socks.socksocket(socket.AF_INET, socket.SOCK_STREAM, proto=0)
+            return socks.socksocket(socket.AF_INET, socket.SOCK_STREAM, proto=0, *args, **kwargs)
         case Socks5AddressType.IPv6:
-            return socks.socksocket(socket.AF_INET6, socket.SOCK_STREAM, proto=0)
+            return socks.socksocket(socket.AF_INET6, socket.SOCK_STREAM, proto=0, *args, **kwargs)
         case _ as unreachable:
             assert_never(unreachable)
 
@@ -130,17 +131,16 @@ def exchange_loop(
     chunk_size: int = CHUNK_SIZE,
     timeout: Optional[float] = None,
 ):
-    while True:
-        r, w, e = select([client, remote], [client, remote], [], timeout)
-        if client in r and remote in w:
-            data = client.recv(chunk_size)
-            if remote.send(data) <= 0:
-                break
+    with selectors.DefaultSelector() as selector:
+        selector.register(client, selectors.EVENT_READ, remote)
+        selector.register(remote, selectors.EVENT_READ, client)
 
-        if remote in r and client in w:
-            data = remote.recv(chunk_size)
-            if client.send(data) <= 0:
-                break
+        while len(selector.get_map().keys()) == 2:
+            for key, mask in selector.select(timeout):
+                if data := cast(socket.socket, key.fileobj).recv(chunk_size):
+                    cast(socket.socket, key.data).sendall(data)
+                else:
+                    selector.unregister(key.fileobj)
 
 
 def match_upstream(routing_table: RoutingTable, destination: Address) -> Optional[UpstreamAddress]:
@@ -382,8 +382,7 @@ class SocksRouterRequestHandler(StreamRequestHandler):
         self.state = Socks5State.CLOSED
         return
 
-        # TODO: When a reply (REP value other than X'00') indicates a failure, the SOCKS server MUST terminate the TCP connection shortly after sending the reply.  This must be no more than 10 seconds after detecting the condition that caused a failure.
-
+    # TODO: When a reply (REP value other than X'00') indicates a failure, the SOCKS server MUST terminate the TCP connection shortly after sending the reply.  This must be no more than 10 seconds after detecting the condition that caused a failure.
     def exchange(self):
         assert self.remote is not None
         exchange_loop(self.connection, self.remote, timeout=0)

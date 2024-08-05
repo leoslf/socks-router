@@ -1,9 +1,11 @@
 import sys
+import os
 import logging
 
 import io
 import functools
 import contextlib
+import resource
 import ipaddress
 import threading
 import subprocess
@@ -120,7 +122,8 @@ def describe_create_socket():
         ids=ids,
     )
     def it_should_create_the_socket(type):
-        assert isinstance(create_socket(type), socks.socksocket)
+        with create_socket(type) as socket:
+            assert isinstance(socket, socks.socksocket)
 
 
 def describe_with_proxy():
@@ -138,28 +141,6 @@ def describe_connect_remote():
     def it_should_connect_to_socket(mocker, client):
         mocker.patch("socks_router.router.create_socket").__enter__.return_value = client
         connect_remote(IPv4("127.0.0.1", 12345), logger=logger)
-
-
-@contextlib.contextmanager
-def daemonize(
-    # NOTE: if we have to use server.address we have to bind with an actual address instead of 0.0.0.0 or ::
-    address: str = "127.0.0.1",
-    type: type[IPv4] | type[IPv6] | type[Host] = IPv4,
-    handler: type = SocksRouterRequestHandler,
-    **kwargs,
-) -> Iterator[SocksRouter]:
-    _, port = free_port("127.0.0.1")
-    server = SocksRouter(
-        (address, port),
-        handler,
-        address_family={IPv4: socket.AF_INET, IPv6: socket.AF_INET6, Host: socket.AF_INET}[type],
-        **kwargs,
-    )
-    try:
-        threading.Thread(target=server.serve_forever, name=server.context.name, daemon=True).start()
-        yield server
-    finally:
-        server.shutdown()
 
 
 def describe_match_upstream():
@@ -189,9 +170,34 @@ def describe_SocksRouter():
         # must listen on ipv6 to work for both ipv4 and ipv6
         return ("::", 0)
 
+    @pytest.fixture
+    def daemonize(reraise):
+        @contextlib.contextmanager
+        def daemonize(
+            # NOTE: if we have to use server.address we have to bind with an actual address instead of 0.0.0.0 or ::
+            address: str = "127.0.0.1",
+            type: type[IPv4] | type[IPv6] | type[Host] = IPv4,
+            handler: type = SocksRouterRequestHandler,
+            **kwargs,
+        ) -> Iterator[SocksRouter]:
+            _, port = free_port("127.0.0.1")
+            server = SocksRouter(
+                (address, port),
+                handler,
+                address_family={IPv4: socket.AF_INET, IPv6: socket.AF_INET6, Host: socket.AF_INET}[type],
+                **kwargs,
+            )
+            try:
+                threading.Thread(target=reraise.wrap(server.serve_forever), name=server.context.name, daemon=True).start()
+                yield server
+            finally:
+                server.shutdown()
+
+        return daemonize
+
     def when_used_with_empty_routing_table():
         @pytest.mark.parametrize("address_type,address", [(IPv4, "127.0.0.1"), (Host, "localhost"), (IPv6, "::1")])
-        def it_should_transparently_go_through(httpserver, address_type, address):
+        def it_should_transparently_go_through(daemonize, httpserver, address_type, address):
             destination = address_type(address, httpserver.port)
             httpserver.expect_request("/").respond_with_json(mocked_response := {"foo": "bar"})
             # we use a server without routing table to be a pass-through socks5 server
@@ -208,7 +214,7 @@ def describe_SocksRouter():
     def when_used_with_transparent_socks5_upstream():
         @pytest.mark.parametrize("address_type,address", [(IPv4, "127.0.0.1"), (Host, "localhost"), (IPv6, "::1")])
         @pytest.mark.parametrize("scheme", [UpstreamScheme.SOCKS5, UpstreamScheme.SOCKS5H])
-        def it_should_relay_through_upstream(httpserver, scheme, address_type, address):
+        def it_should_relay_through_upstream(daemonize, httpserver, scheme, address_type, address):
             destination = address_type(address, httpserver.port)
             httpserver.expect_request("/").respond_with_json(mocked_response := {"foo": "bar"})
             # we use a server without routing table to be a pass-through socks5 server
@@ -241,7 +247,7 @@ def describe_SocksRouter():
         @pytest.mark.parametrize("address_type,address", [(IPv4, "127.0.0.1"), (Host, "localhost"), (IPv6, "::1")])
         @pytest.mark.parametrize("proxy_address_type,proxy_address", [(IPv4, "127.0.0.1"), (Host, "localhost"), (IPv6, "::1")])
         def it_should_successfully_return_and_resuse_ssh_upstream_in_second_pass(
-            mocker, httpserver, address_type, address, proxy_address_type, proxy_address
+            mocker, daemonize, httpserver, address_type, address, proxy_address_type, proxy_address
         ):
             if sys.platform == "linux" and any(type == IPv6 for type in [address_type, proxy_address_type]):
                 return pytest.skip("skip IPv6 tests on linux to avoid address family not supported")
@@ -278,7 +284,7 @@ def describe_SocksRouter():
                 create.assert_called_once()
 
         @pytest.mark.parametrize("address_type,address", [(IPv4, "127.0.0.1"), (Host, "localhost"), (IPv6, "::1")])
-        def it_should_recreate_ssh_upstream_if_subprocess_is_dead(mocker, httpserver, address_type, address):
+        def it_should_recreate_ssh_upstream_if_subprocess_is_dead(mocker, daemonize, httpserver, address_type, address):
             if sys.platform == "linux" and address_type == IPv6:
                 return pytest.skip("skip IPv6 tests on linux to avoid address family not supported")
 
@@ -311,7 +317,7 @@ def describe_SocksRouter():
                 ssh_client.poll.assert_called_with()
                 assert context.upstreams[upstream_address] != original_upstream
 
-        def it_should_not_explicitly_kill_ssh_client_if_dead_on_shutdown(mocker):
+        def it_should_not_explicitly_kill_ssh_client_if_dead_on_shutdown(mocker, daemonize):
             ssh_client = mocker.Mock(subprocess.Popen, stdout=io.StringIO(), stderr=io.StringIO())
             upstream_address = UpstreamAddress(UpstreamScheme.SSH, Host("127.0.0.1", -1))
             upstream = SSHUpstream(ssh_client, upstream_address.address)
@@ -333,7 +339,7 @@ def describe_SocksRouter():
 
     def when_client_attempt_to_use_socks4():
         @pytest.mark.parametrize("address_type,address", [(IPv4, "127.0.0.1"), (Host, "localhost"), (IPv6, "::1")])
-        def it_should_close_socket(httpserver, address_type, address):
+        def it_should_close_socket(daemonize, httpserver, address_type, address):
             destination = address_type(address, httpserver.port)
             with daemonize(address, type=address_type) as proxy:
                 with pytest.raises(
@@ -345,7 +351,7 @@ def describe_SocksRouter():
                     ).json()
 
     def when_client_attempt_to_use_unacceptable_methods():
-        def it_should_reply_no_acceptable_methods():
+        def it_should_reply_no_acceptable_methods(daemonize):
             with daemonize() as proxy:
                 with connect_remote(proxy.address) as client:
                     # handshake
@@ -355,7 +361,7 @@ def describe_SocksRouter():
                     )
 
     def when_client_attempt_to_use_command_other_than_connect():
-        def it_should_reply_command_not_supported():
+        def it_should_reply_command_not_supported(daemonize):
             with daemonize() as proxy:
                 # handshake
                 with connect_remote(proxy.address) as client:
@@ -390,7 +396,7 @@ def describe_SocksRouter():
             ],
             ids=ids,
         )
-        def it_should_fail_gracefully(scheme, destination, reply):
+        def it_should_fail_gracefully(daemonize, scheme, destination, reply):
             if sys.platform == "linux" and isinstance(destination, IPv6):
                 return pytest.skip("skip IPv6 tests on linux to avoid address family not supported")
 
@@ -437,7 +443,7 @@ def describe_SocksRouter():
             ],
             ids=ids,
         )
-        def it_should_fail_gracefully(httpserver, upstream_address, replies):
+        def it_should_fail_gracefully(daemonize, httpserver, upstream_address, replies):
             httpserver.expect_request("/").respond_with_json({})
 
             context = ApplicationContext(
@@ -455,7 +461,7 @@ def describe_SocksRouter():
 
     def when_an_unrecognized_exception_raised_during_handle_request():
         @pytest.mark.parametrize("exception", [Exception, OSError])
-        def it_should_reply_GENERAL_SOCKS_SERVER_FAILURE(mocker, httpserver, exception):
+        def it_should_reply_GENERAL_SOCKS_SERVER_FAILURE(mocker, daemonize, httpserver, exception):
             mocker.patch("socks_router.router.connect_remote", side_effect=exception)
             httpserver.expect_request("/").respond_with_json({})
             with daemonize() as proxy:
@@ -466,7 +472,7 @@ def describe_SocksRouter():
 
     def when_socket_exceptions_raised_during_handle_request():
         @pytest.mark.parametrize("errno", ["EAI_NODATA", "EAI_NONAME", "EAI_ADDRFAMILY", "EAI_FAMILY"])
-        def it_should_reply_other_than_GENERAL_SOCKS_SERVER_FAILURE(mocker, httpserver, errno):
+        def it_should_reply_other_than_GENERAL_SOCKS_SERVER_FAILURE(mocker, daemonize, httpserver, errno):
             mocker.patch("socks_router.router.connect_remote", side_effect=OSError(getattr(socket, errno), ""))
             httpserver.expect_request("/").respond_with_json({})
             with daemonize() as proxy:
@@ -477,7 +483,7 @@ def describe_SocksRouter():
                     requests.get(httpserver.url_for("/"), proxies=proxies(proxy.address)).json()
 
     def when_an_unrecognized_exception_raised_elsewhere():
-        def it_should_handle_it_gracefully(httpserver):
+        def it_should_handle_it_gracefully(daemonize, httpserver):
             httpserver.expect_request("/").respond_with_json({})
 
             class ExceptionRaisingRequestHandler(SocksRouterRequestHandler):
@@ -492,7 +498,7 @@ def describe_SocksRouter():
 
     def when_upstream_server_does_not_behave():
         @pytest.mark.parametrize("scheme", [UpstreamScheme.SOCKS5, UpstreamScheme.SOCKS5H])
-        def it_should_reply_with_GENERAL_SOCKS_SERVER_FAILURE(httpserver, scheme):
+        def it_should_reply_with_GENERAL_SOCKS_SERVER_FAILURE(daemonize, httpserver, scheme):
             destination = IPv4("127.0.0.1", httpserver.port)
             httpserver.expect_request("/").respond_with_json({})
 
@@ -517,3 +523,38 @@ def describe_SocksRouter():
                             f"http://{destination}/",
                             proxies=proxies(proxy.address),
                         ).json()
+
+    def when_filedesctiprors_get_out_of_FD_SETSIZE():
+        @pytest.mark.parametrize("address_type,address", [(IPv4, "127.0.0.1")])
+        def it_should_not_throw_filedescriptor_out_of_range(daemonize, httpserver, address_type, address):
+            FD_SETSIZE = resource.getrlimit(resource.RLIMIT_NOFILE)[0]
+            # create arbitrary pipes to use up the file descriptors
+            pipes = []
+            while True:
+                pipes.append(pipe := os.pipe())
+                # reserve file descriptors for the followings
+                # 1. client HTTP socket
+                # 2. client socks socket
+                # 3. server side connection to client
+                # 4. server side remote
+                # 5. http server connection to client
+                if any(fd >= (FD_SETSIZE - 5) for fd in pipe):
+                    break
+
+            destination = address_type(address, httpserver.port)
+            httpserver.expect_request("/").respond_with_json(mocked_response := {"foo": "bar"})
+            with pytest.raises(requests.exceptions.ConnectionError):
+                # we use a server without routing table to be a pass-through socks5 server
+                with daemonize(address, context=ApplicationContext("passthrough"), type=address_type) as passthrough:
+                    # using the pass-through server from client
+                    assert (
+                        requests.get(
+                            f"http://{destination}/",
+                            proxies=proxies(passthrough.address),
+                        ).json()
+                        == mocked_response
+                    )
+
+            for pipe in pipes:
+                for fd in pipe:
+                    os.close(fd)
