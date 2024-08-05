@@ -1,0 +1,46 @@
+socks_router.utils
+==================
+
+.. py:module:: socks_router.utils
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   socks_router.utils.resolve_type
+   socks_router.utils.to_bin
+   socks_router.utils.to_oct
+   socks_router.utils.to_hex
+   socks_router.utils.is_optional
+   socks_router.utils.is_list
+   socks_router.utils.tokenize_pack_format
+   socks_router.utils.read_socket
+   socks_router.utils.write_socket
+   socks_router.utils.free_port
+
+
+Module Contents
+---------------
+
+.. py:function:: resolve_type(type: str, module: Optional[types.ModuleType] = None) -> resolve_type.type
+
+.. py:function:: to_bin(value: int) -> str
+
+.. py:function:: to_oct(value: int) -> str
+
+.. py:function:: to_hex(value: int) -> str
+
+.. py:function:: is_optional(field)
+
+.. py:function:: is_list(type: type) -> TypeGuard[list[is_list.T]]
+
+.. py:function:: tokenize_pack_format(format: str) -> collections.abc.Iterator[socks_router.models.PackingSequence]
+
+.. py:function:: read_socket(sock: socket.socket, type: type[read_socket.T], format: Optional[str] = None) -> read_socket.T
+
+.. py:function:: write_socket(sock: socket.socket, instance: write_socket.T, format: Optional[str] = None, type: Optional[type[write_socket.T]] = None) -> None
+
+.. py:function:: free_port(address: str = '') -> tuple[str, int]
+

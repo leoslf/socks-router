@@ -1,0 +1,192 @@
+socks_router.router
+===================
+
+.. py:module:: socks_router.router
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   socks_router.router.CHUNK_SIZE
+   socks_router.router.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   socks_router.router.SocksRouter
+   socks_router.router.SocksRouterRequestHandler
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   socks_router.router.create_socket
+   socks_router.router.with_proxy
+   socks_router.router.poll_socket
+   socks_router.router.resolve_address
+   socks_router.router.create_remote
+   socks_router.router.connect_remote
+   socks_router.router.exchange_loop
+   socks_router.router.match_upstream
+
+
+Module Contents
+---------------
+
+.. py:data:: CHUNK_SIZE
+   :value: 4096
+
+
+.. py:data:: logger
+
+.. py:function:: create_socket(type: socks_router.models.Socks5AddressType, *args: create_socket.P, **kwargs: create_socket.P) -> socks.socksocket
+
+.. py:function:: with_proxy(socket: socks.socksocket, proxy_server: Optional[socks_router.models.Address] = None) -> socks.socksocket
+
+.. py:function:: poll_socket(destination: socks_router.models.Address, timeout: float = 0.1)
+
+.. py:function:: resolve_address(address: socks_router.models.Address, logger: logging.Logger = logger, **kwargs) -> socks_router.models.Address
+
+.. py:function:: create_remote(address: socks_router.models.Address, proxy_server: Optional[socks_router.models.Address] = None) -> socks.socksocket
+
+.. py:function:: connect_remote(destination: socks_router.models.Address, proxy_server: Optional[socks_router.models.Address] = None, remote_socket_timeout: Optional[float] = None, proxy_poll_socket_timeout: float = 0.1, proxy_retry_options: Optional[socks_router.models.RetryOptions] = None, logger: logging.Logger = logger) -> socks.socksocket
+
+.. py:function:: exchange_loop(client: socket.socket, remote: socket.socket, chunk_size: int = CHUNK_SIZE, timeout: Optional[float] = None)
+
+.. py:function:: match_upstream(routing_table: socks_router.models.RoutingTable, destination: socks_router.models.Address) -> Optional[socks_router.models.UpstreamAddress]
+
+.. py:class:: SocksRouter(*argv, context: Optional[socks_router.models.ApplicationContext] = None, address_family: socket.AddressFamily = socket.AF_INET, **kwargs)
+
+   Bases: :py:obj:`socketserver.ThreadingTCPServer`
+
+
+   Mix-in class to handle each request in a new thread.
+
+
+   .. py:attribute:: allow_reuse_address
+      :value: True
+
+
+
+   .. py:attribute:: daemon_threads
+      :value: True
+
+
+
+   .. py:attribute:: block_on_close
+      :value: True
+
+
+
+   .. py:attribute:: context
+      :type:  socks_router.models.ApplicationContext
+
+
+   .. py:attribute:: logger
+      :type:  logging.Logger
+
+
+   .. py:attribute:: address_family
+
+
+   .. py:property:: address
+      :type: socks_router.models.Address
+
+
+
+   .. py:method:: server_activate() -> None
+
+      Called by constructor to activate the server.
+
+      May be overridden.
+
+
+
+
+   .. py:method:: get_request()
+
+      Get the request and client address from the socket.
+
+      May be overridden.
+
+
+
+
+   .. py:method:: shutdown_request(request: socket.socket | tuple[bytes, socket.socket]) -> None
+
+      Called to shutdown and close an individual request.
+
+
+
+   .. py:method:: shutdown() -> None
+
+      Stops the serve_forever loop.
+
+      Blocks until the loop has finished. This must be called while
+      serve_forever() is running in another thread, or it will
+      deadlock.
+
+
+
+.. py:class:: SocksRouterRequestHandler(request, client_address, server)
+
+   Bases: :py:obj:`socketserver.StreamRequestHandler`
+
+
+   Define self.rfile and self.wfile for stream sockets.
+
+
+   .. py:attribute:: server
+      :type:  SocksRouter
+
+
+   .. py:attribute:: state
+      :type:  socks_router.models.Socks5State
+
+
+   .. py:attribute:: remote
+      :type:  Optional[socks.socksocket]
+      :value: None
+
+
+
+   .. py:property:: logger
+
+
+   .. py:method:: acquire_upstream(destination: socks_router.models.Address) -> Optional[socks_router.models.UpstreamAddress]
+
+
+   .. py:method:: handshake()
+
+
+   .. py:method:: reply(type: socks_router.models.Socks5ReplyType)
+
+
+   .. py:method:: connect_remote(destination: socks_router.models.Address) -> socks.socksocket
+
+
+   .. py:method:: handle_request()
+
+
+   .. py:method:: exchange()
+
+
+   .. py:method:: setup()
+
+
+   .. py:method:: handle()
+
+      Handle incoming connections
+
+
+
+   .. py:method:: finish()
+
+

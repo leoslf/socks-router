@@ -1,0 +1,115 @@
+socks_router.parsers
+====================
+
+.. py:module:: socks_router.parsers
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   socks_router.parsers.logger
+   socks_router.parsers.whitespace
+   socks_router.parsers.whitespaces
+   socks_router.parsers.ipv4_octet
+   socks_router.parsers.ipv6_doublet
+   socks_router.parsers.ipv4
+   socks_router.parsers.h16
+   socks_router.parsers.ls32
+   socks_router.parsers.ipv6
+   socks_router.parsers.port
+   socks_router.parsers.ipv4_address
+   socks_router.parsers.ipv6_address
+   socks_router.parsers.hostname
+   socks_router.parsers.host_address
+   socks_router.parsers.address
+   socks_router.parsers.scheme
+   socks_router.parsers.upstream_address
+   socks_router.parsers.comment
+   socks_router.parsers.pattern
+   socks_router.parsers.routing_rule
+   socks_router.parsers.routing_table
+   socks_router.parsers.pysocks_socks5_error
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   socks_router.parsers.trace
+   socks_router.parsers.parse_sockaddr
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+.. py:function:: trace(value: trace.T) -> trace.T
+
+.. py:data:: whitespace
+   :type:  parsec.Parser[str]
+
+.. py:data:: whitespaces
+   :type:  parsec.Parser[list[str]]
+
+.. py:data:: ipv4_octet
+   :type:  parsec.Parser[int]
+
+.. py:data:: ipv6_doublet
+   :type:  parsec.Parser[int]
+
+.. py:data:: ipv4
+   :type:  parsec.Parser[str]
+
+.. py:data:: h16
+   :type:  parsec.Parser[str]
+
+.. py:data:: ls32
+   :type:  parsec.Parser[str]
+
+.. py:data:: ipv6
+   :type:  parsec.Parser[str]
+
+.. py:data:: port
+
+.. py:data:: ipv4_address
+   :type:  parsec.Parser[socks_router.models.IPv4]
+
+.. py:data:: ipv6_address
+   :type:  parsec.Parser[socks_router.models.IPv6]
+
+.. py:data:: hostname
+   :type:  parsec.Parser[str]
+
+.. py:data:: host_address
+   :type:  parsec.Parser[socks_router.models.Host]
+
+.. py:data:: address
+   :type:  parsec.Parser[socks_router.models.Address]
+
+.. py:data:: scheme
+   :type:  parsec.Parser[socks_router.models.UpstreamScheme]
+
+.. py:data:: upstream_address
+   :type:  parsec.Parser[socks_router.models.UpstreamAddress]
+
+.. py:data:: comment
+   :type:  parsec.Parser[str]
+
+.. py:data:: pattern
+   :type:  parsec.Parser[socks_router.models.Pattern]
+
+.. py:data:: routing_rule
+   :type:  parsec.Parser[tuple[socks_router.models.UpstreamAddress, socks_router.models.RoutingEntry]]
+
+.. py:data:: routing_table
+   :type:  parsec.Parser[socks_router.models.RoutingTable]
+
+.. py:function:: parse_sockaddr(sockaddr: tuple[parse_sockaddr.S, int]) -> socks_router.models.Address
+
+.. py:data:: pysocks_socks5_error
+   :type:  parsec.Parser[tuple[socks_router.models.Socks5ReplyType, str]]
+
