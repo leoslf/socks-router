@@ -24,7 +24,7 @@ sphinx-pyproject = { version = "^0.3.0", optional = true }
 sphinxcontrib-apidoc = { version = "^0.5.0", optional = true }
 sphinx-autoapi = { version = "^3.0.0", optional = true }
 click = "^8.1.7"
-more-itertools = "^10.2.0"
+more-itertools = "^10.4.0"
 pyaml-env = "^1.2.1"
 setuptools = "^70.0.0"
 parsec = { git = "https://github.com/leoslf/parsec.py", branch = "master" } # "^3.17"
