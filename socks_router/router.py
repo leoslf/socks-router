@@ -9,9 +9,11 @@ import socket
 import selectors
 import socks
 
-from typing import Optional, assert_never, cast
-from collections.abc import Iterator
+
+from typing import Optional, Never, assert_never, cast
+from collections.abc import Iterator, Set
 from more_itertools import partition
+from functools import cached_property
 from socketserver import ThreadingTCPServer, StreamRequestHandler
 
 from retry.api import retry_call
@@ -25,6 +27,14 @@ from socks_router.models import (
     Socks5AddressType,
     Socks5MethodSelectionRequest,
     Socks5MethodSelectionResponse,
+    Socks5GSSAPINegotiationState,
+    Socks5GSSAPIClientInitialTokenV1,
+    Socks5GSSAPIMessageProtectionSubnegotiationV1,
+    Socks5GSSAPIPerMessageProtectionV1,
+    Socks5GSSAPISecurityContextFailureV1,
+    Socks5UsernamePasswordStatus,
+    Socks5UsernamePasswordInitialNegotiationV1,
+    Socks5UsernamePasswordInitialNegotiationResponseV1,
     Socks5Request,
     Socks5Address,
     Socks5ReplyType,
@@ -143,7 +153,7 @@ def exchange_loop(
                     selector.unregister(key.fileobj)
 
 
-def match_upstream(routing_table: RoutingTable, destination: Address) -> Optional[UpstreamAddress]:
+def match_upstream(routing_table: RoutingTable, destination: Address, logger: logging.Logger = logger) -> Optional[UpstreamAddress]:
     def matches(patterns: Iterator[Pattern]) -> Iterator[list[str]]:
         return (fnmatch.filter([f"{destination}", f"{destination.address}"], pattern.address) for pattern in patterns)
 
@@ -180,6 +190,18 @@ class SocksRouter(ThreadingTCPServer):
     @property
     def address(self) -> Address:
         return parse_sockaddr(cast(tuple[str, int], self.server_address))
+
+    @cached_property
+    def supported_methods(self) -> Set[Socks5Method]:
+        return {
+            key
+            for key, condition in {
+                Socks5Method.NO_AUTHENTICATION_REQUIRED: True,
+                Socks5Method.GSSAPI: self.context.enable_gssapi,
+                Socks5Method.USERNAME_PASSWORD: self.context.users is not None,
+            }.items()
+            if condition
+        }
 
     def server_activate(self) -> None:
         self.logger.info("Server started on %r", self.server_address)
@@ -218,6 +240,7 @@ class SocksRouter(ThreadingTCPServer):
 class SocksRouterRequestHandler(StreamRequestHandler):
     server: SocksRouter
     state: Socks5State = Socks5State.LISTEN
+    accepted_method: Optional[Socks5Method] = None
     remote: Optional[socks.socksocket] = None
 
     @property
@@ -226,7 +249,7 @@ class SocksRouterRequestHandler(StreamRequestHandler):
         return self.server.logger.getChild(f"handler-{client_address}")
 
     def acquire_upstream(self, destination: Address) -> Optional[UpstreamAddress]:
-        if (upstream := match_upstream(self.server.context.routing_table, destination)) is None:
+        if (upstream := match_upstream(self.server.context.routing_table, destination, logger=self.logger)) is None:
             return None
 
         with self.server.context.mutex:
@@ -279,23 +302,89 @@ class SocksRouterRequestHandler(StreamRequestHandler):
 
         # select method from server side
         for method in request.methods:
-            match method:
-                case Socks5Method.NO_AUTHENTICATION_REQUIRED:
-                    self.logger.debug("accept no authentication required")
-                    write_socket(
-                        self.connection, Socks5MethodSelectionResponse(SOCKS_VERSION, Socks5Method.NO_AUTHENTICATION_REQUIRED)
-                    )
-                    self.state = Socks5State.REQUEST
-                    return
-                case _:
-                    pass
+            if method in self.server.supported_methods:
+                self.accepted_method = method
+                self.logger.debug(f"accept method: {self.accepted_method.name}")
+                write_socket(self.connection, Socks5MethodSelectionResponse(SOCKS_VERSION, self.accepted_method))
+                self.state = Socks5State.METHOD_SUBNEGOTIATION
+                return
 
         # none of the methods listed by the client are acceptable
         # notify the client
-        self.logger.debug("notify client no Socks5Method.NO_ACCEPTABLE_METHODS")
+        self.logger.debug(
+            f"notify client {Socks5Method.NO_ACCEPTABLE_METHODS}, client requested: {[method.name for method in request.methods]}"
+        )
         write_socket(self.connection, Socks5MethodSelectionResponse(SOCKS_VERSION, Socks5Method.NO_ACCEPTABLE_METHODS))
         # the client MUST close the connection
         self.state = Socks5State.CLOSED
+
+    def handle_method_subnegotiation(self):
+        match self.accepted_method:
+            case Socks5Method.NO_AUTHENTICATION_REQUIRED:
+                self.state = Socks5State.REQUEST
+            case Socks5Method.GSSAPI:
+                # GSS-API peers achieve interoperability by establishing a common security mechanism for security context establishment - either through administrative action, or through negotiation.
+                # SEE: https://datatracker.ietf.org/doc/html/rfc1961
+                # NOTE: prior to use of GSS-API primitives, the client and server should be locally authenticated, and have established default GSS-API credentials.
+                # The client should call gss_import_name to obtain an internal representation of the server name.
+                # For maximal portability, the default name_type GSS_C_NULL_OID should be used to specify the default name space and the input name_string should be treated by the client's code as an opaque name-space specific input.
+                # NOTE: in all continue/confirmation cases, the server uses the same message type as for the client -> server interaction.
+                state = Socks5GSSAPINegotiationState.CLIENT_INITIAL_TOKEN
+                while True:
+                    self.logger.debug(f"GSSAPI negotiation state: {state.name}")
+                    match state:
+                        case Socks5GSSAPINegotiationState.CLIENT_INITIAL_TOKEN:
+                            initial_negotiation = read_socket(self.connection, Socks5GSSAPIClientInitialTokenV1)
+                            if initial_negotiation.token == b"fakepassword":
+                                write_socket(self.connection, initial_negotiation)
+                                state = Socks5GSSAPINegotiationState.MESSAGE_PROTECTION_SUBNEGOTIATION
+                                continue
+                            self.logger.debug(f"failed given: {initial_negotiation}")
+                            break
+                        case Socks5GSSAPINegotiationState.MESSAGE_PROTECTION_SUBNEGOTIATION:
+                            message_protection = read_socket(self.connection, Socks5GSSAPIMessageProtectionSubnegotiationV1)
+                            if message_protection.token == b"fakepassword":
+                                write_socket(self.connection, message_protection)
+                                state = Socks5GSSAPINegotiationState.PER_MESSAGE_PROTECTION
+                                continue
+                            self.logger.debug(f"failed given: {message_protection}")
+                            break
+                        case Socks5GSSAPINegotiationState.PER_MESSAGE_PROTECTION:
+                            per_message_protection = read_socket(self.connection, Socks5GSSAPIPerMessageProtectionV1)
+                            if per_message_protection.token == b"fakepassword":
+                                write_socket(self.connection, per_message_protection)
+                                state = Socks5GSSAPINegotiationState.SUCCESS
+                                continue
+                            self.logger.debug(f"failed given: {per_message_protection}")
+                            break
+                        case Socks5GSSAPINegotiationState.SUCCESS:
+                            self.state = Socks5State.REQUEST
+                            return
+                        case _ as unreachable:
+                            assert_never(unreachable)
+                # failure
+                write_socket(self.connection, Socks5GSSAPISecurityContextFailureV1())
+                self.state = Socks5State.CLOSED
+            case Socks5Method.USERNAME_PASSWORD:
+                # SEE: https://datatracker.ietf.org/doc/html/rfc1929
+                assert self.server.context.users is not None
+                auth = read_socket(self.connection, Socks5UsernamePasswordInitialNegotiationV1)
+                if auth.version == 1 and self.server.context.users.get(auth.username) == auth.password:
+                    write_socket(
+                        self.connection,
+                        Socks5UsernamePasswordInitialNegotiationResponseV1(status=Socks5UsernamePasswordStatus.SUCCESS),
+                    )
+                    self.state = Socks5State.REQUEST
+                    return
+                self.logger.debug(
+                    f"failed given: {auth}, users: {self.server.context.users}, auth.username in users: {auth.username in self.server.context.users}, password equality: {self.server.context.users.get(auth.username) == auth.password}"
+                )
+                write_socket(
+                    self.connection, Socks5UsernamePasswordInitialNegotiationResponseV1(status=Socks5UsernamePasswordStatus.FAILURE)
+                )
+                self.state = Socks5State.CLOSED
+            case _ as unreachable:
+                assert_never(cast(Never, unreachable))
 
     def reply(self, type: Socks5ReplyType):
         self.logger.debug(f"Replying {type.name}")
@@ -402,9 +491,10 @@ class SocksRouterRequestHandler(StreamRequestHandler):
                         self.state = Socks5State.HANDSHAKE
                     case Socks5State.HANDSHAKE:
                         self.handshake()
-                        # TODO: The client and server then enter a method-specific sub-negotiation.
-                        # Descriptions of the method-dependent sub-negotiations appear in separate memos.
+                    case Socks5State.METHOD_SUBNEGOTIATION:
+                        # The client and server then enter a method-specific sub-negotiation.
                         # Compliant implementations MUST support GSSAPI and SHOULD support USERNAME/PASSWORD authentication methods.
+                        self.handle_method_subnegotiation()
                     case Socks5State.REQUEST:
                         # Once the method-dependent subnegotiation has completed, the client sends the request details.  If the negotiated method includes encapsulation for purposes of integrity checking and/or confidentiality, these requests MUST be encapsulated in the method-dependent encapsulation.
                         # The SOCKS server will typically evaluate the request based on source and destination addresses, and return one or more reply messages, as appropriate for the request type.

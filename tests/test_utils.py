@@ -1,14 +1,24 @@
 from __future__ import annotations
 import pytest
 
+import builtins
 import re
 import socket
 
-from typing import Annotated
+from typing import Annotated, Any
+from collections.abc import Sequence, MutableSequence
 
 from dataclasses import dataclass
 
-from socks_router.utils import to_bin, to_oct, to_hex, tokenize_pack_format, read_socket, write_socket
+from socks_router.utils import (
+    to_bin,
+    to_oct,
+    to_hex,
+    construct,
+    tokenize_pack_format,
+    read_socket,
+    write_socket,
+)
 
 
 def test_to_bin():
@@ -21,6 +31,25 @@ def test_to_oct():
 
 def test_to_hex():
     assert to_hex(0x10) == "10"
+
+
+def describe_construct():
+    @pytest.mark.parametrize(
+        "type",
+        [
+            Sequence,
+            Sequence[Any],
+            Sequence[int],
+            MutableSequence,
+            MutableSequence[Any],
+            MutableSequence[int],
+            list,
+            list[Any],
+            list[int],
+        ],
+    )
+    def it_should_correctly_construct_Sequence[T](type: builtins.type[T]):
+        assert isinstance(construct(type)([1, 2, 3]), list)
 
 
 def describe_tokenize_pack_format():

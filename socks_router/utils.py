@@ -3,6 +3,7 @@ from types import ModuleType
 from typing import (
     Annotated,
     Any,
+    Callable,
     ForwardRef,
     Optional,
     SupportsBytes,
@@ -12,10 +13,12 @@ from typing import (
     get_origin,
     assert_never,
     cast,
+    overload,
 )
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence, MutableSequence
 
 import builtins
+import operator
 import inspect
 import re
 import struct
@@ -29,6 +32,8 @@ from socks_router.models import (
 )
 
 import socks_router.models
+
+type TypeComparator = Callable[[builtins.type, builtins.type], bool]
 
 
 def resolve_type(type: str, module: Optional[ModuleType] = None) -> type:
@@ -57,10 +62,47 @@ def is_optional(field):
     return get_origin(field) is Union and type(None) in get_args(field)
 
 
-def is_list[T](type: builtins.type) -> TypeGuard[list[T]]:
+def is_[T](type: builtins.type, target: builtins.type[T], comparator: TypeComparator = issubclass) -> TypeGuard[T]:
+    return inspect.isclass(type) and comparator(type, target)
+
+
+def generic_is_[T](type: builtins.type, target: builtins.type[T], comparator: TypeComparator = issubclass) -> TypeGuard[T]:
     return (
-        inspect.isclass(type) and issubclass(type, list) or inspect.isclass(origin := get_origin(type)) and issubclass(origin, list)
+        is_(type, target, comparator)
+        or (origin := get_origin(type)) is not None
+        and is_(cast(builtins.type, origin), target, comparator)
     )
+
+
+def is_sequence[T](type: builtins.type, comparator: TypeComparator = issubclass) -> TypeGuard[Sequence[T]]:
+    return generic_is_(type, cast(builtins.type[Sequence[T]], Sequence), comparator)
+
+
+def is_bytes(type: builtins.type, comparator: TypeComparator = issubclass) -> TypeGuard[bytes]:
+    return is_(type, bytes, comparator)
+
+
+def is_str(type: builtins.type, comparator: TypeComparator = issubclass) -> TypeGuard[str]:
+    return is_(type, str, comparator)
+
+
+def construct[T, **P](type: builtins.type[T]) -> Callable[P, T]:
+    def wrapped(*argv: P.args, **kwargs: P.kwargs) -> T:
+        if not is_str(type) and is_sequence(type):
+            origin = cast(
+                Callable[P, T],
+                list
+                if any(generic_is_(cast(builtins.type, type), target, operator.eq) for target in (Sequence, MutableSequence))  # type: ignore [type-abstract]
+                else type,
+            )
+            match get_args(type):
+                case tuple([element]) if element is not Any:
+                    return cast(T, origin(cast(P.args, map(construct(element), *argv, **kwargs))))
+                case _:
+                    return cast(T, origin(*argv, **kwargs))
+        return type(*argv, **kwargs)
+
+    return wrapped
 
 
 def tokenize_pack_format(format: str) -> Iterator[PackingSequence]:
@@ -108,10 +150,9 @@ def read_socket[T](sock: socket.socket, type: builtins.type[T], format: Optional
 
     # primitives
     is_primitive = inspect.isclass(type) and issubclass(type, (bool, int, float))
-    is_str = inspect.isclass(type) and issubclass(type, str)
     supports_unbytes = inspect.isclass(type) and issubclass(type, SupportsUnbytes)
 
-    if is_primitive or is_list(type) or is_str or supports_unbytes:
+    if is_primitive or is_bytes(type) or is_str(type) or is_sequence(type) or supports_unbytes:
         if format is None:
             raise TypeError(f"cannot read {type} from socket without format")
 
@@ -128,17 +169,16 @@ def read_socket[T](sock: socket.socket, type: builtins.type[T], format: Optional
 
         match sequence[0]:
             case tuple([length_format, element_format]):
-                if is_list(type) or is_str:
+                if is_bytes(type):
+                    return cast(T, bytes(read_sequence(sock, length_format, element_format)))
+                if is_str(type):
+                    return read_sequence(sock, length_format, element_format)[0].decode("utf-8")
+                if is_sequence(type):
                     content = read_sequence(sock, length_format, element_format)
-
-                    if is_str:
-                        return content[0].decode("utf-8")
-
-                    return type(content)  # type: ignore[call-arg]
-
+                    return construct(type)(content)  # type: ignore [arg-type]
                 raise TypeError(f"variable-length format {format} is not allowed on non-sequence type, given type: {type}")
             case _ as fmt:
-                return type(*read(sock, cast(str, fmt)))
+                return construct(type)(*read(sock, cast(str, fmt)))
 
     if dataclasses.is_dataclass(type):
         field_descriptors = {field.name: field for field in dataclasses.fields(type)}
@@ -178,7 +218,7 @@ def read_socket[T](sock: socket.socket, type: builtins.type[T], format: Optional
             else:
                 results[name] = read_socket(sock, field.type)
 
-        return cast(T, type(**results))
+        return cast(T, construct(type)(**results))
 
     # we have no way to deserialize
     raise TypeError(
@@ -189,10 +229,22 @@ def read_socket[T](sock: socket.socket, type: builtins.type[T], format: Optional
 def write_socket[T](
     sock: socket.socket, instance: T, format: Optional[str] = None, type: Optional[builtins.type[T]] = None
 ) -> None:
-    def write_sequence[S: (list, bytes)](sock: socket.socket, length_format: str, element_format: str, sequence: S):
+    @overload
+    def write_sequence(sock: socket.socket, length_format: str, element_format: str, sequence: bytes): ...
+    @overload
+    def write_sequence(sock: socket.socket, length_format: str, element_format: str, sequence: str): ...
+    @overload
+    def write_sequence[V](sock: socket.socket, length_format: str, element_format: str, sequence: Sequence[V]): ...
+
+    def write_sequence(sock, length_format, element_format, sequence):
         return sock.sendall(
             struct.pack(length_format, length := len(sequence))
-            + struct.pack(element_format % length, *([sequence] if isinstance(sequence, bytes) else sequence))
+            + (
+                struct.pack(
+                    element_format % length,
+                    *([sequence.encode("utf-8")] if isinstance(sequence, str) else sequence) if length > 0 else bytes(),
+                )
+            )
         )
 
     if type is None:
@@ -211,9 +263,10 @@ def write_socket[T](
         format = instance.__pack_format__()
 
     is_primitive: TypeGuard[bool | int | float] = isinstance(instance, (bool, int, float))
+    is_bytes: TypeGuard[bytes] = isinstance(instance, bytes)
     is_str: TypeGuard[str] = isinstance(instance, str)
 
-    if format is not None and (is_primitive or is_list(type) or is_str):
+    if format is not None and (is_primitive or is_bytes or is_str or is_sequence(type)):
         sequence = list(tokenize_pack_format(format))
 
         if not sequence:
@@ -225,10 +278,8 @@ def write_socket[T](
         match sequence[0]:
             case tuple([length_format, element_format]):
                 match instance:
-                    case str() as content:
-                        return write_sequence(sock, length_format, element_format, content.encode("utf-8"))
-                    case list() as items:
-                        return write_sequence(sock, length_format, element_format, items)
+                    case bytes() | str() | list():
+                        return write_sequence(sock, length_format, element_format, instance)
                     case _:
                         raise TypeError(f"variable-length format {format} is not allowed on non-sequence type, given type: {type}")
             case str() as fmt:
@@ -260,7 +311,7 @@ def write_socket[T](
 
     # we have no way to serialize
     raise TypeError(
-        f"write_socket can only handle primitives, list, str, SupportsBytes or dataclasses, but type {type} ({builtins.type(type)}) given"
+        f"write_socket can only handle primitives, str, Sequence, SupportsBytes or dataclasses, but type {type} ({builtins.type(type)}) given, instance: {instance}"
     )
 
 

@@ -46,6 +46,7 @@ logger = logging.getLogger(__name__)
     show_default=True,
 )
 @click.option("--retries", envvar="SOCKS_ROUTER_RETRIES", type=int, default=-1)
+@click.option("--enable-gssapi/--disable-gssapi", envvar="SOCKS_ROUTER_USE_GSSAPI", type=bool, default=False)
 @click.version_option()
 @click.pass_context
 def cli(
@@ -56,6 +57,7 @@ def cli(
     routes: Optional[str],
     routes_file: pathlib.Path,
     retries: int,
+    enable_gssapi: bool,
 ):
     # load logging config
     if os.path.exists(logging_config):
@@ -70,6 +72,7 @@ def cli(
         context=ApplicationContext(
             routing_table=routing_table.parse(routes or ""),
             proxy_retry_options=RetryOptions(tries=retries),
+            enable_gssapi=enable_gssapi,
         ),
     ) as server:
         server.serve_forever()

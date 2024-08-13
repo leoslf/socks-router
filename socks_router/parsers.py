@@ -44,7 +44,7 @@ from socks_router.utils import to_hex
 logger = logging.getLogger(__name__)
 
 
-def trace[T](value: T) -> T:
+def trace[T](value: T, logger: logging.Logger = logger) -> T:
     logger.debug(f"value: {value}")
     return value
 

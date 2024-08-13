@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Annotated, Final, Literal, Optional, Type, Self, Protocol, runtime_checkable, overload, assert_never
 from abc import abstractmethod
-from collections.abc import Mapping, MutableMapping
+from collections.abc import Mapping, MutableMapping, Sequence
 from enum import IntEnum, StrEnum, auto
 from dataclasses import dataclass, field
 from subprocess import Popen, PIPE
@@ -123,7 +123,7 @@ class Socks5Method(IntEnum):
     NO_AUTHENTICATION_REQUIRED = 0x00
     GSSAPI = 0x01
     USERNAME_PASSWORD = 0x02
-    # IANA_ASSIGNED = 0x03
+    # IANA_ASSIGNED = frozenset(range(0x03, 0x80)) # 0x03..0xFE
     # RESERVED_FOR_PRIVATE_METHODS = frozenset(range(0x80, 0xFF)) # 0x80..0xFE
     NO_ACCEPTABLE_METHODS = 0xFF
 
@@ -168,7 +168,7 @@ class Socks5MethodSelectionRequest:
     """
 
     version: Annotated[int, "!B"]
-    methods: Annotated[list[int], "!B%*B"]
+    methods: Annotated[Sequence[Socks5Method], "!B%*B"]
 
 
 @dataclass
@@ -182,6 +182,136 @@ class Socks5MethodSelectionResponse:
 
     version: Annotated[int, "!B"]
     method: Socks5Method
+
+
+class Socks5GSSAPIMessageType(IntEnum):
+    AUTHENTICATION = 0x01
+    PROTECTION_LEVEL_NEGOTIATION = 0x02
+    ENCAPSULATED_USER_DATA = 0x03
+    ABORT = 0xFF
+
+    @classmethod
+    def __pack_format__(cls) -> str:
+        return "!B"
+
+
+class Socks5GSSAPINegotiationState(IntEnum):
+    CLIENT_INITIAL_TOKEN = auto()
+    MESSAGE_PROTECTION_SUBNEGOTIATION = auto()
+    PER_MESSAGE_PROTECTION = auto()
+    SUCCESS = auto()
+
+
+@dataclass(frozen=True)
+class Socks5GSSAPIClientInitialTokenV1:
+    """GSS-API Client Initial Token for SOCKS/GSS-API protocol v1
+    SEE: https://datatracker.ietf.org/doc/html/rfc1961#section-3.4
+
+    SOCKS/GSS-API Client Initial Token
+    ----------------------------------
+    | ver    | mtyp   | len     | token                 |
+    | 1 byte | 1 byte | 2 bytes | up to 2^16 - 1 octets |
+
+    Args:
+        version (int):      SOCKS/GSS-API protocol version (0x01)
+        message_type (int): SOCKS/GSS-API Message Type (Socks5GSSAPIMessageType.AUTHENTICATION)
+        token (bytes):  A 16-bit length (consumed) followed by the opaque authentication token emitted by GSS-API up to 2^16 - 1 variable-length octets.
+    """
+
+    version: Annotated[int, "!B"] = 1
+    message_type: Socks5GSSAPIMessageType = Socks5GSSAPIMessageType.AUTHENTICATION
+    token: Annotated[bytes, "!H%*B"] = b""
+
+
+@dataclass(frozen=True)
+class Socks5GSSAPIMessageProtectionSubnegotiationV1:
+    """GSS-API Message Protection Subnegotiation for SOCKS/GSS-API protocol v1
+    SEE: https://datatracker.ietf.org/doc/html/rfc1961#section-4.3
+
+    Args:
+        version (int):      SOCKS/GSS-API protocol version (0x01)
+        message_type (int): SOCKS/GSS-API Message Type (Socks5GSSAPIMessageType.PROTECTION_LEVEL_NEGOTIATION)
+        token (bytes):  A 16-bit length (consumed) followed by the GSS-API encapsulated protection level up to 2^16 - 1 variable-length octets.
+    """
+
+    version: Annotated[int, "!B"] = 1
+    message_type: Socks5GSSAPIMessageType = Socks5GSSAPIMessageType.PROTECTION_LEVEL_NEGOTIATION
+    token: Annotated[bytes, "!H%*B"] = b""
+
+
+@dataclass(frozen=True)
+class Socks5GSSAPIPerMessageProtectionV1:
+    """GSS-API Per Message Protection for SOCKS/GSS-API protocol v1
+    SEE: https://datatracker.ietf.org/doc/html/rfc1961#section-5
+
+    Args:
+        version (int):      SOCKS/GSS-API protocol version (0x01)
+        message_type (int): SOCKS/GSS-API Message Type (Socks5GSSAPIMessageType.PROTECTION_LEVEL_NEGOTIATION)
+        token (bytes):  A 16-bit length (consumed) followed by the user data encapsulated by GSS-API up to 2^16 - 1 variable-length octets.
+    """
+
+    version: Annotated[int, "!B"] = 1
+    message_type: Socks5GSSAPIMessageType = Socks5GSSAPIMessageType.PROTECTION_LEVEL_NEGOTIATION
+    token: Annotated[bytes, "!H%*B"] = b""
+
+
+@dataclass(frozen=True)
+class Socks5GSSAPISecurityContextFailureV1:
+    """GSS-API Security Context Failure for SOCKS/GSS-API protocol v1
+    SEE: https://datatracker.ietf.org/doc/html/rfc1961#section-3.8
+
+    Args:
+        version (int):      SOCKS/GSS-API protocol version (0x01)
+        message_type (int): Socks5GSSAPIMessageType.ABORT
+    """
+
+    version: Annotated[int, "!B"] = 1
+    message_type: Socks5GSSAPIMessageType = Socks5GSSAPIMessageType.ABORT
+
+
+class Socks5UsernamePasswordStatus(IntEnum):
+    SUCCESS = 0x00
+    FAILURE = 0x01
+
+    @classmethod
+    def __pack_format__(cls) -> str:
+        return "!B"
+
+
+@dataclass(frozen=True)
+class Socks5UsernamePasswordInitialNegotiationV1:
+    """Username/Password Authentication V1 Initial Negotiation for SOCKS5
+    SEE: https://datatracker.ietf.org/doc/html/rfc1929#section-2
+
+    Username/Password Subnegotiation
+    --------------------------------
+    | version | username.length | username       | password.length | password       |
+    | 1 byte  | 1 byte          | 1 to 255 bytes | 1 byte          | 1 to 255 bytes |
+
+    Args:
+        version (int): Subnegotiation version (0x01)
+        username (str): A 8-bit length (consumed) followed by the variable-length username of the source operating system
+        password (str): A 8-bit length (consumed) followed by the variable-length password of the source operating system
+    """
+
+    version: Annotated[int, "!B"] = 1
+    username: Annotated[str, "!B%*s"] = ""
+    password: Annotated[str, "!B%*s"] = ""
+
+
+@dataclass(frozen=True)
+class Socks5UsernamePasswordInitialNegotiationResponseV1:
+    """Username/Password Authentication V1 Initial Negotiation Response for SOCKS5
+    SEE: https://datatracker.ietf.org/doc/html/rfc1929#section-2
+
+    Username/Password Subnegotiation Response
+    -----------------------------------------
+    | version | status |
+    | 1 byte  | 1 byte |
+    """
+
+    version: Annotated[int, "!B"] = 1
+    status: Socks5UsernamePasswordStatus = Socks5UsernamePasswordStatus.SUCCESS
 
 
 @dataclass(frozen=True)
@@ -280,6 +410,7 @@ class Socks5Reply:
 class Socks5State(StrEnum):
     LISTEN = auto()
     HANDSHAKE = auto()
+    METHOD_SUBNEGOTIATION = auto()
     REQUEST = auto()
     ESTABLISHED = auto()
     CLOSED = auto()
@@ -399,3 +530,5 @@ class ApplicationContext:
     mutex: threading.Lock = field(default_factory=threading.Lock)
     upstreams: MutableMapping[UpstreamAddress, Upstream] = field(default_factory=dict)
     is_terminating: bool = False
+    enable_gssapi: bool = False
+    users: Optional[Mapping[str, str]] = None

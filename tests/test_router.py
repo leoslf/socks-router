@@ -3,6 +3,7 @@ import os
 import logging
 
 import io
+import itertools
 import functools
 import contextlib
 import resource
@@ -19,6 +20,7 @@ import pytest
 from mocket import Mocket, MocketEntry, mocketize
 from mocket.mocket import MocketSocket, true_gethostbyname
 
+import struct
 import socket
 import socks
 
@@ -27,6 +29,13 @@ from socks_router.models import (
     Socks5Method,
     Socks5MethodSelectionRequest,
     Socks5MethodSelectionResponse,
+    Socks5GSSAPIClientInitialTokenV1,
+    Socks5GSSAPIMessageProtectionSubnegotiationV1,
+    Socks5GSSAPIPerMessageProtectionV1,
+    Socks5GSSAPISecurityContextFailureV1,
+    Socks5UsernamePasswordStatus,
+    Socks5UsernamePasswordInitialNegotiationV1,
+    Socks5UsernamePasswordInitialNegotiationResponseV1,
     Socks5Command,
     Socks5Request,
     Socks5ReplyType,
@@ -56,6 +65,15 @@ from socks_router.router import (
 from socks_router.utils import read_socket, write_socket, free_port
 
 logger = logging.getLogger(__name__)
+
+
+def helper(f):
+    @functools.wraps(f)
+    @pytest.fixture
+    def wrapped():
+        return f
+
+    return wrapped
 
 
 def ids(value, depth: int = 0):
@@ -340,25 +358,150 @@ def describe_SocksRouter():
     def when_client_attempt_to_use_socks4():
         @pytest.mark.parametrize("address_type,address", [(IPv4, "127.0.0.1"), (Host, "localhost"), (IPv6, "::1")])
         def it_should_close_socket(daemonize, httpserver, address_type, address):
-            destination = address_type(address, httpserver.port)
             with daemonize(address, type=address_type) as proxy:
-                with pytest.raises(
-                    requests.exceptions.ConnectionError, match=r".*(Connection reset by peer|Connection closed unexpectedly).*"
-                ):
-                    requests.get(
-                        f"http://{destination}/",
-                        proxies=proxies(proxy.address, scheme="socks4"),
-                    ).json()
+                with connect_remote(proxy.address) as client:
+                    with pytest.raises(struct.error, match=r"unpack requires a buffer of \d+"):
+                        # handshake
+                        write_socket(client, Socks5MethodSelectionRequest(0x04, methods=[Socks5Method.USERNAME_PASSWORD]))
+                        assert read_socket(client, Socks5MethodSelectionResponse) == Socks5MethodSelectionResponse(
+                            SOCKS_VERSION, Socks5Method.NO_ACCEPTABLE_METHODS
+                        )
 
     def when_client_attempt_to_use_unacceptable_methods():
         def it_should_reply_no_acceptable_methods(daemonize):
             with daemonize() as proxy:
                 with connect_remote(proxy.address) as client:
                     # handshake
-                    write_socket(client, Socks5MethodSelectionRequest(SOCKS_VERSION, methods=[Socks5Method.USERNAME_PASSWORD]))
+                    write_socket(client, Socks5MethodSelectionRequest(SOCKS_VERSION, methods=[Socks5Method.NO_ACCEPTABLE_METHODS]))
                     assert read_socket(client, Socks5MethodSelectionResponse) == Socks5MethodSelectionResponse(
-                        SOCKS_VERSION, Socks5Method.NO_ACCEPTABLE_METHODS
+                        SOCKS_VERSION,
+                        Socks5Method.NO_ACCEPTABLE_METHODS,
                     )
+
+    def when_client_attempt_to_use_GSSAPI():
+        @helper
+        def handshake(client):
+            write_socket(client, Socks5MethodSelectionRequest(SOCKS_VERSION, methods=[Socks5Method.GSSAPI]))
+            return read_socket(client, Socks5MethodSelectionResponse)
+
+        def when_disable_gssapi():
+            def it_should_reply_no_acceptable_methods(daemonize):
+                with daemonize(context=ApplicationContext(enable_gssapi=False)) as proxy:
+                    with connect_remote(proxy.address) as client:
+                        # handshake
+                        write_socket(client, Socks5MethodSelectionRequest(SOCKS_VERSION, methods=[Socks5Method.USERNAME_PASSWORD]))
+                        assert read_socket(client, Socks5MethodSelectionResponse) == Socks5MethodSelectionResponse(
+                            SOCKS_VERSION,
+                            Socks5Method.NO_ACCEPTABLE_METHODS,
+                        )
+
+        def when_enable_gssapi():
+            def it_should_reply_GSSAPI_selected(daemonize, handshake):
+                with daemonize(context=ApplicationContext(enable_gssapi=True)) as proxy:
+                    with connect_remote(proxy.address) as client:
+                        assert handshake(client) == Socks5MethodSelectionResponse(SOCKS_VERSION, Socks5Method.GSSAPI)
+
+            def when_invalid_request():
+                @pytest.mark.parametrize(
+                    "requests,",
+                    list(
+                        itertools.accumulate(
+                            map(
+                                lambda x: (x,),
+                                [
+                                    {
+                                        "type": Socks5GSSAPIClientInitialTokenV1,
+                                        "token": b"fakepassword",
+                                        "incorrect_token": b"fakeincorrectpassword",
+                                    },
+                                    {
+                                        "type": Socks5GSSAPIMessageProtectionSubnegotiationV1,
+                                        "token": b"fakepassword",
+                                        "incorrect_token": b"fakeincorrectpassword",
+                                    },
+                                    {
+                                        "type": Socks5GSSAPIPerMessageProtectionV1,
+                                        "token": b"fakepassword",
+                                        "incorrect_token": b"fakeincorrectpassword",
+                                    },
+                                ],
+                            )
+                        )
+                    ),
+                )
+                def it_should_reject_subnegotiation(daemonize, handshake, requests):
+                    with daemonize(context=ApplicationContext(enable_gssapi=True)) as proxy:
+                        with connect_remote(proxy.address) as client:
+                            assert handshake(client) == Socks5MethodSelectionResponse(SOCKS_VERSION, Socks5Method.GSSAPI)
+                            for request in requests[:-1]:
+                                write_socket(client, payload := request["type"](token=request["token"]))
+                                assert read_socket(client, request["type"]) == payload
+
+                            write_socket(client, requests[-1]["type"](token=requests[-1]["incorrect_token"]))
+                            assert (
+                                read_socket(client, Socks5GSSAPISecurityContextFailureV1) == Socks5GSSAPISecurityContextFailureV1()
+                            )
+
+            def when_everything_is_valid():
+                def it_should_handle_subnegotiation(daemonize, handshake):
+                    with daemonize(context=ApplicationContext(enable_gssapi=True)) as proxy:
+                        with connect_remote(proxy.address) as client:
+                            assert handshake(client) == Socks5MethodSelectionResponse(SOCKS_VERSION, Socks5Method.GSSAPI)
+
+                            write_socket(client, initial_negotiation := Socks5GSSAPIClientInitialTokenV1(token=b"fakepassword"))
+                            assert read_socket(client, Socks5GSSAPIClientInitialTokenV1) == initial_negotiation
+
+                            write_socket(
+                                client, message_protection := Socks5GSSAPIMessageProtectionSubnegotiationV1(token=b"fakepassword")
+                            )
+                            assert read_socket(client, Socks5GSSAPIMessageProtectionSubnegotiationV1) == message_protection
+
+                            write_socket(
+                                client, per_message_protection := Socks5GSSAPIPerMessageProtectionV1(token=b"fakepassword")
+                            )
+                            assert read_socket(client, Socks5GSSAPIPerMessageProtectionV1) == per_message_protection
+
+    def when_client_attempt_to_use_username_password():
+        def when_no_users_given_in_context():
+            def it_should_reply_no_acceptable_methods(daemonize):
+                with daemonize() as proxy:
+                    with connect_remote(proxy.address) as client:
+                        # handshake
+                        write_socket(client, Socks5MethodSelectionRequest(SOCKS_VERSION, methods=[Socks5Method.USERNAME_PASSWORD]))
+                        assert read_socket(client, Socks5MethodSelectionResponse) == Socks5MethodSelectionResponse(
+                            SOCKS_VERSION,
+                            Socks5Method.NO_ACCEPTABLE_METHODS,
+                        )
+
+        def when_users_given_in_the_context():
+            def it_should_reply_USERNAME_PASSWORD_selected(daemonize):
+                with daemonize(context=ApplicationContext(users={})) as proxy:
+                    with connect_remote(proxy.address) as client:
+                        write_socket(client, Socks5MethodSelectionRequest(SOCKS_VERSION, methods=[Socks5Method.USERNAME_PASSWORD]))
+                        assert read_socket(client, Socks5MethodSelectionResponse) == Socks5MethodSelectionResponse(
+                            SOCKS_VERSION,
+                            Socks5Method.USERNAME_PASSWORD,
+                        )
+
+            @pytest.mark.parametrize(
+                "users,username,password,status",
+                [
+                    ({"foo": "fakepassword"}, "foo", "fakepassword", Socks5UsernamePasswordStatus.SUCCESS),
+                    ({}, "foo", "fakepassword", Socks5UsernamePasswordStatus.FAILURE),
+                ],
+            )
+            def it_should_handle_subnegotiation_on_request(daemonize, users, username, password, status):
+                with daemonize(context=ApplicationContext(users=users)) as proxy:
+                    with connect_remote(proxy.address) as client:
+                        write_socket(client, Socks5MethodSelectionRequest(SOCKS_VERSION, methods=[Socks5Method.USERNAME_PASSWORD]))
+                        assert read_socket(client, Socks5MethodSelectionResponse) == Socks5MethodSelectionResponse(
+                            SOCKS_VERSION,
+                            Socks5Method.USERNAME_PASSWORD,
+                        )
+                        write_socket(client, Socks5UsernamePasswordInitialNegotiationV1(username=username, password=password))
+                        assert read_socket(
+                            client, Socks5UsernamePasswordInitialNegotiationResponseV1
+                        ) == Socks5UsernamePasswordInitialNegotiationResponseV1(status=status)
 
     def when_client_attempt_to_use_command_other_than_connect():
         def it_should_reply_command_not_supported(daemonize):
