@@ -60,9 +60,7 @@ class FileProxy[T](BaseProxy[T], LoggingEventHandler):
 
     def update(self):
         with self.mutex:
-            content = self.parser(self.content)
-            self.logger.debug(f"self.path: {self.path!r}, content: {content!r}")
-            self.__subject__ = content
+            self.__subject__ = self.parser(self.content)
 
     def on_modified(self, event: ModifiedEvent):
         super().on_modified(event)
