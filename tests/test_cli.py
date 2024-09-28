@@ -61,6 +61,15 @@ def describe_cli():
                 assert not result.exception
                 assert result.exit_code == 0
 
+    def when_routes_literal_present():
+        def it_should_not_fail(mocker, runner):
+            mocker.patch("socks_router.cli.SocksRouter.serve_forever", side_effect=SystemExit(0))
+
+            with runner.isolated_filesystem():
+                result = runner.invoke(cli, ["--routes=''"])
+                assert not result.exception
+                assert result.exit_code == 0
+
     def when_routes_file_present():
         @pytest.mark.parametrize(
             "filename",

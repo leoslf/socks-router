@@ -6,16 +6,16 @@ import pathlib
 
 import click
 
-from typing import Optional
+from typing import Optional, cast
 
 from click_option_group import optgroup, MutuallyExclusiveOptionGroup
 
 from pyaml_env import parse_config
 
-
 from socks_router.parsers import routing_table
-from socks_router.models import ApplicationContext, RetryOptions
+from socks_router.models import ApplicationContext, RetryOptions, RoutingTable
 from socks_router.router import SocksRouter, SocksRouterRequestHandler
+from socks_router.proxies import Proxy, observer, create_proxy
 
 logger = logging.getLogger(__name__)
 
@@ -61,15 +61,14 @@ def cli(
     if os.path.exists(logging_config):
         logging.config.dictConfig(parse_config(logging_config))
 
-    if routes is None and routes_file.exists():
-        routes = routes_file.read_text()
-
-    with SocksRouter(
-        (hostname, port),
-        SocksRouterRequestHandler,
-        context=ApplicationContext(
-            routing_table=routing_table.parse(routes or ""),
-            proxy_retry_options=RetryOptions(tries=retries),
-        ),
-    ) as server:
-        server.serve_forever()
+    routing_table_proxy = create_proxy(routes, routes_file, parser=routing_table.parse, default="")
+    with observer(cast(Proxy[RoutingTable], routing_table_proxy)):
+        with SocksRouter(
+            (hostname, port),
+            SocksRouterRequestHandler,
+            context=ApplicationContext(
+                routing_table=routing_table_proxy,
+                proxy_retry_options=RetryOptions(tries=retries),
+            ),
+        ) as server:
+            server.serve_forever()
