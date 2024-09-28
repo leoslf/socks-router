@@ -540,6 +540,7 @@ def describe_SocksRouter():
                 with tempfile.TemporaryDirectory() as workspace:
                     routes_filename = os.path.join(workspace, "routes")
                     # create empty file
+                    logger.debug(f"creating empty file {routes_filename!r}")
                     pathlib.Path(routes_filename).write_text("")
 
                     context = ApplicationContext(
@@ -548,7 +549,8 @@ def describe_SocksRouter():
                     on_modified = mocker.spy(context.routing_table, "on_modified")
                     with observer(cast(FileProxy, context.routing_table)):
                         with daemonize(context=context) as proxy:
-                            assert not cast(FileProxy, context.routing_table).__subject__, "routing_table should be empty"
+                            logger.debug("checking if proxy.context.routing_table.__subject__ is empty")
+                            assert not cast(FileProxy, proxy.context.routing_table).__subject__, "routing_table should be empty"
 
                             requests.get(
                                 f"http://{destination}/",
@@ -572,7 +574,8 @@ def describe_SocksRouter():
 
                             on_modified.assert_called_once()
 
-                            assert cast(FileProxy, context.routing_table).__subject__ == routing_table.parse(
+                            logger.debug("checking if proxy.context.routing_table.__subject__ has been updated")
+                            assert cast(FileProxy, proxy.context.routing_table).__subject__ == routing_table.parse(
                                 routes
                             ), "the proxied routing_table should reflect changes in the file"
 
