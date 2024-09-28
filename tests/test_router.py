@@ -2,17 +2,21 @@ import sys
 import os
 import logging
 
+import math
+import time
 import io
+import pathlib
 import functools
 import contextlib
 import resource
 import ipaddress
 import threading
 import subprocess
+import tempfile
 
 import requests
 
-from typing import Iterator
+from typing import Iterator, cast
 from enum import IntEnum
 
 import pytest
@@ -45,6 +49,7 @@ from socks_router.models import (
     ApplicationContext,
     RetryOptions,
 )
+from socks_router.parsers import routing_table
 from socks_router.router import (
     create_socket,
     with_proxy,
@@ -54,6 +59,7 @@ from socks_router.router import (
     SocksRouterRequestHandler,
 )
 from socks_router.utils import read_socket, write_socket, free_port
+from socks_router.proxies import FileProxy, observer
 
 logger = logging.getLogger(__name__)
 
@@ -524,6 +530,59 @@ def describe_SocksRouter():
                             proxies=proxies(proxy.address),
                         ).json()
 
+    def when_file_descriptor_changes():
+        def it_should_reflect_changes_in_newer_requests(mocker, daemonize, httpserver):
+            destination = IPv4("127.0.0.1", httpserver.port)
+            httpserver.expect_request("/").respond_with_json({})
+
+            with daemonize(context=ApplicationContext("passthrough")) as passthrough:
+                process_request = mocker.spy(passthrough, "process_request")
+                with tempfile.TemporaryDirectory() as workspace:
+                    routes_filename = os.path.join(workspace, "routes")
+                    # create empty file
+                    pathlib.Path(routes_filename).write_text("")
+
+                    context = ApplicationContext(
+                        routing_table=FileProxy.create(routes_filename, parser=routing_table.parse),
+                    )
+                    on_modified = mocker.spy(context.routing_table, "on_modified")
+                    with observer(cast(FileProxy, context.routing_table)):
+                        with daemonize(context=context) as proxy:
+                            assert not cast(FileProxy, context.routing_table).__subject__, "routing_table should be empty"
+
+                            requests.get(
+                                f"http://{destination}/",
+                                proxies=proxies(proxy.address),
+                            ).json()
+
+                            process_request.assert_not_called()
+                            on_modified.assert_not_called()
+
+                            routes = f"socks5h://{passthrough.address} *\n"
+
+                            # update the content in the file with external program
+                            pathlib.Path(routes_filename).write_text(routes)
+
+                            timeout = 10
+                            interval = 0.1
+                            for i in range(math.ceil(timeout / interval)):
+                                if on_modified.mock_calls:
+                                    break
+                                time.sleep(interval)
+
+                            on_modified.assert_called_once()
+
+                            assert cast(FileProxy, context.routing_table).__subject__ == routing_table.parse(
+                                routes
+                            ), "the proxied routing_table should reflect changes in the file"
+
+                            requests.get(
+                                f"http://{destination}/",
+                                proxies=proxies(proxy.address),
+                            ).json()
+
+                            process_request.assert_called()
+
     def when_filedesctiprors_get_out_of_FD_SETSIZE():
         @pytest.mark.parametrize("address_type,address", [(IPv4, "127.0.0.1")])
         def it_should_not_throw_filedescriptor_out_of_range(daemonize, httpserver, address_type, address):
@@ -538,7 +597,7 @@ def describe_SocksRouter():
                 # 3. server side connection to client
                 # 4. server side remote
                 # 5. http server connection to client
-                if any(fd >= (FD_SETSIZE - 5) for fd in pipe):
+                if any(fd > (FD_SETSIZE - 4) for fd in pipe):
                     break
 
             destination = address_type(address, httpserver.port)
