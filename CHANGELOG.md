@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## v0.2.0 (2024-09-28)
+
+### Feature
+
+* feat: config hot reload via watchdog (#42)
+
+* feat: config hot reload via watchdog
+
+* wip: adding debug logs to debug linux
+
+* wip: adding debug logs in test case
+
+* chore: remove debug logs
+
+* chore: remove unused branches and place sleep to wait for __subject__ to update
+
+* chore: fix coverage pragma ([`6ce0241`](https://github.com/leoslf/socks-router/commit/6ce0241b70c531aacb015409ebcda6663fd3c71d))
+
 ## v0.1.1 (2024-08-05)
 
 ### Ci
