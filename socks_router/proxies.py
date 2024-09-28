@@ -68,7 +68,7 @@ class FileProxy[T](BaseProxy[T], LoggingEventHandler):
         match event:
             case FileModifiedEvent() if os.fsdecode(event.src_path) == os.path.realpath(self.path):
                 self.update()
-            case _:  # pragma: no cover
+            case _:  # pragma: not covered
                 pass
 
 
