@@ -574,6 +574,9 @@ def describe_SocksRouter():
 
                             on_modified.assert_called_once()
 
+                            # FIXME: for some reason linux version has __subject__ not updated for some time
+                            time.sleep(1)
+
                             logger.debug("checking if proxy.context.routing_table.__subject__ has been updated")
                             assert cast(FileProxy, proxy.context.routing_table).__subject__ == routing_table.parse(
                                 routes
