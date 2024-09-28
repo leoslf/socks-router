@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>socks-router &mdash; Project name not set  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=fd3f3429" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API Reference" href="autoapi/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            Project name not set
+          </a>
+              <div class="version">
+                0.2.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="autoapi/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">Project name not set</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">socks-router</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="socks-router">
+<h1>socks-router<a class="headerlink" href="#socks-router" title="Link to this heading"></a></h1>
+<p>Thin facade layer on top of openssh’s dynamic proxy with slightly more sophiscated configurable routing rules</p>
+<section id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>socks-router<span class="w"> </span>--help
+</pre></div>
+</div>
+</section>
+<section id="routing-table">
+<h2>Routing Table<a class="headerlink" href="#routing-table" title="Link to this heading"></a></h2>
+<section id="grammar">
+<h3>Grammar<a class="headerlink" href="#grammar" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>routing_table := &quot;&quot; | comment | routing_rule [[comment] end_of_line routing_table]
+routing_rule := upstream_address whitespaces patterns
+comment := [whitespaces] &quot;#&quot;  [whitespaces] .*
+
+upstream_address := [upstream_scheme &quot;://&quot;] address
+address := ipv4_address | ipv6_address | host_address
+
+upstream_scheme := &quot;ssh&quot; | &quot;socks5&quot; | &quot;socks5h&quot;
+
+patterns := pattern [whitespaces patterns]
+pattern := [&quot;!&quot;] &quot;[^ \t\r\n]+&quot;
+
+ipv4_address := ipv4 [&quot;:&quot; port]
+ipv6_address := (&quot;[&quot; ipv6 &quot;]:&quot; port) | ipv6
+host_address := host [&quot;:&quot; port]
+
+whitespaces := whitespace | whitespaces
+whitespace := &quot; &quot; | &quot;\t&quot;
+end_of_line := &quot;\r\n&quot; | &quot;\r&quot; | &quot;\n&quot;
+</pre></div>
+</div>
+</section>
+<section id="example">
+<h3>Example<a class="headerlink" href="#example" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span># ~/.ssh/routes
+
+# default upstream scheme: ssh://
+# use ssh host foo&#39;s dynamic proxy to connect to bar.com
+foo bar.com
+# use ssh host foo&#39;s dynamic proxy to connect to *.bar.com
+foo *.bar.com
+# use ssh host foo&#39;s dynamic proxy to connect to *.google.com but abc.bar.com
+foo *.bar.com !abc.bar.com
+ssh://foo *.google.com
+
+# transparent socks5 / socks5h upstreams
+# perform DNS resolution in socks-router
+socks5://foo-bar.baz hello-world.com
+# defer the DNS resolution to upstream
+socks5h://foo-bar.baz hello-world.com
+</pre></div>
+</div>
+</section>
+</section>
+<section id="development">
+<h2>Development<a class="headerlink" href="#development" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>install
+
+poetry<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>--cov-report<span class="w"> </span>html
+</pre></div>
+</div>
+<p>NOTE: pre-commit hooks are set up</p>
+</section>
+</section>
+<section id="table-of-content">
+<h1>Table of Content<a class="headerlink" href="#table-of-content" title="Link to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="autoapi/index.html">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="autoapi/socks_router/index.html">socks_router</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="autoapi/socks_router/index.html#submodules">Submodules</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/socks_router/cli/index.html">socks_router.cli</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/socks_router/cli/index.html#attributes">Attributes</a></li>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/socks_router/cli/index.html#functions">Functions</a></li>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/socks_router/cli/index.html#module-contents">Module Contents</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/cli/index.html#socks_router.cli.logger"><code class="docutils literal notranslate"><span class="pre">logger</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/cli/index.html#socks_router.cli.cli"><code class="docutils literal notranslate"><span class="pre">cli</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/socks_router/models/index.html">socks_router.models</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/socks_router/models/index.html#attributes">Attributes</a></li>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/socks_router/models/index.html#classes">Classes</a></li>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/socks_router/models/index.html#module-contents">Module Contents</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.SOCKS_VERSION"><code class="docutils literal notranslate"><span class="pre">SOCKS_VERSION</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.PackingSequence"><code class="docutils literal notranslate"><span class="pre">PackingSequence</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.RecursiveMapping"><code class="docutils literal notranslate"><span class="pre">RecursiveMapping</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.PACKABLE_DEFERRED_FORMAT"><code class="docutils literal notranslate"><span class="pre">PACKABLE_DEFERRED_FORMAT</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.PACKABLE_VARIABLE_LENGTH_DECLARATION_FORMAT"><code class="docutils literal notranslate"><span class="pre">PACKABLE_VARIABLE_LENGTH_DECLARATION_FORMAT</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Packable"><code class="docutils literal notranslate"><span class="pre">Packable</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Packable.__pack_format__"><code class="docutils literal notranslate"><span class="pre">Packable.__pack_format__</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.SupportsUnbytes"><code class="docutils literal notranslate"><span class="pre">SupportsUnbytes</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.SupportsUnbytes.__unbytes__"><code class="docutils literal notranslate"><span class="pre">SupportsUnbytes.__unbytes__</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.SocketAddress"><code class="docutils literal notranslate"><span class="pre">SocketAddress</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.SocketAddress.address"><code class="docutils literal notranslate"><span class="pre">SocketAddress.address</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.SocketAddress.port"><code class="docutils literal notranslate"><span class="pre">SocketAddress.port</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.SocketAddress.__str__"><code class="docutils literal notranslate"><span class="pre">SocketAddress.__str__</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.SocketAddress.sockaddr"><code class="docutils literal notranslate"><span class="pre">SocketAddress.sockaddr</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.SocketAddress.with_port"><code class="docutils literal notranslate"><span class="pre">SocketAddress.with_port</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.SocketAddress.with_default_port"><code class="docutils literal notranslate"><span class="pre">SocketAddress.with_default_port</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.SocketAddress.url_literal"><code class="docutils literal notranslate"><span class="pre">SocketAddress.url_literal</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.IPv4"><code class="docutils literal notranslate"><span class="pre">IPv4</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.IPv4.address"><code class="docutils literal notranslate"><span class="pre">IPv4.address</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.IPv4.IPv4Address"><code class="docutils literal notranslate"><span class="pre">IPv4.IPv4Address</span></code></a><ul>
+<li class="toctree-l8"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.IPv4.IPv4Address.__pack_format__"><code class="docutils literal notranslate"><span class="pre">IPv4.IPv4Address.__pack_format__</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.IPv4.IPv4Address.__bytes__"><code class="docutils literal notranslate"><span class="pre">IPv4.IPv4Address.__bytes__</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.IPv4.IPv4Address.__unbytes__"><code class="docutils literal notranslate"><span class="pre">IPv4.IPv4Address.__unbytes__</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.IPv6"><code class="docutils literal notranslate"><span class="pre">IPv6</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.IPv6.address"><code class="docutils literal notranslate"><span class="pre">IPv6.address</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.IPv6.IPv6Address"><code class="docutils literal notranslate"><span class="pre">IPv6.IPv6Address</span></code></a><ul>
+<li class="toctree-l8"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.IPv6.IPv6Address.__pack_format__"><code class="docutils literal notranslate"><span class="pre">IPv6.IPv6Address.__pack_format__</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.IPv6.IPv6Address.__bytes__"><code class="docutils literal notranslate"><span class="pre">IPv6.IPv6Address.__bytes__</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.IPv6.IPv6Address.__unbytes__"><code class="docutils literal notranslate"><span class="pre">IPv6.IPv6Address.__unbytes__</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.IPv6.url_literal"><code class="docutils literal notranslate"><span class="pre">IPv6.url_literal</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Host"><code class="docutils literal notranslate"><span class="pre">Host</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Host.address"><code class="docutils literal notranslate"><span class="pre">Host.address</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Address"><code class="docutils literal notranslate"><span class="pre">Address</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5Method"><code class="docutils literal notranslate"><span class="pre">Socks5Method</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5Method.NO_AUTHENTICATION_REQUIRED"><code class="docutils literal notranslate"><span class="pre">Socks5Method.NO_AUTHENTICATION_REQUIRED</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5Method.GSSAPI"><code class="docutils literal notranslate"><span class="pre">Socks5Method.GSSAPI</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5Method.USERNAME_PASSWORD"><code class="docutils literal notranslate"><span class="pre">Socks5Method.USERNAME_PASSWORD</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5Method.NO_ACCEPTABLE_METHODS"><code class="docutils literal notranslate"><span class="pre">Socks5Method.NO_ACCEPTABLE_METHODS</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5Method.__pack_format__"><code class="docutils literal notranslate"><span class="pre">Socks5Method.__pack_format__</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5Command"><code class="docutils literal notranslate"><span class="pre">Socks5Command</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5Command.CONNECT"><code class="docutils literal notranslate"><span class="pre">Socks5Command.CONNECT</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5Command.BIND"><code class="docutils literal notranslate"><span class="pre">Socks5Command.BIND</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5Command.UDP_ASSOCIATE"><code class="docutils literal notranslate"><span class="pre">Socks5Command.UDP_ASSOCIATE</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5Command.__pack_format__"><code class="docutils literal notranslate"><span class="pre">Socks5Command.__pack_format__</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5AddressType"><code class="docutils literal notranslate"><span class="pre">Socks5AddressType</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5AddressType.IPv4"><code class="docutils literal notranslate"><span class="pre">Socks5AddressType.IPv4</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5AddressType.DOMAINNAME"><code class="docutils literal notranslate"><span class="pre">Socks5AddressType.DOMAINNAME</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5AddressType.IPv6"><code class="docutils literal notranslate"><span class="pre">Socks5AddressType.IPv6</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5AddressType.__pack_format__"><code class="docutils literal notranslate"><span class="pre">Socks5AddressType.__pack_format__</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5MethodSelectionRequest"><code class="docutils literal notranslate"><span class="pre">Socks5MethodSelectionRequest</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5MethodSelectionRequest.version"><code class="docutils literal notranslate"><span class="pre">Socks5MethodSelectionRequest.version</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5MethodSelectionRequest.methods"><code class="docutils literal notranslate"><span class="pre">Socks5MethodSelectionRequest.methods</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5MethodSelectionResponse"><code class="docutils literal notranslate"><span class="pre">Socks5MethodSelectionResponse</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5MethodSelectionResponse.version"><code class="docutils literal notranslate"><span class="pre">Socks5MethodSelectionResponse.version</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5MethodSelectionResponse.method"><code class="docutils literal notranslate"><span class="pre">Socks5MethodSelectionResponse.method</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5Address"><code class="docutils literal notranslate"><span class="pre">Socks5Address</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5Address.address_type"><code class="docutils literal notranslate"><span class="pre">Socks5Address.address_type</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5Address.type"><code class="docutils literal notranslate"><span class="pre">Socks5Address.type</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5Address.sockaddr"><code class="docutils literal notranslate"><span class="pre">Socks5Address.sockaddr</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5Address.from_address"><code class="docutils literal notranslate"><span class="pre">Socks5Address.from_address</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5Request"><code class="docutils literal notranslate"><span class="pre">Socks5Request</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5Request.version"><code class="docutils literal notranslate"><span class="pre">Socks5Request.version</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5Request.command"><code class="docutils literal notranslate"><span class="pre">Socks5Request.command</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5Request.reserved"><code class="docutils literal notranslate"><span class="pre">Socks5Request.reserved</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5Request.destination"><code class="docutils literal notranslate"><span class="pre">Socks5Request.destination</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5ReplyType"><code class="docutils literal notranslate"><span class="pre">Socks5ReplyType</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5ReplyType.SUCCEEDED"><code class="docutils literal notranslate"><span class="pre">Socks5ReplyType.SUCCEEDED</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5ReplyType.GENERAL_SOCKS_SERVER_FAILURE"><code class="docutils literal notranslate"><span class="pre">Socks5ReplyType.GENERAL_SOCKS_SERVER_FAILURE</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5ReplyType.CONNECTION_NOT_ALLOWED_BY_RULESET"><code class="docutils literal notranslate"><span class="pre">Socks5ReplyType.CONNECTION_NOT_ALLOWED_BY_RULESET</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5ReplyType.NETWORK_UNREACHABLE"><code class="docutils literal notranslate"><span class="pre">Socks5ReplyType.NETWORK_UNREACHABLE</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5ReplyType.HOST_UNREACHABLE"><code class="docutils literal notranslate"><span class="pre">Socks5ReplyType.HOST_UNREACHABLE</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5ReplyType.CONNECTION_REFUSED"><code class="docutils literal notranslate"><span class="pre">Socks5ReplyType.CONNECTION_REFUSED</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5ReplyType.TTL_EXPIRED"><code class="docutils literal notranslate"><span class="pre">Socks5ReplyType.TTL_EXPIRED</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5ReplyType.COMMAND_NOT_SUPPORTED"><code class="docutils literal notranslate"><span class="pre">Socks5ReplyType.COMMAND_NOT_SUPPORTED</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5ReplyType.ADDRESS_TYPE_NOT_SUPPORTED"><code class="docutils literal notranslate"><span class="pre">Socks5ReplyType.ADDRESS_TYPE_NOT_SUPPORTED</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5ReplyType.__pack_format__"><code class="docutils literal notranslate"><span class="pre">Socks5ReplyType.__pack_format__</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5ReplyType.message"><code class="docutils literal notranslate"><span class="pre">Socks5ReplyType.message</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5Reply"><code class="docutils literal notranslate"><span class="pre">Socks5Reply</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5Reply.version"><code class="docutils literal notranslate"><span class="pre">Socks5Reply.version</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5Reply.reply"><code class="docutils literal notranslate"><span class="pre">Socks5Reply.reply</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5Reply.reserved"><code class="docutils literal notranslate"><span class="pre">Socks5Reply.reserved</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5Reply.server_bound_address"><code class="docutils literal notranslate"><span class="pre">Socks5Reply.server_bound_address</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5State"><code class="docutils literal notranslate"><span class="pre">Socks5State</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5State.LISTEN"><code class="docutils literal notranslate"><span class="pre">Socks5State.LISTEN</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5State.HANDSHAKE"><code class="docutils literal notranslate"><span class="pre">Socks5State.HANDSHAKE</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5State.REQUEST"><code class="docutils literal notranslate"><span class="pre">Socks5State.REQUEST</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5State.ESTABLISHED"><code class="docutils literal notranslate"><span class="pre">Socks5State.ESTABLISHED</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5State.CLOSED"><code class="docutils literal notranslate"><span class="pre">Socks5State.CLOSED</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Pattern"><code class="docutils literal notranslate"><span class="pre">Pattern</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Pattern.address"><code class="docutils literal notranslate"><span class="pre">Pattern.address</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Pattern.is_positive_match"><code class="docutils literal notranslate"><span class="pre">Pattern.is_positive_match</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Pattern.__str__"><code class="docutils literal notranslate"><span class="pre">Pattern.__str__</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.UpstreamScheme"><code class="docutils literal notranslate"><span class="pre">UpstreamScheme</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.UpstreamScheme.SSH"><code class="docutils literal notranslate"><span class="pre">UpstreamScheme.SSH</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.UpstreamScheme.SOCKS5"><code class="docutils literal notranslate"><span class="pre">UpstreamScheme.SOCKS5</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.UpstreamScheme.SOCKS5H"><code class="docutils literal notranslate"><span class="pre">UpstreamScheme.SOCKS5H</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.UpstreamScheme.default_port"><code class="docutils literal notranslate"><span class="pre">UpstreamScheme.default_port</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.UpstreamAddress"><code class="docutils literal notranslate"><span class="pre">UpstreamAddress</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.UpstreamAddress.scheme"><code class="docutils literal notranslate"><span class="pre">UpstreamAddress.scheme</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.UpstreamAddress.address"><code class="docutils literal notranslate"><span class="pre">UpstreamAddress.address</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.UpstreamAddress.__str__"><code class="docutils literal notranslate"><span class="pre">UpstreamAddress.__str__</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.UpstreamAddress.with_default_port"><code class="docutils literal notranslate"><span class="pre">UpstreamAddress.with_default_port</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.RoutingEntry"><code class="docutils literal notranslate"><span class="pre">RoutingEntry</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.RoutingTable"><code class="docutils literal notranslate"><span class="pre">RoutingTable</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5Addresses"><code class="docutils literal notranslate"><span class="pre">Socks5Addresses</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Socks5AddressTypes"><code class="docutils literal notranslate"><span class="pre">Socks5AddressTypes</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.SSHUpstream"><code class="docutils literal notranslate"><span class="pre">SSHUpstream</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.SSHUpstream.ssh_client"><code class="docutils literal notranslate"><span class="pre">SSHUpstream.ssh_client</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.SSHUpstream.proxy_server"><code class="docutils literal notranslate"><span class="pre">SSHUpstream.proxy_server</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.SSHUpstream.create"><code class="docutils literal notranslate"><span class="pre">SSHUpstream.create</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.ProxyUpstream"><code class="docutils literal notranslate"><span class="pre">ProxyUpstream</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.ProxyUpstream.proxy_server"><code class="docutils literal notranslate"><span class="pre">ProxyUpstream.proxy_server</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.Upstream"><code class="docutils literal notranslate"><span class="pre">Upstream</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.RetryOptions"><code class="docutils literal notranslate"><span class="pre">RetryOptions</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.RetryOptions.tries"><code class="docutils literal notranslate"><span class="pre">RetryOptions.tries</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.RetryOptions.delay"><code class="docutils literal notranslate"><span class="pre">RetryOptions.delay</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.RetryOptions.max_delay"><code class="docutils literal notranslate"><span class="pre">RetryOptions.max_delay</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.RetryOptions.backoff"><code class="docutils literal notranslate"><span class="pre">RetryOptions.backoff</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.RetryOptions.jitter"><code class="docutils literal notranslate"><span class="pre">RetryOptions.jitter</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.RetryOptions.exponential_backoff"><code class="docutils literal notranslate"><span class="pre">RetryOptions.exponential_backoff</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.ApplicationContext"><code class="docutils literal notranslate"><span class="pre">ApplicationContext</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.ApplicationContext.name"><code class="docutils literal notranslate"><span class="pre">ApplicationContext.name</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.ApplicationContext.routing_table"><code class="docutils literal notranslate"><span class="pre">ApplicationContext.routing_table</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.ApplicationContext.ssh_connection_timeout"><code class="docutils literal notranslate"><span class="pre">ApplicationContext.ssh_connection_timeout</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.ApplicationContext.remote_socket_timeout"><code class="docutils literal notranslate"><span class="pre">ApplicationContext.remote_socket_timeout</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.ApplicationContext.proxy_poll_socket_timeout"><code class="docutils literal notranslate"><span class="pre">ApplicationContext.proxy_poll_socket_timeout</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.ApplicationContext.proxy_retry_options"><code class="docutils literal notranslate"><span class="pre">ApplicationContext.proxy_retry_options</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.ApplicationContext.mutex"><code class="docutils literal notranslate"><span class="pre">ApplicationContext.mutex</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.ApplicationContext.upstreams"><code class="docutils literal notranslate"><span class="pre">ApplicationContext.upstreams</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/models/index.html#socks_router.models.ApplicationContext.is_terminating"><code class="docutils literal notranslate"><span class="pre">ApplicationContext.is_terminating</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/socks_router/parsers/index.html">socks_router.parsers</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/socks_router/parsers/index.html#attributes">Attributes</a></li>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/socks_router/parsers/index.html#functions">Functions</a></li>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/socks_router/parsers/index.html#module-contents">Module Contents</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/parsers/index.html#socks_router.parsers.logger"><code class="docutils literal notranslate"><span class="pre">logger</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/parsers/index.html#socks_router.parsers.trace"><code class="docutils literal notranslate"><span class="pre">trace</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/parsers/index.html#socks_router.parsers.whitespace"><code class="docutils literal notranslate"><span class="pre">whitespace</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/parsers/index.html#socks_router.parsers.whitespaces"><code class="docutils literal notranslate"><span class="pre">whitespaces</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/parsers/index.html#socks_router.parsers.ipv4_octet"><code class="docutils literal notranslate"><span class="pre">ipv4_octet</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/parsers/index.html#socks_router.parsers.ipv6_doublet"><code class="docutils literal notranslate"><span class="pre">ipv6_doublet</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/parsers/index.html#socks_router.parsers.ipv4"><code class="docutils literal notranslate"><span class="pre">ipv4</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/parsers/index.html#socks_router.parsers.h16"><code class="docutils literal notranslate"><span class="pre">h16</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/parsers/index.html#socks_router.parsers.ls32"><code class="docutils literal notranslate"><span class="pre">ls32</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/parsers/index.html#socks_router.parsers.ipv6"><code class="docutils literal notranslate"><span class="pre">ipv6</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/parsers/index.html#socks_router.parsers.port"><code class="docutils literal notranslate"><span class="pre">port</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/parsers/index.html#socks_router.parsers.ipv4_address"><code class="docutils literal notranslate"><span class="pre">ipv4_address</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/parsers/index.html#socks_router.parsers.ipv6_address"><code class="docutils literal notranslate"><span class="pre">ipv6_address</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/parsers/index.html#socks_router.parsers.hostname"><code class="docutils literal notranslate"><span class="pre">hostname</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/parsers/index.html#socks_router.parsers.host_address"><code class="docutils literal notranslate"><span class="pre">host_address</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/parsers/index.html#socks_router.parsers.address"><code class="docutils literal notranslate"><span class="pre">address</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/parsers/index.html#socks_router.parsers.scheme"><code class="docutils literal notranslate"><span class="pre">scheme</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/parsers/index.html#socks_router.parsers.upstream_address"><code class="docutils literal notranslate"><span class="pre">upstream_address</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/parsers/index.html#socks_router.parsers.comment"><code class="docutils literal notranslate"><span class="pre">comment</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/parsers/index.html#socks_router.parsers.pattern"><code class="docutils literal notranslate"><span class="pre">pattern</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/parsers/index.html#socks_router.parsers.routing_rule"><code class="docutils literal notranslate"><span class="pre">routing_rule</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/parsers/index.html#socks_router.parsers.routing_table"><code class="docutils literal notranslate"><span class="pre">routing_table</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/parsers/index.html#socks_router.parsers.parse_sockaddr"><code class="docutils literal notranslate"><span class="pre">parse_sockaddr</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/parsers/index.html#socks_router.parsers.pysocks_socks5_error"><code class="docutils literal notranslate"><span class="pre">pysocks_socks5_error</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/socks_router/proxies/index.html">socks_router.proxies</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#attributes">Attributes</a></li>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#classes">Classes</a></li>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#functions">Functions</a></li>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#module-contents">Module Contents</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#socks_router.proxies.logger"><code class="docutils literal notranslate"><span class="pre">logger</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#socks_router.proxies.Parser"><code class="docutils literal notranslate"><span class="pre">Parser</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#socks_router.proxies.ModifiedEvent"><code class="docutils literal notranslate"><span class="pre">ModifiedEvent</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#socks_router.proxies.Proxy"><code class="docutils literal notranslate"><span class="pre">Proxy</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#socks_router.proxies.Proxy.__subject__"><code class="docutils literal notranslate"><span class="pre">Proxy.__subject__</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#socks_router.proxies.BaseProxy"><code class="docutils literal notranslate"><span class="pre">BaseProxy</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#socks_router.proxies.BaseProxy.__getattr__"><code class="docutils literal notranslate"><span class="pre">BaseProxy.__getattr__</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#socks_router.proxies.BaseProxy.__getitem__"><code class="docutils literal notranslate"><span class="pre">BaseProxy.__getitem__</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#socks_router.proxies.BaseProxy.create"><code class="docutils literal notranslate"><span class="pre">BaseProxy.create</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#socks_router.proxies.FileProxy"><code class="docutils literal notranslate"><span class="pre">FileProxy</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#socks_router.proxies.FileProxy.path"><code class="docutils literal notranslate"><span class="pre">FileProxy.path</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#socks_router.proxies.FileProxy.parser"><code class="docutils literal notranslate"><span class="pre">FileProxy.parser</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#socks_router.proxies.FileProxy.mutex"><code class="docutils literal notranslate"><span class="pre">FileProxy.mutex</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#socks_router.proxies.FileProxy.__subject__"><code class="docutils literal notranslate"><span class="pre">FileProxy.__subject__</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#socks_router.proxies.FileProxy.__post_init__"><code class="docutils literal notranslate"><span class="pre">FileProxy.__post_init__</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#socks_router.proxies.FileProxy.__hash__"><code class="docutils literal notranslate"><span class="pre">FileProxy.__hash__</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#socks_router.proxies.FileProxy.event_filter"><code class="docutils literal notranslate"><span class="pre">FileProxy.event_filter</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#socks_router.proxies.FileProxy.content"><code class="docutils literal notranslate"><span class="pre">FileProxy.content</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#socks_router.proxies.FileProxy.update"><code class="docutils literal notranslate"><span class="pre">FileProxy.update</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#socks_router.proxies.FileProxy.on_modified"><code class="docutils literal notranslate"><span class="pre">FileProxy.on_modified</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#socks_router.proxies.LiteralProxy"><code class="docutils literal notranslate"><span class="pre">LiteralProxy</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#socks_router.proxies.LiteralProxy.content"><code class="docutils literal notranslate"><span class="pre">LiteralProxy.content</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#socks_router.proxies.LiteralProxy.parser"><code class="docutils literal notranslate"><span class="pre">LiteralProxy.parser</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#socks_router.proxies.LiteralProxy.__subject__"><code class="docutils literal notranslate"><span class="pre">LiteralProxy.__subject__</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#socks_router.proxies.LiteralProxy.__post_init__"><code class="docutils literal notranslate"><span class="pre">LiteralProxy.__post_init__</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#socks_router.proxies.observer"><code class="docutils literal notranslate"><span class="pre">observer</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/proxies/index.html#socks_router.proxies.create_proxy"><code class="docutils literal notranslate"><span class="pre">create_proxy</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/socks_router/router/index.html">socks_router.router</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/socks_router/router/index.html#attributes">Attributes</a></li>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/socks_router/router/index.html#classes">Classes</a></li>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/socks_router/router/index.html#functions">Functions</a></li>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/socks_router/router/index.html#module-contents">Module Contents</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.CHUNK_SIZE"><code class="docutils literal notranslate"><span class="pre">CHUNK_SIZE</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.logger"><code class="docutils literal notranslate"><span class="pre">logger</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.create_socket"><code class="docutils literal notranslate"><span class="pre">create_socket</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.with_proxy"><code class="docutils literal notranslate"><span class="pre">with_proxy</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.poll_socket"><code class="docutils literal notranslate"><span class="pre">poll_socket</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.resolve_address"><code class="docutils literal notranslate"><span class="pre">resolve_address</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.create_remote"><code class="docutils literal notranslate"><span class="pre">create_remote</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.connect_remote"><code class="docutils literal notranslate"><span class="pre">connect_remote</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.exchange_loop"><code class="docutils literal notranslate"><span class="pre">exchange_loop</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.match_upstream"><code class="docutils literal notranslate"><span class="pre">match_upstream</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.SocksRouter"><code class="docutils literal notranslate"><span class="pre">SocksRouter</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.SocksRouter.allow_reuse_address"><code class="docutils literal notranslate"><span class="pre">SocksRouter.allow_reuse_address</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.SocksRouter.daemon_threads"><code class="docutils literal notranslate"><span class="pre">SocksRouter.daemon_threads</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.SocksRouter.block_on_close"><code class="docutils literal notranslate"><span class="pre">SocksRouter.block_on_close</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.SocksRouter.context"><code class="docutils literal notranslate"><span class="pre">SocksRouter.context</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.SocksRouter.logger"><code class="docutils literal notranslate"><span class="pre">SocksRouter.logger</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.SocksRouter.address_family"><code class="docutils literal notranslate"><span class="pre">SocksRouter.address_family</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.SocksRouter.address"><code class="docutils literal notranslate"><span class="pre">SocksRouter.address</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.SocksRouter.server_activate"><code class="docutils literal notranslate"><span class="pre">SocksRouter.server_activate</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.SocksRouter.get_request"><code class="docutils literal notranslate"><span class="pre">SocksRouter.get_request</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.SocksRouter.shutdown_request"><code class="docutils literal notranslate"><span class="pre">SocksRouter.shutdown_request</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.SocksRouter.shutdown"><code class="docutils literal notranslate"><span class="pre">SocksRouter.shutdown</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.SocksRouterRequestHandler"><code class="docutils literal notranslate"><span class="pre">SocksRouterRequestHandler</span></code></a><ul>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.SocksRouterRequestHandler.server"><code class="docutils literal notranslate"><span class="pre">SocksRouterRequestHandler.server</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.SocksRouterRequestHandler.state"><code class="docutils literal notranslate"><span class="pre">SocksRouterRequestHandler.state</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.SocksRouterRequestHandler.remote"><code class="docutils literal notranslate"><span class="pre">SocksRouterRequestHandler.remote</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.SocksRouterRequestHandler.logger"><code class="docutils literal notranslate"><span class="pre">SocksRouterRequestHandler.logger</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.SocksRouterRequestHandler.acquire_upstream"><code class="docutils literal notranslate"><span class="pre">SocksRouterRequestHandler.acquire_upstream</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.SocksRouterRequestHandler.handshake"><code class="docutils literal notranslate"><span class="pre">SocksRouterRequestHandler.handshake</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.SocksRouterRequestHandler.reply"><code class="docutils literal notranslate"><span class="pre">SocksRouterRequestHandler.reply</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.SocksRouterRequestHandler.connect_remote"><code class="docutils literal notranslate"><span class="pre">SocksRouterRequestHandler.connect_remote</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.SocksRouterRequestHandler.handle_request"><code class="docutils literal notranslate"><span class="pre">SocksRouterRequestHandler.handle_request</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.SocksRouterRequestHandler.exchange"><code class="docutils literal notranslate"><span class="pre">SocksRouterRequestHandler.exchange</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.SocksRouterRequestHandler.setup"><code class="docutils literal notranslate"><span class="pre">SocksRouterRequestHandler.setup</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.SocksRouterRequestHandler.handle"><code class="docutils literal notranslate"><span class="pre">SocksRouterRequestHandler.handle</span></code></a></li>
+<li class="toctree-l7"><a class="reference internal" href="autoapi/socks_router/router/index.html#socks_router.router.SocksRouterRequestHandler.finish"><code class="docutils literal notranslate"><span class="pre">SocksRouterRequestHandler.finish</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="autoapi/socks_router/utils/index.html">socks_router.utils</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/socks_router/utils/index.html#functions">Functions</a></li>
+<li class="toctree-l5"><a class="reference internal" href="autoapi/socks_router/utils/index.html#module-contents">Module Contents</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/utils/index.html#socks_router.utils.resolve_type"><code class="docutils literal notranslate"><span class="pre">resolve_type</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/utils/index.html#socks_router.utils.to_bin"><code class="docutils literal notranslate"><span class="pre">to_bin</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/utils/index.html#socks_router.utils.to_oct"><code class="docutils literal notranslate"><span class="pre">to_oct</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/utils/index.html#socks_router.utils.to_hex"><code class="docutils literal notranslate"><span class="pre">to_hex</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/utils/index.html#socks_router.utils.is_optional"><code class="docutils literal notranslate"><span class="pre">is_optional</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/utils/index.html#socks_router.utils.is_list"><code class="docutils literal notranslate"><span class="pre">is_list</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/utils/index.html#socks_router.utils.tokenize_pack_format"><code class="docutils literal notranslate"><span class="pre">tokenize_pack_format</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/utils/index.html#socks_router.utils.read_socket"><code class="docutils literal notranslate"><span class="pre">read_socket</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/utils/index.html#socks_router.utils.write_socket"><code class="docutils literal notranslate"><span class="pre">write_socket</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="autoapi/socks_router/utils/index.html#socks_router.utils.free_port"><code class="docutils literal notranslate"><span class="pre">free_port</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<section id="changelog">
+<h2>CHANGELOG<a class="headerlink" href="#changelog" title="Link to this heading"></a></h2>
+<section id="v0-2-0-2024-09-28">
+<h3>v0.2.0 (2024-09-28)<a class="headerlink" href="#v0-2-0-2024-09-28" title="Link to this heading"></a></h3>
+<section id="feature">
+<h4>Feature<a class="headerlink" href="#feature" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p>feat: config hot reload via watchdog (#42)</p></li>
+<li><p>feat: config hot reload via watchdog</p></li>
+<li><p>wip: adding debug logs to debug linux</p></li>
+<li><p>wip: adding debug logs in test case</p></li>
+<li><p>chore: remove debug logs</p></li>
+<li><p>chore: remove unused branches and place sleep to wait for <strong>subject</strong> to update</p></li>
+<li><p>chore: fix coverage pragma (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/6ce0241b70c531aacb015409ebcda6663fd3c71d"><code class="docutils literal notranslate"><span class="pre">6ce0241</span></code></a>)</p></li>
+</ul>
+</section>
+</section>
+<section id="v0-1-1-2024-08-05">
+<h3>v0.1.1 (2024-08-05)<a class="headerlink" href="#v0-1-1-2024-08-05" title="Link to this heading"></a></h3>
+<section id="ci">
+<h4>Ci<a class="headerlink" href="#ci" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p>ci: switch to sonarcloud (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/bba275fc166b1dcd887634d7f668f131642e0e0e"><code class="docutils literal notranslate"><span class="pre">bba275f</span></code></a>)</p></li>
+<li><p>ci: build docs after release (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/a4a9d356852a6fbd8cbf7c1b743e19b9151ee146"><code class="docutils literal notranslate"><span class="pre">a4a9d35</span></code></a>)</p></li>
+</ul>
+</section>
+<section id="fix">
+<h4>Fix<a class="headerlink" href="#fix" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p>fix(exchange-loop): fixed filedescriptor out of range in select() (#22) (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/a89f59d59890ddfe2722cf6cd5a05acf9efe583b"><code class="docutils literal notranslate"><span class="pre">a89f59d</span></code></a>)</p></li>
+</ul>
+</section>
+</section>
+<section id="v0-1-0-2024-06-13">
+<h3>v0.1.0 (2024-06-13)<a class="headerlink" href="#v0-1-0-2024-06-13" title="Link to this heading"></a></h3>
+<section id="chore">
+<h4>Chore<a class="headerlink" href="#chore" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p>chore: ensure ssh permissions (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/76be6704a281593632f62d99006d5a7e28a790c9"><code class="docutils literal notranslate"><span class="pre">76be670</span></code></a>)</p></li>
+<li><p>chore: verbose ssh flag (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/79295d590391eb4cabfdb5c3733488ec42a00f05"><code class="docutils literal notranslate"><span class="pre">79295d5</span></code></a>)</p></li>
+<li><p>chore: ssh on mac (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/1cd4999d0327b6647ae25af9910a3c23ef301685"><code class="docutils literal notranslate"><span class="pre">1cd4999</span></code></a>)</p></li>
+<li><p>chore: sshd config on mac (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/2265c348d13db80460ea2addb89fcc812227f00e"><code class="docutils literal notranslate"><span class="pre">2265c34</span></code></a>)</p></li>
+<li><p>chore: test ssh (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/469b528144f43ea282efffa092759a82bfdb2539"><code class="docutils literal notranslate"><span class="pre">469b528</span></code></a>)</p></li>
+<li><p>chore: restart ssh (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/470e909392c8f3453f7a4698365002d629c9e6cd"><code class="docutils literal notranslate"><span class="pre">470e909</span></code></a>)</p></li>
+<li><p>chore: restart ssh (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/a39b51cd0f7f6fd655d6609d106a7e3754b21daf"><code class="docutils literal notranslate"><span class="pre">a39b51c</span></code></a>)</p></li>
+<li><p>chore: ssh config (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/3321fab3fbe5aa27e0daeafb3797a4d098ce4db9"><code class="docutils literal notranslate"><span class="pre">3321fab</span></code></a>)</p></li>
+<li><p>chore: set AddressFamily to any in sshd_config (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/2aadf01e6f53b194267dac65b7251e3edacfda7a"><code class="docutils literal notranslate"><span class="pre">2aadf01</span></code></a>)</p></li>
+<li><p>chore: added debug log on OSError (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/ebc4331aa4c1b68bcf45a9acd4640f692011c74f"><code class="docutils literal notranslate"><span class="pre">ebc4331</span></code></a>)</p></li>
+<li><p>chore: improve exception logging (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/219680671098934b20fc95fd94241fb6325a7fa2"><code class="docutils literal notranslate"><span class="pre">2196806</span></code></a>)</p></li>
+<li><p>chore: changed log level in utils (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/6420457a66b938a3c0073afa399ade5e604b3a6d"><code class="docutils literal notranslate"><span class="pre">6420457</span></code></a>)</p></li>
+<li><p>chore: better handling for exceptions (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/26fbe30f66e9ae23b8f6c57a18e5e3a13905f815"><code class="docutils literal notranslate"><span class="pre">26fbe30</span></code></a>)</p></li>
+<li><p>chore: removed unused code (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/dfb14f699183c7377b796bb86f7d0951d8a11016"><code class="docutils literal notranslate"><span class="pre">dfb14f6</span></code></a>)</p></li>
+<li><p>chore: fixed typo (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/05fac3e46c7d60aa144865f965ae642d2472fb5f"><code class="docutils literal notranslate"><span class="pre">05fac3e</span></code></a>)</p></li>
+<li><p>chore: added pytest into pre-commit hooks (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/bd3aca2ce2bd22800988f45eae86aeb3197f9ff4"><code class="docutils literal notranslate"><span class="pre">bd3aca2</span></code></a>)</p></li>
+<li><p>chore: fixed linter errors (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/fd16a0ce77cf55d86d96cc8a93e2c8842bb1604c"><code class="docutils literal notranslate"><span class="pre">fd16a0c</span></code></a>)</p></li>
+<li><p>chore: initial check-in (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/565e063525bfd8f894b98749ffbbeaafbfe34afd"><code class="docutils literal notranslate"><span class="pre">565e063</span></code></a>)</p></li>
+</ul>
+</section>
+<section id="id1">
+<h4>Ci<a class="headerlink" href="#id1" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p>ci: fix default branch checking (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/557bcbf4117319bfa575df8073220b3ca24b3b03"><code class="docutils literal notranslate"><span class="pre">557bcbf</span></code></a>)</p></li>
+<li><p>ci: fix ssh command test (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/1d4903fbea226df11d804d3e142bbaa392c0d3f1"><code class="docutils literal notranslate"><span class="pre">1d4903f</span></code></a>)</p></li>
+<li><p>ci: fix ssh command test (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/bd9fdb61f5b5b0fba3f4f9215e5eef8802d61d62"><code class="docutils literal notranslate"><span class="pre">bd9fdb6</span></code></a>)</p></li>
+<li><p>ci: use native traceback in pytest (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/52c2ff3faa179f3345b24cc2fa5bfa1ee4d05db9"><code class="docutils literal notranslate"><span class="pre">52c2ff3</span></code></a>)</p></li>
+<li><p>ci: ssh config (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/09bad9e7c33a3e97bb15585f037a0544512eeb16"><code class="docutils literal notranslate"><span class="pre">09bad9e</span></code></a>)</p></li>
+<li><p>ci: ssh MaxAuthTries 100 (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/91c0112a1926598693de91e66293141e2746ebc6"><code class="docutils literal notranslate"><span class="pre">91c0112</span></code></a>)</p></li>
+<li><p>ci: ssha (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/813398e56f7d1b8c7966e797a520a41c93c01f9d"><code class="docutils literal notranslate"><span class="pre">813398e</span></code></a>)</p></li>
+<li><p>ci: ssh (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/18b79618bcd2506e376cb070af32bdeba9f9133b"><code class="docutils literal notranslate"><span class="pre">18b7961</span></code></a>)</p></li>
+<li><p>ci: ssh config (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/b6a4c1fe70f0c770c845e30f2f344bc332d45934"><code class="docutils literal notranslate"><span class="pre">b6a4c1f</span></code></a>)</p></li>
+<li><p>ci: host key (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/c8bb0f095e251e95cfb2cc5602db732eb5c28696"><code class="docutils literal notranslate"><span class="pre">c8bb0f0</span></code></a>)</p></li>
+<li><p>ci: attempt to connect to sshd first (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/a5f8e6cd65f5f6cf3fdd5a53d791df7a20c17b0b"><code class="docutils literal notranslate"><span class="pre">a5f8e6c</span></code></a>)</p></li>
+<li><p>ci: leave ListenAddress alone (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/3dbe22df6a224e372bc10bc97c1b1845af192aff"><code class="docutils literal notranslate"><span class="pre">3dbe22d</span></code></a>)</p></li>
+<li><p>ci: write logs to junitxml (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/340934324a17f5e1d7ed0a73d27c045676eb4043"><code class="docutils literal notranslate"><span class="pre">3409343</span></code></a>)</p></li>
+<li><p>ci: lock mypy at 415d49f25b6315cf1b7a04046a942246a033498d (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/3ea10c6d075733697480d9cb3d36c1e25024e684"><code class="docutils literal notranslate"><span class="pre">3ea10c6</span></code></a>)</p></li>
+<li><p>ci: add colors to github actions (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/9837b450bf44483198fd4e7a3fda255d37d91c40"><code class="docutils literal notranslate"><span class="pre">9837b45</span></code></a>)</p></li>
+<li><p>ci: add colors to github actions (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/699ea7b0b4a0c171b46c0379acbee25d2627e5db"><code class="docutils literal notranslate"><span class="pre">699ea7b</span></code></a>)</p></li>
+<li><p>ci: always proceed to consolidation and sonarqube (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/970442bd962ca37a1f3a8eac4cd318e29f5df68e"><code class="docutils literal notranslate"><span class="pre">970442b</span></code></a>)</p></li>
+<li><p>ci: sed compatibility (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/056406f0cdb703d39108566574be9e12b2b05e69"><code class="docutils literal notranslate"><span class="pre">056406f</span></code></a>)</p></li>
+<li><p>ci: quoting (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/9e1e5da7c0b6033764759cf7e878c763950a8da4"><code class="docutils literal notranslate"><span class="pre">9e1e5da</span></code></a>)</p></li>
+<li><p>ci: quoting (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/6b3e8daf3300ea64147e79b9a08b63fa4525c533"><code class="docutils literal notranslate"><span class="pre">6b3e8da</span></code></a>)</p></li>
+<li><p>ci: accomodate mac (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/c9e2558ff9c4aa2140c562ad5c8e0eb8c6548e6a"><code class="docutils literal notranslate"><span class="pre">c9e2558</span></code></a>)</p></li>
+<li><p>ci: set +e in start-ssh-agent (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/52438a633abb2a1c4796845bb833814b08967ab9"><code class="docutils literal notranslate"><span class="pre">52438a6</span></code></a>)</p></li>
+<li><p>ci: fix ssh-keygen (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/d426fd377da90174538c0d753dead2d5e90d58d5"><code class="docutils literal notranslate"><span class="pre">d426fd3</span></code></a>)</p></li>
+<li><p>ci: specify path for id_rsa (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/7eed8410fdb8b3034f4a02e90f7dffd41c9050d2"><code class="docutils literal notranslate"><span class="pre">7eed841</span></code></a>)</p></li>
+<li><p>ci: fixed permission issue (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/858bee12ebf3a33a559d1fb7b0887603dc1d3046"><code class="docutils literal notranslate"><span class="pre">858bee1</span></code></a>)</p></li>
+<li><p>ci: fixed quotes in action (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/1c55f25876a5498ef5c84431db45c8bb1880ff1e"><code class="docutils literal notranslate"><span class="pre">1c55f25</span></code></a>)</p></li>
+<li><p>ci: added shell parameter in action (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/55f9d19b9ca937a831d7c49ff3c34e8da549512c"><code class="docutils literal notranslate"><span class="pre">55f9d19</span></code></a>)</p></li>
+<li><p>ci: setup sshd (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/e2b3a1af63227c22113609f14aa3ac0b2ae94d99"><code class="docutils literal notranslate"><span class="pre">e2b3a1a</span></code></a>)</p></li>
+<li><p>ci: fixed pipeline (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/b207d420bf33759bdbb249136f979de394fc1c48"><code class="docutils literal notranslate"><span class="pre">b207d42</span></code></a>)</p></li>
+<li><p>ci: fixed sphinx (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/1190ed43fb897dd899b8c76260a10767ce50a2e5"><code class="docutils literal notranslate"><span class="pre">1190ed4</span></code></a>)</p></li>
+<li><p>ci: fixed sonar-project.properties (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/dd1bf6db3b559392b50eafce278d6464cd5ec3cb"><code class="docutils literal notranslate"><span class="pre">dd1bf6d</span></code></a>)</p></li>
+<li><p>ci: use –non-interactive in ci (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/b7c2aead47729fa2faf950cff80c1204c9b3bf00"><code class="docutils literal notranslate"><span class="pre">b7c2aea</span></code></a>)</p></li>
+<li><p>ci: use sonarqube on-premise (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/d5c919c0712636471fcab6e0b0ae4abe5a26ff75"><code class="docutils literal notranslate"><span class="pre">d5c919c</span></code></a>)</p></li>
+<li><p>ci: added python version (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/d62a9338df2212a25500e57f9c201fca657f6b87"><code class="docutils literal notranslate"><span class="pre">d62a933</span></code></a>)</p></li>
+<li><p>ci: added python version (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/319b018672e22e8342eaf1181da687a798be6de1"><code class="docutils literal notranslate"><span class="pre">319b018</span></code></a>)</p></li>
+<li><p>ci: fix setup (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/4ef0956d9601ae7c068f86dcccb46e696ae8b2ba"><code class="docutils literal notranslate"><span class="pre">4ef0956</span></code></a>)</p></li>
+<li><p>ci: added –enable-incomplete-feature=NewGenericSyntax (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/9f746a9b7d996e2c7953f9dfc572b32afc2504b3"><code class="docutils literal notranslate"><span class="pre">9f746a9</span></code></a>)</p></li>
+</ul>
+</section>
+<section id="id2">
+<h4>Feature<a class="headerlink" href="#id2" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p>feat: implemented socks-router (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/a59afc25cf8d97be3e682259f068e082a767f219"><code class="docutils literal notranslate"><span class="pre">a59afc2</span></code></a>)</p></li>
+</ul>
+</section>
+<section id="id3">
+<h4>Fix<a class="headerlink" href="#id3" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p>fix: show sshd_config (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/9c010c3ad12a69d7e5a4dcd2a7ddeafbdef1579f"><code class="docutils literal notranslate"><span class="pre">9c010c3</span></code></a>)</p></li>
+<li><p>fix: pattern matching should match any port if port not given in routing table (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/b71b215c134a33f200604effb9e4d0a7122d44d3"><code class="docutils literal notranslate"><span class="pre">b71b215</span></code></a>)</p></li>
+</ul>
+</section>
+<section id="performance">
+<h4>Performance<a class="headerlink" href="#performance" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p>perf: fixed connection reset problem (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/422da331e02366fd113525b90face635cba70f32"><code class="docutils literal notranslate"><span class="pre">422da33</span></code></a>)</p></li>
+</ul>
+</section>
+<section id="refactor">
+<h4>Refactor<a class="headerlink" href="#refactor" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p>refactor: refactored pattern logic (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/a61d4e0622f0ad209c27152c10aa741a75ae68c1"><code class="docutils literal notranslate"><span class="pre">a61d4e0</span></code></a>)</p></li>
+<li><p>refactor: use Annotated to handle struct packing (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/3508f7a11026cbd22c39a6c97c62a444aec36344"><code class="docutils literal notranslate"><span class="pre">3508f7a</span></code></a>)</p></li>
+<li><p>refactor: extends ThreadingTCPServer (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/f1003fb01d245b2ff60aa46b02a0920a60c30b54"><code class="docutils literal notranslate"><span class="pre">f1003fb</span></code></a>)</p></li>
+<li><p>refactor: fixed typing (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/cd79854cdbbbe0030dd12ce63e71e4325aeabb31"><code class="docutils literal notranslate"><span class="pre">cd79854</span></code></a>)</p></li>
+<li><p>refactor: fixed ruff errors (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/47a92bb867c0d762463d1855f27d6335edd6b6c0"><code class="docutils literal notranslate"><span class="pre">47a92bb</span></code></a>)</p></li>
+</ul>
+</section>
+<section id="test">
+<h4>Test<a class="headerlink" href="#test" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p>test: force ipv4 for destination for when_upstream_server_does_not_behave (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/26db9c76a2ffc370f3b68bcc821f751861e9da0a"><code class="docutils literal notranslate"><span class="pre">26db9c7</span></code></a>)</p></li>
+<li><p>test: remove fixture to fix ScopeMismatch (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/6f34b1c51a822c0c451ad54459471d0f4d490640"><code class="docutils literal notranslate"><span class="pre">6f34b1c</span></code></a>)</p></li>
+<li><p>test: fix linux test case (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/ecb17fab2bc4a0ed29afe0f1ef58c606841b6b9f"><code class="docutils literal notranslate"><span class="pre">ecb17fa</span></code></a>)</p></li>
+<li><p>test: refactored proxies (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/174c15d04a8e42868ea82ad282686a124421f1bd"><code class="docutils literal notranslate"><span class="pre">174c15d</span></code></a>)</p></li>
+<li><p>test: use StringIO for stdout and stderr (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/7fac1a066ee28a59cfa46acae4a59bd37336fbd2"><code class="docutils literal notranslate"><span class="pre">7fac1a0</span></code></a>)</p></li>
+<li><p>test: specify identity file (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/7954c1ac1245b2e2617a029bdb318fa8600f8b2b"><code class="docutils literal notranslate"><span class="pre">7954c1a</span></code></a>)</p></li>
+<li><p>test: cover router (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/aceea3e4c416da9b5b5b1b3a212d38a6c8584baf"><code class="docutils literal notranslate"><span class="pre">aceea3e</span></code></a>)</p></li>
+<li><p>test: cover router (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/4657e1520fcca743994d9eb4cfe3119936e4b63d"><code class="docutils literal notranslate"><span class="pre">4657e15</span></code></a>)</p></li>
+<li><p>test: fully covered utils (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/993c0716075e72b7f4874728b2a5c8f42e59679e"><code class="docutils literal notranslate"><span class="pre">993c071</span></code></a>)</p></li>
+<li><p>test: cover read_socket (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/21a5f768812d76487d879818d04ea3143110f9d0"><code class="docutils literal notranslate"><span class="pre">21a5f76</span></code></a>)</p></li>
+<li><p>test: cover utils (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/cf5f6d4d16445114353d3a1d657e8ea141e2c8fb"><code class="docutils literal notranslate"><span class="pre">cf5f6d4</span></code></a>)</p></li>
+<li><p>test: testing router (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/8cbf208fce89b54651e178a6beb2e3f8ac001eda"><code class="docutils literal notranslate"><span class="pre">8cbf208</span></code></a>)</p></li>
+<li><p>test: fully test cli (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/b48388f676d534a7636cf09303d67e45d6aee46e"><code class="docutils literal notranslate"><span class="pre">b48388f</span></code></a>)</p></li>
+<li><p>test: added test case to ensure non-sock5 versions are not handled (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/ffd2d75f2556923901bf0496fbcf73a2ae284fc3"><code class="docutils literal notranslate"><span class="pre">ffd2d75</span></code></a>)</p></li>
+<li><p>test: testing socks-router with itself (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/4bee59f2847b9ff911f2263fdfab580d127280f8"><code class="docutils literal notranslate"><span class="pre">4bee59f</span></code></a>)</p></li>
+<li><p>test: added tests to router (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/5635fc9a44f49b6ecdb38659ee67a3cbba5060df"><code class="docutils literal notranslate"><span class="pre">5635fc9</span></code></a>)</p></li>
+</ul>
+</section>
+<section id="unknown">
+<h4>Unknown<a class="headerlink" href="#unknown" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p>wip: debug on CI (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/b962c3a4004e971c448b28c88b38f9d923dfc2b5"><code class="docutils literal notranslate"><span class="pre">b962c3a</span></code></a>)</p></li>
+<li><p>wip: debug on CI (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/60c555d1bec1cb043909f5e19ec5e9d74fbe9b98"><code class="docutils literal notranslate"><span class="pre">60c555d</span></code></a>)</p></li>
+<li><p>wip: debug on CI (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/7a23bad5c6737c2099b874859fb1eefeabfb87ef"><code class="docutils literal notranslate"><span class="pre">7a23bad</span></code></a>)</p></li>
+<li><p>wip: debug on CI (<a class="reference external" href="https://github.com/leoslf/socks-router/commit/6c4cc9b21f0e756501571d2f6cc96ff617034502"><code class="docutils literal notranslate"><span class="pre">6c4cc9b</span></code></a>)</p></li>
+</ul>
+</section>
+</section>
+</section>
+</section>
+<section id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading"></a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="autoapi/index.html" class="btn btn-neutral float-right" title="API Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

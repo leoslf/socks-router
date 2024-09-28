@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>socks_router.proxies &mdash; Project name not set  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=fd3f3429" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="socks_router.router" href="../router/index.html" />
+    <link rel="prev" title="socks_router.parsers" href="../parsers/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Project name not set
+          </a>
+              <div class="version">
+                0.2.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">socks_router</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../cli/index.html">socks_router.cli</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../models/index.html">socks_router.models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../parsers/index.html">socks_router.parsers</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">socks_router.proxies</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../router/index.html">socks_router.router</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../utils/index.html">socks_router.utils</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Project name not set</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">API Reference</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">socks_router</a></li>
+      <li class="breadcrumb-item active">socks_router.proxies</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/autoapi/socks_router/proxies/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-socks_router.proxies">
+<span id="socks-router-proxies"></span><h1>socks_router.proxies<a class="headerlink" href="#module-socks_router.proxies" title="Link to this heading"></a></h1>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#socks_router.proxies.logger" title="socks_router.proxies.logger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logger</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#socks_router.proxies.Parser" title="socks_router.proxies.Parser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Parser</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#socks_router.proxies.ModifiedEvent" title="socks_router.proxies.ModifiedEvent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ModifiedEvent</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#socks_router.proxies.Proxy" title="socks_router.proxies.Proxy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Proxy</span></code></a></p></td>
+<td><p>Base class for protocol classes.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#socks_router.proxies.BaseProxy" title="socks_router.proxies.BaseProxy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseProxy</span></code></a></p></td>
+<td><p>Base class for protocol classes.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#socks_router.proxies.FileProxy" title="socks_router.proxies.FileProxy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FileProxy</span></code></a></p></td>
+<td><p>Base class for protocol classes.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#socks_router.proxies.LiteralProxy" title="socks_router.proxies.LiteralProxy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LiteralProxy</span></code></a></p></td>
+<td><p>Base class for protocol classes.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#socks_router.proxies.observer" title="socks_router.proxies.observer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">observer</span></code></a>(...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#socks_router.proxies.create_proxy" title="socks_router.proxies.create_proxy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_proxy</span></code></a>(→ create_proxy.T)</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="socks_router.proxies.logger">
+<span class="sig-name descname"><span class="pre">logger</span></span><a class="headerlink" href="#socks_router.proxies.logger" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="socks_router.proxies.Parser">
+<span class="sig-name descname"><span class="pre">Parser</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">TypeAlias</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Callable[[S],</span> <span class="pre">T]</span></em><a class="headerlink" href="#socks_router.proxies.Parser" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="socks_router.proxies.ModifiedEvent">
+<span class="sig-name descname"><span class="pre">ModifiedEvent</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">TypeAlias</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">DirModifiedEvent</span> <span class="pre">|</span> <span class="pre">FileModifiedEvent</span></em><a class="headerlink" href="#socks_router.proxies.ModifiedEvent" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="socks_router.proxies.Proxy">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Proxy</span></span><a class="reference internal" href="../../../_modules/socks_router/proxies.html#Proxy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.proxies.Proxy" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">Protocol</span></code></p>
+<p>Base class for protocol classes.</p>
+<p>Protocol classes are defined as:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Proto</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">meth</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="o">...</span>
+</pre></div>
+</div>
+<p>Such classes are primarily used with static type checkers that recognize
+structural subtyping (static duck-typing).</p>
+<p>For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">C</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">meth</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Proto</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">meth</span><span class="p">()</span>
+
+<span class="n">func</span><span class="p">(</span><span class="n">C</span><span class="p">())</span>  <span class="c1"># Passes static type check</span>
+</pre></div>
+</div>
+<p>See PEP 544 for details. Protocol classes decorated with
+&#64;typing.runtime_checkable act as simple-minded runtime protocols that check
+only the presence of given attributes, ignoring their type signatures.
+Protocol classes can be generic, they are defined as:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">GenProto</span><span class="p">[</span><span class="n">T</span><span class="p">](</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">meth</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
+        <span class="o">...</span>
+</pre></div>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.proxies.Proxy.__subject__">
+<span class="sig-name descname"><span class="pre">__subject__</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Proxy.T</span></em><a class="headerlink" href="#socks_router.proxies.Proxy.__subject__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="socks_router.proxies.BaseProxy">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">BaseProxy</span></span><a class="reference internal" href="../../../_modules/socks_router/proxies.html#BaseProxy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.proxies.BaseProxy" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#socks_router.proxies.Proxy" title="socks_router.proxies.Proxy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Proxy</span></code></a>[<code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseProxy.T</span></code>]</p>
+<p>Base class for protocol classes.</p>
+<p>Protocol classes are defined as:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Proto</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">meth</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="o">...</span>
+</pre></div>
+</div>
+<p>Such classes are primarily used with static type checkers that recognize
+structural subtyping (static duck-typing).</p>
+<p>For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">C</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">meth</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Proto</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">meth</span><span class="p">()</span>
+
+<span class="n">func</span><span class="p">(</span><span class="n">C</span><span class="p">())</span>  <span class="c1"># Passes static type check</span>
+</pre></div>
+</div>
+<p>See PEP 544 for details. Protocol classes decorated with
+&#64;typing.runtime_checkable act as simple-minded runtime protocols that check
+only the presence of given attributes, ignoring their type signatures.
+Protocol classes can be generic, they are defined as:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">GenProto</span><span class="p">[</span><span class="n">T</span><span class="p">](</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">meth</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
+        <span class="o">...</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.proxies.BaseProxy.__getattr__">
+<span class="sig-name descname"><span class="pre">__getattr__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/socks_router/proxies.html#BaseProxy.__getattr__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.proxies.BaseProxy.__getattr__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.proxies.BaseProxy.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/socks_router/proxies.html#BaseProxy.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.proxies.BaseProxy.__getitem__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.proxies.BaseProxy.create">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">BaseProxy.create.P</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">BaseProxy.create.P</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="reference internal" href="../../../_modules/socks_router/proxies.html#BaseProxy.create"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.proxies.BaseProxy.create" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="socks_router.proxies.FileProxy">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FileProxy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Logger" title="(in Python v3.12)"><span class="pre">logging.Logger</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/socks_router/proxies.html#FileProxy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.proxies.FileProxy" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#socks_router.proxies.BaseProxy" title="socks_router.proxies.BaseProxy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseProxy</span></code></a>[<code class="xref py py-obj docutils literal notranslate"><span class="pre">FileProxy.T</span></code>], <code class="xref py py-obj docutils literal notranslate"><span class="pre">watchdog.events.LoggingEventHandler</span></code></p>
+<p>Base class for protocol classes.</p>
+<p>Protocol classes are defined as:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Proto</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">meth</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="o">...</span>
+</pre></div>
+</div>
+<p>Such classes are primarily used with static type checkers that recognize
+structural subtyping (static duck-typing).</p>
+<p>For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">C</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">meth</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Proto</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">meth</span><span class="p">()</span>
+
+<span class="n">func</span><span class="p">(</span><span class="n">C</span><span class="p">())</span>  <span class="c1"># Passes static type check</span>
+</pre></div>
+</div>
+<p>See PEP 544 for details. Protocol classes decorated with
+&#64;typing.runtime_checkable act as simple-minded runtime protocols that check
+only the presence of given attributes, ignoring their type signatures.
+Protocol classes can be generic, they are defined as:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">GenProto</span><span class="p">[</span><span class="n">T</span><span class="p">](</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">meth</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
+        <span class="o">...</span>
+</pre></div>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.proxies.FileProxy.path">
+<span class="sig-name descname"><span class="pre">path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></em><a class="headerlink" href="#socks_router.proxies.FileProxy.path" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.proxies.FileProxy.parser">
+<span class="sig-name descname"><span class="pre">parser</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Parser</span><span class="p"><span class="pre">[</span></span><span class="pre">FileProxy.T</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#socks_router.proxies.FileProxy.parser" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.proxies.FileProxy.mutex">
+<span class="sig-name descname"><span class="pre">mutex</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/threading.html#threading.Lock" title="(in Python v3.12)"><span class="pre">threading.Lock</span></a></em><a class="headerlink" href="#socks_router.proxies.FileProxy.mutex" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.proxies.FileProxy.__subject__">
+<span class="sig-name descname"><span class="pre">__subject__</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">FileProxy.T</span></em><a class="headerlink" href="#socks_router.proxies.FileProxy.__subject__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.proxies.FileProxy.__post_init__">
+<span class="sig-name descname"><span class="pre">__post_init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/socks_router/proxies.html#FileProxy.__post_init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.proxies.FileProxy.__post_init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.proxies.FileProxy.__hash__">
+<span class="sig-name descname"><span class="pre">__hash__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/socks_router/proxies.html#FileProxy.__hash__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.proxies.FileProxy.__hash__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="socks_router.proxies.FileProxy.event_filter">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">event_filter</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#type" title="(in Python v3.12)"><span class="pre">type</span></a><span class="p"><span class="pre">[</span></span><span class="pre">watchdog.events.FileSystemEvent</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#socks_router.proxies.FileProxy.event_filter" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="socks_router.proxies.FileProxy.content">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">content</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></em><a class="headerlink" href="#socks_router.proxies.FileProxy.content" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.proxies.FileProxy.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/socks_router/proxies.html#FileProxy.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.proxies.FileProxy.update" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.proxies.FileProxy.on_modified">
+<span class="sig-name descname"><span class="pre">on_modified</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ModifiedEvent</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/socks_router/proxies.html#FileProxy.on_modified"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.proxies.FileProxy.on_modified" title="Link to this definition"></a></dt>
+<dd><p>Called when a file or directory is modified.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">DirModifiedEvent</span></code> or <code class="xref py py-class docutils literal notranslate"><span class="pre">FileModifiedEvent</span></code>) – Event representing file/directory modification.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="socks_router.proxies.LiteralProxy">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LiteralProxy</span></span><a class="reference internal" href="../../../_modules/socks_router/proxies.html#LiteralProxy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.proxies.LiteralProxy" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#socks_router.proxies.BaseProxy" title="socks_router.proxies.BaseProxy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseProxy</span></code></a>[<code class="xref py py-obj docutils literal notranslate"><span class="pre">LiteralProxy.T</span></code>]</p>
+<p>Base class for protocol classes.</p>
+<p>Protocol classes are defined as:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Proto</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">meth</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="o">...</span>
+</pre></div>
+</div>
+<p>Such classes are primarily used with static type checkers that recognize
+structural subtyping (static duck-typing).</p>
+<p>For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">C</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">meth</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Proto</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">meth</span><span class="p">()</span>
+
+<span class="n">func</span><span class="p">(</span><span class="n">C</span><span class="p">())</span>  <span class="c1"># Passes static type check</span>
+</pre></div>
+</div>
+<p>See PEP 544 for details. Protocol classes decorated with
+&#64;typing.runtime_checkable act as simple-minded runtime protocols that check
+only the presence of given attributes, ignoring their type signatures.
+Protocol classes can be generic, they are defined as:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">GenProto</span><span class="p">[</span><span class="n">T</span><span class="p">](</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">meth</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
+        <span class="o">...</span>
+</pre></div>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.proxies.LiteralProxy.content">
+<span class="sig-name descname"><span class="pre">content</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">LiteralProxy.S</span></em><a class="headerlink" href="#socks_router.proxies.LiteralProxy.content" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.proxies.LiteralProxy.parser">
+<span class="sig-name descname"><span class="pre">parser</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Parser</span><span class="p"><span class="pre">[</span></span><span class="pre">LiteralProxy.T</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">LiteralProxy.S</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#socks_router.proxies.LiteralProxy.parser" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="socks_router.proxies.LiteralProxy.__subject__">
+<span class="sig-name descname"><span class="pre">__subject__</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">LiteralProxy.T</span></em><a class="headerlink" href="#socks_router.proxies.LiteralProxy.__subject__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="socks_router.proxies.LiteralProxy.__post_init__">
+<span class="sig-name descname"><span class="pre">__post_init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/socks_router/proxies.html#LiteralProxy.__post_init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.proxies.LiteralProxy.__post_init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="socks_router.proxies.observer">
+<span class="sig-name descname"><span class="pre">observer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">proxies</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#socks_router.proxies.Proxy" title="socks_router.proxies.Proxy"><span class="pre">Proxy</span></a><span class="p"><span class="pre">[</span></span><span class="pre">observer.T</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">watchdog.observers.ObserverType</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Observer</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Generator" title="(in Python v3.12)"><span class="pre">collections.abc.Generator</span></a><span class="p"><span class="pre">[</span></span><span class="pre">watchdog.observers.api.BaseObserver</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/socks_router/proxies.html#observer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.proxies.observer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="socks_router.proxies.create_proxy">
+<span class="sig-name descname"><span class="pre">create_proxy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">content</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/os.html#os.PathLike" title="(in Python v3.12)"><span class="pre">os.PathLike</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">parser</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Parser</span><span class="p"><span class="pre">[</span></span><span class="pre">create_proxy.T</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">create_proxy.T</span></span></span><a class="reference internal" href="../../../_modules/socks_router/proxies.html#create_proxy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#socks_router.proxies.create_proxy" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../parsers/index.html" class="btn btn-neutral float-left" title="socks_router.parsers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../router/index.html" class="btn btn-neutral float-right" title="socks_router.router" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

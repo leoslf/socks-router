@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>socks_router.models &mdash; Project name not set  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Project name not set
+          </a>
+              <div class="version">
+                0.2.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Project name not set</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">socks_router.models</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for socks_router.models</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">Final</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Self</span><span class="p">,</span> <span class="n">Protocol</span><span class="p">,</span> <span class="n">runtime_checkable</span><span class="p">,</span> <span class="n">overload</span><span class="p">,</span> <span class="n">assert_never</span>
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">MutableMapping</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">IntEnum</span><span class="p">,</span> <span class="n">StrEnum</span><span class="p">,</span> <span class="n">auto</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span> <span class="nn">subprocess</span> <span class="kn">import</span> <span class="n">Popen</span><span class="p">,</span> <span class="n">PIPE</span>
+<span class="kn">from</span> <span class="nn">more_itertools</span> <span class="kn">import</span> <span class="n">collapse</span><span class="p">,</span> <span class="n">zip_broadcast</span>
+
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">ipaddress</span>
+<span class="kn">import</span> <span class="nn">socks</span>
+
+<span class="n">SOCKS_VERSION</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span>
+
+<span class="nb">type</span> <span class="n">PackingSequence</span> <span class="o">=</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
+
+<span class="nb">type</span> <span class="n">RecursiveMapping</span><span class="p">[</span><span class="n">K</span><span class="p">,</span> <span class="n">V</span><span class="p">]</span> <span class="o">=</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">K</span><span class="p">,</span> <span class="n">V</span> <span class="o">|</span> <span class="n">RecursiveMapping</span><span class="p">[</span><span class="n">K</span><span class="p">,</span> <span class="n">V</span><span class="p">]]</span>
+
+<span class="n">PACKABLE_DEFERRED_FORMAT</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&amp;&quot;</span>
+<span class="n">PACKABLE_VARIABLE_LENGTH_DECLARATION_FORMAT</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;%*&quot;</span>
+
+
+<div class="viewcode-block" id="Packable">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.Packable">[docs]</a>
+<span class="nd">@runtime_checkable</span>
+<span class="k">class</span> <span class="nc">Packable</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+<div class="viewcode-block" id="Packable.__pack_format__">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.Packable.__pack_format__">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__pack_format__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span> <span class="o">...</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SupportsUnbytes">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.SupportsUnbytes">[docs]</a>
+<span class="nd">@runtime_checkable</span>
+<span class="k">class</span> <span class="nc">SupportsUnbytes</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+<div class="viewcode-block" id="SupportsUnbytes.__unbytes__">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.SupportsUnbytes.__unbytes__">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">__unbytes__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span> <span class="o">...</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SocketAddress">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.SocketAddress">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">SocketAddress</span><span class="p">:</span>
+    <span class="n">address</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">field</span><span class="p">()</span>
+    <span class="n">port</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="s2">&quot;!H&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="SocketAddress.__str__">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.SocketAddress.__str__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">port</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">address</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">url_literal</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sockaddr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">address</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">port</span> <span class="ow">or</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="SocketAddress.with_port">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.SocketAddress.with_port">[docs]</a>
+    <span class="k">def</span> <span class="nf">with_port</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">port</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">address</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SocketAddress.with_default_port">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.SocketAddress.with_default_port">[docs]</a>
+    <span class="k">def</span> <span class="nf">with_default_port</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">port</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">with_port</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">port</span> <span class="ow">or</span> <span class="n">port</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">url_literal</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;:&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">address</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">port</span><span class="p">])))</span></div>
+
+
+
+<div class="viewcode-block" id="IPv4">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.IPv4">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">IPv4</span><span class="p">(</span><span class="n">SocketAddress</span><span class="p">):</span>
+    <span class="n">address</span><span class="p">:</span> <span class="n">IPv4</span><span class="o">.</span><span class="n">IPv4Address</span>
+
+<div class="viewcode-block" id="IPv4.IPv4Address">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.IPv4.IPv4Address">[docs]</a>
+    <span class="k">class</span> <span class="nc">IPv4Address</span><span class="p">(</span><span class="n">ipaddress</span><span class="o">.</span><span class="n">IPv4Address</span><span class="p">):</span>
+<div class="viewcode-block" id="IPv4.IPv4Address.__pack_format__">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.IPv4.IPv4Address.__pack_format__">[docs]</a>
+        <span class="nd">@classmethod</span>
+        <span class="k">def</span> <span class="nf">__pack_format__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;!4B&quot;</span></div>
+
+
+<div class="viewcode-block" id="IPv4.IPv4Address.__bytes__">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.IPv4.IPv4Address.__bytes__">[docs]</a>
+        <span class="k">def</span> <span class="fm">__bytes__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">packed</span></div>
+
+
+<div class="viewcode-block" id="IPv4.IPv4Address.__unbytes__">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.IPv4.IPv4Address.__unbytes__">[docs]</a>
+        <span class="nd">@classmethod</span>
+        <span class="k">def</span> <span class="nf">__unbytes__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span></div>
+</div>
+
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">IPv4</span><span class="o">.</span><span class="n">IPv4Address</span><span class="p">,</span> <span class="o">*</span><span class="n">argv</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">address</span> <span class="o">=</span> <span class="n">IPv4</span><span class="o">.</span><span class="n">IPv4Address</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="o">*</span><span class="n">argv</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="IPv6">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.IPv6">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">IPv6</span><span class="p">(</span><span class="n">SocketAddress</span><span class="p">):</span>
+    <span class="n">address</span><span class="p">:</span> <span class="n">IPv6</span><span class="o">.</span><span class="n">IPv6Address</span>
+
+<div class="viewcode-block" id="IPv6.IPv6Address">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.IPv6.IPv6Address">[docs]</a>
+    <span class="k">class</span> <span class="nc">IPv6Address</span><span class="p">(</span><span class="n">ipaddress</span><span class="o">.</span><span class="n">IPv6Address</span><span class="p">):</span>
+<div class="viewcode-block" id="IPv6.IPv6Address.__pack_format__">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.IPv6.IPv6Address.__pack_format__">[docs]</a>
+        <span class="nd">@classmethod</span>
+        <span class="k">def</span> <span class="nf">__pack_format__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;!16B&quot;</span></div>
+
+
+<div class="viewcode-block" id="IPv6.IPv6Address.__bytes__">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.IPv6.IPv6Address.__bytes__">[docs]</a>
+        <span class="k">def</span> <span class="fm">__bytes__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">packed</span></div>
+
+
+<div class="viewcode-block" id="IPv6.IPv6Address.__unbytes__">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.IPv6.IPv6Address.__unbytes__">[docs]</a>
+        <span class="nd">@classmethod</span>
+        <span class="k">def</span> <span class="nf">__unbytes__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span></div>
+</div>
+
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">IPv6</span><span class="o">.</span><span class="n">IPv6Address</span><span class="p">,</span> <span class="o">*</span><span class="n">argv</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">address</span> <span class="o">=</span> <span class="n">IPv6</span><span class="o">.</span><span class="n">IPv6Address</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="o">*</span><span class="n">argv</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">url_literal</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;SEE: https://www.ietf.org/rfc/rfc2732.txt&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;:&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">address</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">port</span><span class="p">])))</span></div>
+
+
+
+<div class="viewcode-block" id="Host">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.Host">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Host</span><span class="p">(</span><span class="n">SocketAddress</span><span class="p">):</span>
+    <span class="n">address</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;!B</span><span class="si">%*s</span><span class="s2">&quot;</span><span class="p">]</span></div>
+
+
+
+<span class="nb">type</span> <span class="n">Address</span> <span class="o">=</span> <span class="n">IPv4</span> <span class="o">|</span> <span class="n">IPv6</span> <span class="o">|</span> <span class="n">Host</span>
+
+
+<div class="viewcode-block" id="Socks5Method">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.Socks5Method">[docs]</a>
+<span class="k">class</span> <span class="nc">Socks5Method</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;SEE: https://datatracker.ietf.org/doc/html/rfc1928#section-3&quot;&quot;&quot;</span>
+
+    <span class="n">NO_AUTHENTICATION_REQUIRED</span> <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">GSSAPI</span> <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">USERNAME_PASSWORD</span> <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="c1"># IANA_ASSIGNED = 0x03</span>
+    <span class="c1"># RESERVED_FOR_PRIVATE_METHODS = frozenset(range(0x80, 0xFF)) # 0x80..0xFE</span>
+    <span class="n">NO_ACCEPTABLE_METHODS</span> <span class="o">=</span> <span class="mh">0xFF</span>
+
+<div class="viewcode-block" id="Socks5Method.__pack_format__">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.Socks5Method.__pack_format__">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__pack_format__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;!B&quot;</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Socks5Command">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.Socks5Command">[docs]</a>
+<span class="k">class</span> <span class="nc">Socks5Command</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;SEE: https://datatracker.ietf.org/doc/html/rfc1928#section-4&quot;&quot;&quot;</span>
+
+    <span class="n">CONNECT</span> <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">BIND</span> <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">UDP_ASSOCIATE</span> <span class="o">=</span> <span class="mh">0x03</span>
+
+<div class="viewcode-block" id="Socks5Command.__pack_format__">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.Socks5Command.__pack_format__">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__pack_format__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;!B&quot;</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Socks5AddressType">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.Socks5AddressType">[docs]</a>
+<span class="k">class</span> <span class="nc">Socks5AddressType</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;SEE: https://datatracker.ietf.org/doc/html/rfc1928#section-4&quot;&quot;&quot;</span>
+
+    <span class="n">IPv4</span> <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="c1"># A fully-qualified domain name.  The first octet of the address field contains the number of octets of name that follow, there is no terminating NUL octet.</span>
+    <span class="n">DOMAINNAME</span> <span class="o">=</span> <span class="mh">0x03</span>
+    <span class="n">IPv6</span> <span class="o">=</span> <span class="mh">0x04</span>
+
+<div class="viewcode-block" id="Socks5AddressType.__pack_format__">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.Socks5AddressType.__pack_format__">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__pack_format__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;!B&quot;</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Socks5MethodSelectionRequest">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.Socks5MethodSelectionRequest">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">Socks5MethodSelectionRequest</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Socks5 Header.</span>
+<span class="sd">    SEE: https://datatracker.ietf.org/doc/html/rfc1928#section-3</span>
+<span class="sd">    Header</span>
+<span class="sd">    ------</span>
+<span class="sd">    | version | method_count | methods              |</span>
+<span class="sd">    | 1 byte  | 1 byte       | [method_count] bytes |</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">version</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="s2">&quot;!B&quot;</span><span class="p">]</span>
+    <span class="n">methods</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="s2">&quot;!B%*B&quot;</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="Socks5MethodSelectionResponse">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.Socks5MethodSelectionResponse">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">Socks5MethodSelectionResponse</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Socks5 Method Selection Response</span>
+<span class="sd">    Method Selection Response</span>
+<span class="sd">    -------------------------</span>
+<span class="sd">    | version | method |</span>
+<span class="sd">    | 1 byte  | 1 byte |</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">version</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="s2">&quot;!B&quot;</span><span class="p">]</span>
+    <span class="n">method</span><span class="p">:</span> <span class="n">Socks5Method</span></div>
+
+
+
+<div class="viewcode-block" id="Socks5Address">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.Socks5Address">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Socks5Address</span><span class="p">:</span>
+    <span class="nd">@classmethod</span>
+    <span class="nd">@overload</span>
+    <span class="k">def</span> <span class="nf">address_type</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="n">Socks5AddressType</span><span class="o">.</span><span class="n">IPv4</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="n">IPv4</span><span class="p">]:</span> <span class="o">...</span>
+    <span class="nd">@classmethod</span>
+    <span class="nd">@overload</span>
+    <span class="k">def</span> <span class="nf">address_type</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="n">Socks5AddressType</span><span class="o">.</span><span class="n">DOMAINNAME</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="n">Host</span><span class="p">]:</span> <span class="o">...</span>
+    <span class="nd">@classmethod</span>
+    <span class="nd">@overload</span>
+    <span class="k">def</span> <span class="nf">address_type</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="n">Socks5AddressType</span><span class="o">.</span><span class="n">IPv6</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="n">IPv6</span><span class="p">]:</span> <span class="o">...</span>
+
+<div class="viewcode-block" id="Socks5Address.address_type">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.Socks5Address.address_type">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">address_type</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="n">Socks5AddressType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="n">IPv4</span><span class="p">]</span> <span class="o">|</span> <span class="n">Type</span><span class="p">[</span><span class="n">Host</span><span class="p">]</span> <span class="o">|</span> <span class="n">Type</span><span class="p">[</span><span class="n">IPv6</span><span class="p">]:</span>
+        <span class="k">match</span> <span class="nb">type</span><span class="p">:</span>
+            <span class="k">case</span> <span class="n">Socks5AddressType</span><span class="o">.</span><span class="n">IPv4</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">IPv4</span>
+            <span class="k">case</span> <span class="n">Socks5AddressType</span><span class="o">.</span><span class="n">DOMAINNAME</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">Host</span>
+            <span class="k">case</span> <span class="n">Socks5AddressType</span><span class="o">.</span><span class="n">IPv6</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">IPv6</span>
+            <span class="k">case</span><span class="w"> </span><span class="k">_</span> <span class="k">as</span> <span class="n">unreachable</span><span class="p">:</span>
+                <span class="n">assert_never</span><span class="p">(</span><span class="n">unreachable</span><span class="p">)</span></div>
+
+
+    <span class="nb">type</span><span class="p">:</span> <span class="n">Socks5AddressType</span>
+    <span class="n">sockaddr</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Address</span><span class="p">,</span> <span class="s2">&quot;&amp;&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">,</span> <span class="s2">&quot;address_type&quot;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="Socks5Address.from_address">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.Socks5Address.from_address">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_address</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">address</span><span class="p">:</span> <span class="n">Address</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+        <span class="k">match</span> <span class="n">address</span><span class="p">:</span>
+            <span class="k">case</span> <span class="n">IPv4</span><span class="p">():</span>
+                <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">Socks5AddressType</span><span class="o">.</span><span class="n">IPv4</span><span class="p">,</span> <span class="n">address</span><span class="p">)</span>
+            <span class="k">case</span> <span class="n">Host</span><span class="p">():</span>
+                <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">Socks5AddressType</span><span class="o">.</span><span class="n">DOMAINNAME</span><span class="p">,</span> <span class="n">address</span><span class="p">)</span>
+            <span class="k">case</span> <span class="n">IPv6</span><span class="p">():</span>
+                <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">Socks5AddressType</span><span class="o">.</span><span class="n">IPv6</span><span class="p">,</span> <span class="n">address</span><span class="p">)</span>
+            <span class="k">case</span><span class="w"> </span><span class="k">_</span> <span class="k">as</span> <span class="n">unreachable</span><span class="p">:</span>
+                <span class="n">assert_never</span><span class="p">(</span><span class="n">unreachable</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Socks5Request">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.Socks5Request">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Socks5Request</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;SEE: https://datatracker.ietf.org/doc/html/rfc1928#section-4</span>
+<span class="sd">    Request</span>
+<span class="sd">    -------</span>
+<span class="sd">    | version | cmd    | rsv  | atyp   | dst.addr    | dst.port |</span>
+<span class="sd">    | 1 byte  | 1 byte | 0x00 | 1 byte | 4-255 bytes | 2 bytes  |</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">version</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="s2">&quot;!B&quot;</span><span class="p">]</span>
+    <span class="n">command</span><span class="p">:</span> <span class="n">Socks5Command</span>
+    <span class="n">reserved</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="s2">&quot;!B&quot;</span><span class="p">]</span>
+    <span class="n">destination</span><span class="p">:</span> <span class="n">Socks5Address</span></div>
+
+
+
+<div class="viewcode-block" id="Socks5ReplyType">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.Socks5ReplyType">[docs]</a>
+<span class="k">class</span> <span class="nc">Socks5ReplyType</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;SEE: https://datatracker.ietf.org/doc/html/rfc1928#section-6&quot;&quot;&quot;</span>
+
+    <span class="n">SUCCEEDED</span> <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">GENERAL_SOCKS_SERVER_FAILURE</span> <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">CONNECTION_NOT_ALLOWED_BY_RULESET</span> <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">NETWORK_UNREACHABLE</span> <span class="o">=</span> <span class="mh">0x03</span>
+    <span class="n">HOST_UNREACHABLE</span> <span class="o">=</span> <span class="mh">0x04</span>
+    <span class="n">CONNECTION_REFUSED</span> <span class="o">=</span> <span class="mh">0x05</span>
+    <span class="n">TTL_EXPIRED</span> <span class="o">=</span> <span class="mh">0x06</span>
+    <span class="n">COMMAND_NOT_SUPPORTED</span> <span class="o">=</span> <span class="mh">0x07</span>
+    <span class="n">ADDRESS_TYPE_NOT_SUPPORTED</span> <span class="o">=</span> <span class="mh">0x08</span>
+    <span class="c1"># UNASSIGNED = frozenset(range(0x09, 0x100)) # 0x09..0xFF</span>
+
+<div class="viewcode-block" id="Socks5ReplyType.__pack_format__">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.Socks5ReplyType.__pack_format__">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__pack_format__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;!B&quot;</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">message</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">socks</span><span class="o">.</span><span class="n">SOCKS5_ERRORS</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="Socks5Reply">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.Socks5Reply">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Socks5Reply</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Socks5 Reply</span>
+<span class="sd">    Reply</span>
+<span class="sd">    -----</span>
+<span class="sd">    | version | reply  | rsv  | atyp   | dst.addr    | dst.port |</span>
+<span class="sd">    | 1 byte  | 1 byte | 0x00 | 1 byte | 4-255 bytes | 2 bytes  |</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">version</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="s2">&quot;!B&quot;</span><span class="p">]</span>
+    <span class="n">reply</span><span class="p">:</span> <span class="n">Socks5ReplyType</span>
+    <span class="n">reserved</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="s2">&quot;!B&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">server_bound_address</span><span class="p">:</span> <span class="n">Socks5Address</span> <span class="o">=</span> <span class="n">Socks5Address</span><span class="o">.</span><span class="n">from_address</span><span class="p">(</span><span class="n">IPv4</span><span class="p">(</span><span class="s2">&quot;0.0.0.0&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="Socks5State">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.Socks5State">[docs]</a>
+<span class="k">class</span> <span class="nc">Socks5State</span><span class="p">(</span><span class="n">StrEnum</span><span class="p">):</span>
+    <span class="n">LISTEN</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">HANDSHAKE</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">REQUEST</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ESTABLISHED</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">CLOSED</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="Pattern">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.Pattern">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Pattern</span><span class="p">:</span>
+    <span class="n">address</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">is_positive_match</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+
+<div class="viewcode-block" id="Pattern.__str__">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.Pattern.__str__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s2">&quot;&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_positive_match</span> <span class="k">else</span> <span class="s2">&quot;!&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">address</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="UpstreamScheme">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.UpstreamScheme">[docs]</a>
+<span class="k">class</span> <span class="nc">UpstreamScheme</span><span class="p">(</span><span class="n">StrEnum</span><span class="p">):</span>
+    <span class="n">SSH</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">SOCKS5</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">SOCKS5H</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">default_port</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">match</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">case</span> <span class="n">UpstreamScheme</span><span class="o">.</span><span class="n">SSH</span><span class="p">:</span>
+                <span class="k">return</span> <span class="mi">22</span>
+            <span class="k">case</span> <span class="n">UpstreamScheme</span><span class="o">.</span><span class="n">SOCKS5</span> <span class="o">|</span> <span class="n">UpstreamScheme</span><span class="o">.</span><span class="n">SOCKS5H</span><span class="p">:</span>
+                <span class="k">return</span> <span class="mi">1080</span>
+            <span class="k">case</span><span class="w"> </span><span class="k">_</span> <span class="k">as</span> <span class="n">unreachable</span><span class="p">:</span>
+                <span class="n">assert_never</span><span class="p">(</span><span class="n">unreachable</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="UpstreamAddress">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.UpstreamAddress">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">UpstreamAddress</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">scheme</span><span class="p">:</span> <span class="n">UpstreamScheme</span>
+    <span class="n">address</span><span class="p">:</span> <span class="n">Address</span>
+
+<div class="viewcode-block" id="UpstreamAddress.__str__">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.UpstreamAddress.__str__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">scheme</span><span class="si">}</span><span class="s2">://</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">address</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+<div class="viewcode-block" id="UpstreamAddress.with_default_port">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.UpstreamAddress.with_default_port">[docs]</a>
+    <span class="k">def</span> <span class="nf">with_default_port</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">port</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">scheme</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">with_default_port</span><span class="p">(</span><span class="n">port</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">scheme</span><span class="o">.</span><span class="n">default_port</span><span class="p">))</span></div>
+</div>
+
+
+
+<span class="nb">type</span> <span class="n">RoutingEntry</span> <span class="o">=</span> <span class="nb">list</span><span class="p">[</span><span class="n">Pattern</span><span class="p">]</span>
+
+<span class="nb">type</span> <span class="n">RoutingTable</span> <span class="o">=</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">UpstreamAddress</span><span class="p">,</span> <span class="n">RoutingEntry</span><span class="p">]</span>
+
+<span class="n">Socks5Addresses</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Socks5AddressType</span><span class="p">,</span> <span class="nb">type</span><span class="p">[</span><span class="n">Address</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">Socks5AddressType</span><span class="o">.</span><span class="n">IPv4</span><span class="p">:</span> <span class="n">IPv4</span><span class="p">,</span>
+    <span class="n">Socks5AddressType</span><span class="o">.</span><span class="n">IPv6</span><span class="p">:</span> <span class="n">IPv6</span><span class="p">,</span>
+    <span class="n">Socks5AddressType</span><span class="o">.</span><span class="n">DOMAINNAME</span><span class="p">:</span> <span class="n">Host</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">Socks5AddressTypes</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">IPv4</span><span class="p">:</span> <span class="n">Socks5AddressType</span><span class="o">.</span><span class="n">IPv4</span><span class="p">,</span>
+    <span class="n">IPv6</span><span class="p">:</span> <span class="n">Socks5AddressType</span><span class="o">.</span><span class="n">IPv6</span><span class="p">,</span>
+    <span class="n">Host</span><span class="p">:</span> <span class="n">Socks5AddressType</span><span class="o">.</span><span class="n">DOMAINNAME</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="SSHUpstream">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.SSHUpstream">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">SSHUpstream</span><span class="p">:</span>
+    <span class="n">ssh_client</span><span class="p">:</span> <span class="n">Popen</span>
+    <span class="n">proxy_server</span><span class="p">:</span> <span class="n">Address</span>
+
+<div class="viewcode-block" id="SSHUpstream.create">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.SSHUpstream.create">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">upstream</span><span class="p">:</span> <span class="n">Address</span><span class="p">,</span> <span class="n">proxy_server</span><span class="p">:</span> <span class="n">Address</span><span class="p">,</span> <span class="n">ssh_options</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">Popen</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="s2">&quot;ssh&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;-NT&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;-D&quot;</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">proxy_server</span><span class="o">.</span><span class="n">port</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="o">*</span><span class="n">collapse</span><span class="p">(</span><span class="n">zip_broadcast</span><span class="p">(</span><span class="s2">&quot;-o&quot;</span><span class="p">,</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="p">(</span><span class="n">ssh_options</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">()])),</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">upstream</span><span class="o">.</span><span class="n">address</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="p">]</span>
+                <span class="o">+</span> <span class="p">([]</span> <span class="k">if</span> <span class="n">upstream</span><span class="o">.</span><span class="n">port</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[</span><span class="s2">&quot;-p&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">upstream</span><span class="o">.</span><span class="n">port</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]),</span>
+                <span class="n">stdout</span><span class="o">=</span><span class="n">PIPE</span><span class="p">,</span>
+                <span class="n">stderr</span><span class="o">=</span><span class="n">PIPE</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="n">proxy_server</span><span class="p">,</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ProxyUpstream">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.ProxyUpstream">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">ProxyUpstream</span><span class="p">:</span>
+    <span class="n">proxy_server</span><span class="p">:</span> <span class="n">Address</span></div>
+
+
+
+<span class="nb">type</span> <span class="n">Upstream</span> <span class="o">=</span> <span class="n">SSHUpstream</span> <span class="o">|</span> <span class="n">ProxyUpstream</span>
+
+
+<div class="viewcode-block" id="RetryOptions">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.RetryOptions">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">RetryOptions</span><span class="p">:</span>
+    <span class="n">tries</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">delay</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">max_delay</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">backoff</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">jitter</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="RetryOptions.exponential_backoff">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.RetryOptions.exponential_backoff">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">exponential_backoff</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">argv</span><span class="p">,</span> <span class="n">backoff</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">*</span><span class="n">argv</span><span class="p">,</span> <span class="o">**</span><span class="nb">dict</span><span class="p">(</span><span class="n">backoff</span><span class="o">=</span><span class="n">backoff</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ApplicationContext">
+<a class="viewcode-back" href="../../autoapi/socks_router/models/index.html#socks_router.models.ApplicationContext">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">ApplicationContext</span><span class="p">:</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;socks-router&quot;</span>
+    <span class="n">routing_table</span><span class="p">:</span> <span class="n">RoutingTable</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="c1"># seconds</span>
+    <span class="n">ssh_connection_timeout</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="c1"># seconds</span>
+    <span class="n">remote_socket_timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="c1"># seconds</span>
+    <span class="n">proxy_poll_socket_timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span>
+    <span class="n">proxy_retry_options</span><span class="p">:</span> <span class="n">RetryOptions</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">RetryOptions</span><span class="o">.</span><span class="n">exponential_backoff</span><span class="p">)</span>
+    <span class="n">mutex</span><span class="p">:</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">)</span>
+    <span class="n">upstreams</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="n">UpstreamAddress</span><span class="p">,</span> <span class="n">Upstream</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">is_terminating</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

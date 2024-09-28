@@ -1,0 +1,20 @@
+socks_router
+============
+
+.. py:module:: socks_router
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/socks_router/cli/index
+   /autoapi/socks_router/models/index
+   /autoapi/socks_router/parsers/index
+   /autoapi/socks_router/proxies/index
+   /autoapi/socks_router/router/index
+   /autoapi/socks_router/utils/index
+
+

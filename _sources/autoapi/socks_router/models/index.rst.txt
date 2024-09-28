@@ -1,0 +1,747 @@
+socks_router.models
+===================
+
+.. py:module:: socks_router.models
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   socks_router.models.SOCKS_VERSION
+   socks_router.models.PackingSequence
+   socks_router.models.RecursiveMapping
+   socks_router.models.PACKABLE_DEFERRED_FORMAT
+   socks_router.models.PACKABLE_VARIABLE_LENGTH_DECLARATION_FORMAT
+   socks_router.models.Address
+   socks_router.models.RoutingEntry
+   socks_router.models.RoutingTable
+   socks_router.models.Socks5Addresses
+   socks_router.models.Socks5AddressTypes
+   socks_router.models.Upstream
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   socks_router.models.Packable
+   socks_router.models.SupportsUnbytes
+   socks_router.models.SocketAddress
+   socks_router.models.IPv4
+   socks_router.models.IPv6
+   socks_router.models.Host
+   socks_router.models.Socks5Method
+   socks_router.models.Socks5Command
+   socks_router.models.Socks5AddressType
+   socks_router.models.Socks5MethodSelectionRequest
+   socks_router.models.Socks5MethodSelectionResponse
+   socks_router.models.Socks5Address
+   socks_router.models.Socks5Request
+   socks_router.models.Socks5ReplyType
+   socks_router.models.Socks5Reply
+   socks_router.models.Socks5State
+   socks_router.models.Pattern
+   socks_router.models.UpstreamScheme
+   socks_router.models.UpstreamAddress
+   socks_router.models.SSHUpstream
+   socks_router.models.ProxyUpstream
+   socks_router.models.RetryOptions
+   socks_router.models.ApplicationContext
+
+
+Module Contents
+---------------
+
+.. py:data:: SOCKS_VERSION
+   :type:  Literal[5]
+   :value: 5
+
+
+.. py:data:: PackingSequence
+   :type:  TypeAlias
+   :value: str | tuple[str, str]
+
+
+.. py:data:: RecursiveMapping
+   :type:  TypeAlias
+   :value: Mapping[K, V | RecursiveMapping[K, V]]
+
+
+.. py:data:: PACKABLE_DEFERRED_FORMAT
+   :type:  Final[str]
+   :value: '&'
+
+
+.. py:data:: PACKABLE_VARIABLE_LENGTH_DECLARATION_FORMAT
+   :type:  Final[str]
+   :value: '%*'
+
+
+.. py:class:: Packable
+
+   Bases: :py:obj:`Protocol`
+
+
+   Base class for protocol classes.
+
+   Protocol classes are defined as::
+
+       class Proto(Protocol):
+           def meth(self) -> int:
+               ...
+
+   Such classes are primarily used with static type checkers that recognize
+   structural subtyping (static duck-typing).
+
+   For example::
+
+       class C:
+           def meth(self) -> int:
+               return 0
+
+       def func(x: Proto) -> int:
+           return x.meth()
+
+       func(C())  # Passes static type check
+
+   See PEP 544 for details. Protocol classes decorated with
+   @typing.runtime_checkable act as simple-minded runtime protocols that check
+   only the presence of given attributes, ignoring their type signatures.
+   Protocol classes can be generic, they are defined as::
+
+       class GenProto[T](Protocol):
+           def meth(self) -> T:
+               ...
+
+
+   .. py:method:: __pack_format__() -> str
+      :classmethod:
+
+
+
+.. py:class:: SupportsUnbytes
+
+   Bases: :py:obj:`Protocol`
+
+
+   Base class for protocol classes.
+
+   Protocol classes are defined as::
+
+       class Proto(Protocol):
+           def meth(self) -> int:
+               ...
+
+   Such classes are primarily used with static type checkers that recognize
+   structural subtyping (static duck-typing).
+
+   For example::
+
+       class C:
+           def meth(self) -> int:
+               return 0
+
+       def func(x: Proto) -> int:
+           return x.meth()
+
+       func(C())  # Passes static type check
+
+   See PEP 544 for details. Protocol classes decorated with
+   @typing.runtime_checkable act as simple-minded runtime protocols that check
+   only the presence of given attributes, ignoring their type signatures.
+   Protocol classes can be generic, they are defined as::
+
+       class GenProto[T](Protocol):
+           def meth(self) -> T:
+               ...
+
+
+   .. py:method:: __unbytes__(input: bytes) -> Self
+      :classmethod:
+
+      :abstractmethod:
+
+
+
+.. py:class:: SocketAddress
+
+   .. py:attribute:: address
+      :type:  Any
+
+
+   .. py:attribute:: port
+      :type:  Annotated[Optional[int], !H]
+      :value: None
+
+
+
+   .. py:method:: __str__()
+
+
+   .. py:property:: sockaddr
+      :type: tuple[str, int]
+
+
+
+   .. py:method:: with_port(port: Optional[int]) -> Self
+
+
+   .. py:method:: with_default_port(port: int) -> Self
+
+
+   .. py:property:: url_literal
+      :type: str
+
+
+
+.. py:class:: IPv4(address: str | IPv4, *argv, **kwargs)
+
+   Bases: :py:obj:`SocketAddress`
+
+
+   .. py:attribute:: address
+      :type:  IPv4
+
+
+   .. py:class:: IPv4Address(address)
+
+      Bases: :py:obj:`ipaddress.IPv4Address`
+
+
+      Represent and manipulate single IPv4 Addresses.
+
+
+      .. py:method:: __pack_format__() -> str
+         :classmethod:
+
+
+
+      .. py:method:: __bytes__() -> bytes
+
+
+      .. py:method:: __unbytes__(input: bytes) -> Self
+         :classmethod:
+
+
+
+
+.. py:class:: IPv6(address: str | IPv6, *argv, **kwargs)
+
+   Bases: :py:obj:`SocketAddress`
+
+
+   .. py:attribute:: address
+      :type:  IPv6
+
+
+   .. py:class:: IPv6Address(address)
+
+      Bases: :py:obj:`ipaddress.IPv6Address`
+
+
+      Represent and manipulate single IPv6 Addresses.
+
+
+      .. py:method:: __pack_format__() -> str
+         :classmethod:
+
+
+
+      .. py:method:: __bytes__() -> bytes
+
+
+      .. py:method:: __unbytes__(input: bytes) -> Self
+         :classmethod:
+
+
+
+
+   .. py:property:: url_literal
+      :type: str
+
+      //www.ietf.org/rfc/rfc2732.txt
+
+      :type: SEE
+
+      :type: https
+
+
+.. py:class:: Host
+
+   Bases: :py:obj:`SocketAddress`
+
+
+   .. py:attribute:: address
+      :type:  Annotated[str, !B%*s]
+
+
+.. py:data:: Address
+   :type:  TypeAlias
+   :value: IPv4 | IPv6 | Host
+
+
+.. py:class:: Socks5Method
+
+   Bases: :py:obj:`enum.IntEnum`
+
+
+   SEE: https://datatracker.ietf.org/doc/html/rfc1928#section-3
+
+
+   .. py:attribute:: NO_AUTHENTICATION_REQUIRED
+      :value: 0
+
+
+
+   .. py:attribute:: GSSAPI
+      :value: 1
+
+
+
+   .. py:attribute:: USERNAME_PASSWORD
+      :value: 2
+
+
+
+   .. py:attribute:: NO_ACCEPTABLE_METHODS
+      :value: 255
+
+
+
+   .. py:method:: __pack_format__() -> str
+      :classmethod:
+
+
+
+.. py:class:: Socks5Command
+
+   Bases: :py:obj:`enum.IntEnum`
+
+
+   SEE: https://datatracker.ietf.org/doc/html/rfc1928#section-4
+
+
+   .. py:attribute:: CONNECT
+      :value: 1
+
+
+
+   .. py:attribute:: BIND
+      :value: 2
+
+
+
+   .. py:attribute:: UDP_ASSOCIATE
+      :value: 3
+
+
+
+   .. py:method:: __pack_format__() -> str
+      :classmethod:
+
+
+
+.. py:class:: Socks5AddressType
+
+   Bases: :py:obj:`enum.IntEnum`
+
+
+   SEE: https://datatracker.ietf.org/doc/html/rfc1928#section-4
+
+
+   .. py:attribute:: IPv4
+      :value: 1
+
+
+
+   .. py:attribute:: DOMAINNAME
+      :value: 3
+
+
+
+   .. py:attribute:: IPv6
+      :value: 4
+
+
+
+   .. py:method:: __pack_format__() -> str
+      :classmethod:
+
+
+
+.. py:class:: Socks5MethodSelectionRequest
+
+   Socks5 Header.
+   SEE: https://datatracker.ietf.org/doc/html/rfc1928#section-3
+   Header
+   ------
+   | version | method_count | methods              |
+   | 1 byte  | 1 byte       | [method_count] bytes |
+
+
+   .. py:attribute:: version
+      :type:  Annotated[int, !B]
+
+
+   .. py:attribute:: methods
+      :type:  Annotated[list[int], !B%*B]
+
+
+.. py:class:: Socks5MethodSelectionResponse
+
+   Socks5 Method Selection Response
+   Method Selection Response
+   -------------------------
+   | version | method |
+   | 1 byte  | 1 byte |
+
+
+   .. py:attribute:: version
+      :type:  Annotated[int, !B]
+
+
+   .. py:attribute:: method
+      :type:  Socks5Method
+
+
+.. py:class:: Socks5Address
+
+   .. py:method:: address_type(type: Literal[Socks5AddressType]) -> Type[IPv4]
+                  address_type(type: Literal[Socks5AddressType]) -> Type[Host]
+                  address_type(type: Literal[Socks5AddressType]) -> Type[IPv6]
+      :classmethod:
+
+
+
+   .. py:attribute:: type
+      :type:  Socks5AddressType
+
+
+   .. py:attribute:: sockaddr
+      :type:  Annotated[Address, &, Socks5Address.type, address_type]
+
+
+   .. py:method:: from_address(address: Address) -> Self
+      :classmethod:
+
+
+
+.. py:class:: Socks5Request
+
+   SEE: https://datatracker.ietf.org/doc/html/rfc1928#section-4
+   Request
+   -------
+   | version | cmd    | rsv  | atyp   | dst.addr    | dst.port |
+   | 1 byte  | 1 byte | 0x00 | 1 byte | 4-255 bytes | 2 bytes  |
+
+
+   .. py:attribute:: version
+      :type:  Annotated[int, !B]
+
+
+   .. py:attribute:: command
+      :type:  Socks5Command
+
+
+   .. py:attribute:: reserved
+      :type:  Annotated[int, !B]
+
+
+   .. py:attribute:: destination
+      :type:  Socks5Address
+
+
+.. py:class:: Socks5ReplyType
+
+   Bases: :py:obj:`enum.IntEnum`
+
+
+   SEE: https://datatracker.ietf.org/doc/html/rfc1928#section-6
+
+
+   .. py:attribute:: SUCCEEDED
+      :value: 0
+
+
+
+   .. py:attribute:: GENERAL_SOCKS_SERVER_FAILURE
+      :value: 1
+
+
+
+   .. py:attribute:: CONNECTION_NOT_ALLOWED_BY_RULESET
+      :value: 2
+
+
+
+   .. py:attribute:: NETWORK_UNREACHABLE
+      :value: 3
+
+
+
+   .. py:attribute:: HOST_UNREACHABLE
+      :value: 4
+
+
+
+   .. py:attribute:: CONNECTION_REFUSED
+      :value: 5
+
+
+
+   .. py:attribute:: TTL_EXPIRED
+      :value: 6
+
+
+
+   .. py:attribute:: COMMAND_NOT_SUPPORTED
+      :value: 7
+
+
+
+   .. py:attribute:: ADDRESS_TYPE_NOT_SUPPORTED
+      :value: 8
+
+
+
+   .. py:method:: __pack_format__() -> str
+      :classmethod:
+
+
+
+   .. py:property:: message
+      :type: str
+
+
+
+.. py:class:: Socks5Reply
+
+   Socks5 Reply
+   Reply
+   -----
+   | version | reply  | rsv  | atyp   | dst.addr    | dst.port |
+   | 1 byte  | 1 byte | 0x00 | 1 byte | 4-255 bytes | 2 bytes  |
+
+
+   .. py:attribute:: version
+      :type:  Annotated[int, !B]
+
+
+   .. py:attribute:: reply
+      :type:  Socks5ReplyType
+
+
+   .. py:attribute:: reserved
+      :type:  Annotated[int, !B]
+      :value: 0
+
+
+
+   .. py:attribute:: server_bound_address
+      :type:  Socks5Address
+
+
+.. py:class:: Socks5State
+
+   Bases: :py:obj:`enum.StrEnum`
+
+
+   Enum where members are also (and must be) strings
+
+
+   .. py:attribute:: LISTEN
+
+
+   .. py:attribute:: HANDSHAKE
+
+
+   .. py:attribute:: REQUEST
+
+
+   .. py:attribute:: ESTABLISHED
+
+
+   .. py:attribute:: CLOSED
+
+
+.. py:class:: Pattern
+
+   .. py:attribute:: address
+      :type:  str
+
+
+   .. py:attribute:: is_positive_match
+      :type:  bool
+      :value: True
+
+
+
+   .. py:method:: __str__()
+
+
+.. py:class:: UpstreamScheme
+
+   Bases: :py:obj:`enum.StrEnum`
+
+
+   Enum where members are also (and must be) strings
+
+
+   .. py:attribute:: SSH
+
+
+   .. py:attribute:: SOCKS5
+
+
+   .. py:attribute:: SOCKS5H
+
+
+   .. py:property:: default_port
+
+
+.. py:class:: UpstreamAddress
+
+   Bases: :py:obj:`object`
+
+
+   .. py:attribute:: scheme
+      :type:  UpstreamScheme
+
+
+   .. py:attribute:: address
+      :type:  Address
+
+
+   .. py:method:: __str__()
+
+
+   .. py:method:: with_default_port(port: Optional[int] = None) -> Self
+
+
+.. py:data:: RoutingEntry
+   :type:  TypeAlias
+   :value: list[Pattern]
+
+
+.. py:data:: RoutingTable
+   :type:  TypeAlias
+   :value: Mapping[UpstreamAddress, RoutingEntry]
+
+
+.. py:data:: Socks5Addresses
+   :type:  collections.abc.Mapping[Socks5AddressType, type[Address]]
+
+.. py:data:: Socks5AddressTypes
+
+.. py:class:: SSHUpstream
+
+   .. py:attribute:: ssh_client
+      :type:  subprocess.Popen
+
+
+   .. py:attribute:: proxy_server
+      :type:  Address
+
+
+   .. py:method:: create(upstream: Address, proxy_server: Address, ssh_options: Optional[dict] = None) -> Self
+      :classmethod:
+
+
+
+.. py:class:: ProxyUpstream
+
+   .. py:attribute:: proxy_server
+      :type:  Address
+
+
+.. py:data:: Upstream
+   :type:  TypeAlias
+   :value: SSHUpstream | ProxyUpstream
+
+
+.. py:class:: RetryOptions
+
+   .. py:attribute:: tries
+      :type:  int
+
+
+   .. py:attribute:: delay
+      :type:  float
+      :value: 1
+
+
+
+   .. py:attribute:: max_delay
+      :type:  Optional[float]
+      :value: None
+
+
+
+   .. py:attribute:: backoff
+      :type:  float
+      :value: 1
+
+
+
+   .. py:attribute:: jitter
+      :type:  float
+      :value: 0
+
+
+
+   .. py:method:: exponential_backoff(*argv, backoff=2, **kwargs)
+      :classmethod:
+
+
+
+.. py:class:: ApplicationContext
+
+   .. py:attribute:: name
+      :type:  str
+      :value: 'socks-router'
+
+
+
+   .. py:attribute:: routing_table
+      :type:  RoutingTable
+
+
+   .. py:attribute:: ssh_connection_timeout
+      :type:  int
+      :value: 10
+
+
+
+   .. py:attribute:: remote_socket_timeout
+      :type:  Optional[float]
+      :value: 10
+
+
+
+   .. py:attribute:: proxy_poll_socket_timeout
+      :type:  float
+      :value: 0.1
+
+
+
+   .. py:attribute:: proxy_retry_options
+      :type:  RetryOptions
+
+
+   .. py:attribute:: mutex
+      :type:  threading.Lock
+
+
+   .. py:attribute:: upstreams
+      :type:  collections.abc.MutableMapping[UpstreamAddress, Upstream]
+
+
+   .. py:attribute:: is_terminating
+      :type:  bool
+      :value: False
+
+
+

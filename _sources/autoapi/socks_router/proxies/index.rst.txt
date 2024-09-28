@@ -1,0 +1,279 @@
+socks_router.proxies
+====================
+
+.. py:module:: socks_router.proxies
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   socks_router.proxies.logger
+   socks_router.proxies.Parser
+   socks_router.proxies.ModifiedEvent
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   socks_router.proxies.Proxy
+   socks_router.proxies.BaseProxy
+   socks_router.proxies.FileProxy
+   socks_router.proxies.LiteralProxy
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   socks_router.proxies.observer
+   socks_router.proxies.create_proxy
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+.. py:data:: Parser
+   :type:  TypeAlias
+   :value: Callable[[S], T]
+
+
+.. py:data:: ModifiedEvent
+   :type:  TypeAlias
+   :value: DirModifiedEvent | FileModifiedEvent
+
+
+.. py:class:: Proxy
+
+   Bases: :py:obj:`Protocol`
+
+
+   Base class for protocol classes.
+
+   Protocol classes are defined as::
+
+       class Proto(Protocol):
+           def meth(self) -> int:
+               ...
+
+   Such classes are primarily used with static type checkers that recognize
+   structural subtyping (static duck-typing).
+
+   For example::
+
+       class C:
+           def meth(self) -> int:
+               return 0
+
+       def func(x: Proto) -> int:
+           return x.meth()
+
+       func(C())  # Passes static type check
+
+   See PEP 544 for details. Protocol classes decorated with
+   @typing.runtime_checkable act as simple-minded runtime protocols that check
+   only the presence of given attributes, ignoring their type signatures.
+   Protocol classes can be generic, they are defined as::
+
+       class GenProto[T](Protocol):
+           def meth(self) -> T:
+               ...
+
+
+   .. py:attribute:: __subject__
+      :type:  Proxy.T
+
+
+.. py:class:: BaseProxy
+
+   Bases: :py:obj:`Proxy`\ [\ :py:obj:`BaseProxy.T`\ ]
+
+
+   Base class for protocol classes.
+
+   Protocol classes are defined as::
+
+       class Proto(Protocol):
+           def meth(self) -> int:
+               ...
+
+   Such classes are primarily used with static type checkers that recognize
+   structural subtyping (static duck-typing).
+
+   For example::
+
+       class C:
+           def meth(self) -> int:
+               return 0
+
+       def func(x: Proto) -> int:
+           return x.meth()
+
+       func(C())  # Passes static type check
+
+   See PEP 544 for details. Protocol classes decorated with
+   @typing.runtime_checkable act as simple-minded runtime protocols that check
+   only the presence of given attributes, ignoring their type signatures.
+   Protocol classes can be generic, they are defined as::
+
+       class GenProto[T](Protocol):
+           def meth(self) -> T:
+               ...
+
+
+   .. py:method:: __getattr__(name)
+
+
+   .. py:method:: __getitem__(key)
+
+
+   .. py:method:: create(*args: BaseProxy.create.P, **kwargs: BaseProxy.create.P) -> T
+      :classmethod:
+
+
+
+.. py:class:: FileProxy(*, logger: logging.Logger | None = None)
+
+   Bases: :py:obj:`BaseProxy`\ [\ :py:obj:`FileProxy.T`\ ], :py:obj:`watchdog.events.LoggingEventHandler`
+
+
+   Base class for protocol classes.
+
+   Protocol classes are defined as::
+
+       class Proto(Protocol):
+           def meth(self) -> int:
+               ...
+
+   Such classes are primarily used with static type checkers that recognize
+   structural subtyping (static duck-typing).
+
+   For example::
+
+       class C:
+           def meth(self) -> int:
+               return 0
+
+       def func(x: Proto) -> int:
+           return x.meth()
+
+       func(C())  # Passes static type check
+
+   See PEP 544 for details. Protocol classes decorated with
+   @typing.runtime_checkable act as simple-minded runtime protocols that check
+   only the presence of given attributes, ignoring their type signatures.
+   Protocol classes can be generic, they are defined as::
+
+       class GenProto[T](Protocol):
+           def meth(self) -> T:
+               ...
+
+
+   .. py:attribute:: path
+      :type:  str
+
+
+   .. py:attribute:: parser
+      :type:  Parser[FileProxy.T, str]
+
+
+   .. py:attribute:: mutex
+      :type:  threading.Lock
+
+
+   .. py:attribute:: __subject__
+      :type:  FileProxy.T
+
+
+   .. py:method:: __post_init__()
+
+
+   .. py:method:: __hash__()
+
+
+   .. py:property:: event_filter
+      :type: list[type[watchdog.events.FileSystemEvent]]
+
+
+
+   .. py:property:: content
+      :type: str
+
+
+
+   .. py:method:: update()
+
+
+   .. py:method:: on_modified(event: ModifiedEvent)
+
+      Called when a file or directory is modified.
+
+      :param event:
+          Event representing file/directory modification.
+      :type event:
+          :class:`DirModifiedEvent` or :class:`FileModifiedEvent`
+
+
+
+.. py:class:: LiteralProxy
+
+   Bases: :py:obj:`BaseProxy`\ [\ :py:obj:`LiteralProxy.T`\ ]
+
+
+   Base class for protocol classes.
+
+   Protocol classes are defined as::
+
+       class Proto(Protocol):
+           def meth(self) -> int:
+               ...
+
+   Such classes are primarily used with static type checkers that recognize
+   structural subtyping (static duck-typing).
+
+   For example::
+
+       class C:
+           def meth(self) -> int:
+               return 0
+
+       def func(x: Proto) -> int:
+           return x.meth()
+
+       func(C())  # Passes static type check
+
+   See PEP 544 for details. Protocol classes decorated with
+   @typing.runtime_checkable act as simple-minded runtime protocols that check
+   only the presence of given attributes, ignoring their type signatures.
+   Protocol classes can be generic, they are defined as::
+
+       class GenProto[T](Protocol):
+           def meth(self) -> T:
+               ...
+
+
+   .. py:attribute:: content
+      :type:  LiteralProxy.S
+
+
+   .. py:attribute:: parser
+      :type:  Parser[LiteralProxy.T, LiteralProxy.S]
+
+
+   .. py:attribute:: __subject__
+      :type:  LiteralProxy.T
+
+
+   .. py:method:: __post_init__()
+
+
+.. py:function:: observer(*proxies: Proxy[observer.T], cls: watchdog.observers.ObserverType = Observer) -> collections.abc.Generator[watchdog.observers.api.BaseObserver]
+
+.. py:function:: create_proxy(content: Optional[str], path: os.PathLike, parser: Parser[create_proxy.T, str], default: str) -> create_proxy.T
+

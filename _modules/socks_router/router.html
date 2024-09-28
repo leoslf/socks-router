@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>socks_router.router &mdash; Project name not set  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Project name not set
+          </a>
+              <div class="version">
+                0.2.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Project name not set</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">socks_router.router</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for socks_router.router</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">dataclasses</span>
+
+<span class="kn">import</span> <span class="nn">struct</span>
+<span class="kn">import</span> <span class="nn">fnmatch</span>
+
+<span class="kn">import</span> <span class="nn">errno</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">selectors</span>
+<span class="kn">import</span> <span class="nn">socks</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">assert_never</span><span class="p">,</span> <span class="n">cast</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterator</span>
+<span class="kn">from</span> <span class="nn">more_itertools</span> <span class="kn">import</span> <span class="n">partition</span>
+<span class="kn">from</span> <span class="nn">socketserver</span> <span class="kn">import</span> <span class="n">ThreadingTCPServer</span><span class="p">,</span> <span class="n">StreamRequestHandler</span>
+
+<span class="kn">from</span> <span class="nn">retry.api</span> <span class="kn">import</span> <span class="n">retry_call</span>
+
+<span class="kn">from</span> <span class="nn">socks_router.parsers</span> <span class="kn">import</span> <span class="n">parse_sockaddr</span><span class="p">,</span> <span class="n">pysocks_socks5_error</span>
+
+<span class="kn">from</span> <span class="nn">socks_router.models</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">SOCKS_VERSION</span><span class="p">,</span>
+    <span class="n">Socks5Method</span><span class="p">,</span>
+    <span class="n">Socks5Command</span><span class="p">,</span>
+    <span class="n">Socks5AddressType</span><span class="p">,</span>
+    <span class="n">Socks5MethodSelectionRequest</span><span class="p">,</span>
+    <span class="n">Socks5MethodSelectionResponse</span><span class="p">,</span>
+    <span class="n">Socks5Request</span><span class="p">,</span>
+    <span class="n">Socks5Address</span><span class="p">,</span>
+    <span class="n">Socks5ReplyType</span><span class="p">,</span>
+    <span class="n">Socks5Reply</span><span class="p">,</span>
+    <span class="n">Socks5State</span><span class="p">,</span>
+    <span class="n">Address</span><span class="p">,</span>
+    <span class="n">IPv4</span><span class="p">,</span>
+    <span class="n">IPv6</span><span class="p">,</span>
+    <span class="n">Host</span><span class="p">,</span>
+    <span class="n">Pattern</span><span class="p">,</span>
+    <span class="n">UpstreamScheme</span><span class="p">,</span>
+    <span class="n">UpstreamAddress</span><span class="p">,</span>
+    <span class="n">SSHUpstream</span><span class="p">,</span>
+    <span class="n">ProxyUpstream</span><span class="p">,</span>
+    <span class="n">RetryOptions</span><span class="p">,</span>
+    <span class="n">ApplicationContext</span><span class="p">,</span>
+    <span class="n">RoutingTable</span><span class="p">,</span>
+    <span class="n">Socks5AddressTypes</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">socks_router.utils</span> <span class="kn">import</span> <span class="n">read_socket</span><span class="p">,</span> <span class="n">write_socket</span><span class="p">,</span> <span class="n">free_port</span>
+
+<span class="n">CHUNK_SIZE</span> <span class="o">=</span> <span class="mi">4096</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="create_socket">
+<a class="viewcode-back" href="../../autoapi/socks_router/router/index.html#socks_router.router.create_socket">[docs]</a>
+<span class="k">def</span> <span class="nf">create_socket</span><span class="p">[</span><span class="o">**</span><span class="n">P</span><span class="p">](</span><span class="nb">type</span><span class="p">:</span> <span class="n">Socks5AddressType</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">P</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">P</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">socks</span><span class="o">.</span><span class="n">socksocket</span><span class="p">:</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;create_socket&quot;</span><span class="p">)</span>
+    <span class="k">match</span> <span class="nb">type</span><span class="p">:</span>
+        <span class="k">case</span> <span class="n">Socks5AddressType</span><span class="o">.</span><span class="n">IPv4</span> <span class="o">|</span> <span class="n">Socks5AddressType</span><span class="o">.</span><span class="n">DOMAINNAME</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">socks</span><span class="o">.</span><span class="n">socksocket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">,</span> <span class="n">proto</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">case</span> <span class="n">Socks5AddressType</span><span class="o">.</span><span class="n">IPv6</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">socks</span><span class="o">.</span><span class="n">socksocket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET6</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">,</span> <span class="n">proto</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">case</span><span class="w"> </span><span class="k">_</span> <span class="k">as</span> <span class="n">unreachable</span><span class="p">:</span>
+            <span class="n">assert_never</span><span class="p">(</span><span class="n">unreachable</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="with_proxy">
+<a class="viewcode-back" href="../../autoapi/socks_router/router/index.html#socks_router.router.with_proxy">[docs]</a>
+<span class="k">def</span> <span class="nf">with_proxy</span><span class="p">(</span><span class="n">socket</span><span class="p">:</span> <span class="n">socks</span><span class="o">.</span><span class="n">socksocket</span><span class="p">,</span> <span class="n">proxy_server</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Address</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">socks</span><span class="o">.</span><span class="n">socksocket</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">proxy_server</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">socket</span><span class="o">.</span><span class="n">set_proxy</span><span class="p">(</span><span class="n">socks</span><span class="o">.</span><span class="n">SOCKS5</span><span class="p">,</span> <span class="o">*</span><span class="n">proxy_server</span><span class="o">.</span><span class="n">sockaddr</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">socket</span></div>
+
+
+
+<div class="viewcode-block" id="poll_socket">
+<a class="viewcode-back" href="../../autoapi/socks_router/router/index.html#socks_router.router.poll_socket">[docs]</a>
+<span class="k">def</span> <span class="nf">poll_socket</span><span class="p">(</span><span class="n">destination</span><span class="p">:</span> <span class="n">Address</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">create_socket</span><span class="p">(</span><span class="n">Socks5AddressTypes</span><span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">destination</span><span class="p">)])</span> <span class="k">as</span> <span class="n">socket</span><span class="p">:</span>
+        <span class="n">socket</span><span class="o">.</span><span class="n">settimeout</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
+        <span class="n">socket</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">destination</span><span class="o">.</span><span class="n">sockaddr</span><span class="p">)</span>
+        <span class="n">socket</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="resolve_address">
+<a class="viewcode-back" href="../../autoapi/socks_router/router/index.html#socks_router.router.resolve_address">[docs]</a>
+<span class="k">def</span> <span class="nf">resolve_address</span><span class="p">(</span><span class="n">address</span><span class="p">:</span> <span class="n">Address</span><span class="p">,</span> <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logger</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Address</span><span class="p">:</span>
+    <span class="k">match</span> <span class="n">address</span><span class="p">:</span>
+        <span class="k">case</span> <span class="n">IPv4</span><span class="p">()</span> <span class="o">|</span> <span class="n">IPv6</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">address</span>
+        <span class="k">case</span> <span class="n">Host</span><span class="p">(</span><span class="n">hostname</span><span class="p">,</span> <span class="n">port</span><span class="p">):</span>
+            <span class="c1"># TODO: consider using socket.getaddrinfo</span>
+            <span class="k">return</span> <span class="n">IPv4</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">gethostbyname</span><span class="p">(</span><span class="n">hostname</span><span class="p">),</span> <span class="n">port</span><span class="p">)</span>
+        <span class="k">case</span><span class="w"> </span><span class="k">_</span> <span class="k">as</span> <span class="n">unreachable</span><span class="p">:</span>
+            <span class="n">assert_never</span><span class="p">(</span><span class="n">unreachable</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="create_remote">
+<a class="viewcode-back" href="../../autoapi/socks_router/router/index.html#socks_router.router.create_remote">[docs]</a>
+<span class="k">def</span> <span class="nf">create_remote</span><span class="p">(</span><span class="n">address</span><span class="p">:</span> <span class="n">Address</span><span class="p">,</span> <span class="n">proxy_server</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Address</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">socks</span><span class="o">.</span><span class="n">socksocket</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">with_proxy</span><span class="p">(</span><span class="n">create_socket</span><span class="p">(</span><span class="n">Socks5AddressTypes</span><span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">address</span><span class="p">)]),</span> <span class="n">proxy_server</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="connect_remote">
+<a class="viewcode-back" href="../../autoapi/socks_router/router/index.html#socks_router.router.connect_remote">[docs]</a>
+<span class="k">def</span> <span class="nf">connect_remote</span><span class="p">(</span>
+    <span class="n">destination</span><span class="p">:</span> <span class="n">Address</span><span class="p">,</span>
+    <span class="n">proxy_server</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Address</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">remote_socket_timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">proxy_poll_socket_timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
+    <span class="n">proxy_retry_options</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RetryOptions</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logger</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">socks</span><span class="o">.</span><span class="n">socksocket</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">proxy_server</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">retry_options</span><span class="p">:</span> <span class="n">RetryOptions</span> <span class="o">=</span> <span class="n">proxy_retry_options</span> <span class="ow">or</span> <span class="n">RetryOptions</span><span class="o">.</span><span class="n">exponential_backoff</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;polling proxy_server: </span><span class="si">{</span><span class="n">proxy_server</span><span class="si">}</span><span class="s2"> before connecting to destination </span><span class="si">{</span><span class="n">destination</span><span class="si">}</span><span class="s2"> with retry_options </span><span class="si">{</span><span class="n">retry_options</span><span class="si">}</span><span class="s2">, timeout: </span><span class="si">{</span><span class="n">proxy_poll_socket_timeout</span><span class="si">}</span><span class="s2">s&quot;</span>
+        <span class="p">)</span>
+        <span class="n">retry_call</span><span class="p">(</span>
+            <span class="n">poll_socket</span><span class="p">,</span>
+            <span class="p">(</span><span class="n">proxy_server</span><span class="p">,),</span>
+            <span class="nb">dict</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">proxy_poll_socket_timeout</span><span class="p">),</span>
+            <span class="n">exceptions</span><span class="o">=</span><span class="p">(</span><span class="ne">ConnectionRefusedError</span><span class="p">,),</span>
+            <span class="o">**</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">asdict</span><span class="p">(</span><span class="n">retry_options</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;proxy_server </span><span class="si">{</span><span class="n">proxy_server</span><span class="si">}</span><span class="s2"> ready&quot;</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;creating remote to destination </span><span class="si">{</span><span class="n">destination</span><span class="si">}</span><span class="s2"> with proxy_server </span><span class="si">{</span><span class="n">proxy_server</span><span class="si">}</span><span class="s2">, socket timeout: </span><span class="si">{</span><span class="n">remote_socket_timeout</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
+    <span class="n">remote</span> <span class="o">=</span> <span class="n">create_remote</span><span class="p">(</span><span class="n">destination</span><span class="p">,</span> <span class="n">proxy_server</span><span class="p">)</span>
+    <span class="n">remote</span><span class="o">.</span><span class="n">bind</span><span class="p">((</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;connecting to </span><span class="si">{</span><span class="n">destination</span><span class="o">.</span><span class="n">sockaddr</span><span class="si">}</span><span class="s2">, binding client socket: </span><span class="si">{</span><span class="n">remote</span><span class="o">.</span><span class="n">getsockname</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">remote</span><span class="o">.</span><span class="n">settimeout</span><span class="p">(</span><span class="n">remote_socket_timeout</span><span class="p">)</span>
+    <span class="n">remote</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">destination</span><span class="o">.</span><span class="n">sockaddr</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;connected to </span><span class="si">{</span><span class="n">destination</span><span class="o">.</span><span class="n">sockaddr</span><span class="si">}</span><span class="s2">, binding client socket: </span><span class="si">{</span><span class="n">remote</span><span class="o">.</span><span class="n">getsockname</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">remote</span></div>
+
+
+
+<div class="viewcode-block" id="exchange_loop">
+<a class="viewcode-back" href="../../autoapi/socks_router/router/index.html#socks_router.router.exchange_loop">[docs]</a>
+<span class="k">def</span> <span class="nf">exchange_loop</span><span class="p">(</span>
+    <span class="n">client</span><span class="p">:</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">,</span>
+    <span class="n">remote</span><span class="p">:</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">,</span>
+    <span class="n">chunk_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">CHUNK_SIZE</span><span class="p">,</span>
+    <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="k">with</span> <span class="n">selectors</span><span class="o">.</span><span class="n">DefaultSelector</span><span class="p">()</span> <span class="k">as</span> <span class="n">selector</span><span class="p">:</span>
+        <span class="n">selector</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">selectors</span><span class="o">.</span><span class="n">EVENT_READ</span><span class="p">,</span> <span class="n">remote</span><span class="p">)</span>
+        <span class="n">selector</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">remote</span><span class="p">,</span> <span class="n">selectors</span><span class="o">.</span><span class="n">EVENT_READ</span><span class="p">,</span> <span class="n">client</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">selector</span><span class="o">.</span><span class="n">get_map</span><span class="p">()</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">mask</span> <span class="ow">in</span> <span class="n">selector</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">timeout</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">data</span> <span class="o">:=</span> <span class="n">cast</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">fileobj</span><span class="p">)</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="n">chunk_size</span><span class="p">):</span>
+                    <span class="n">cast</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">sendall</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">selector</span><span class="o">.</span><span class="n">unregister</span><span class="p">(</span><span class="n">key</span><span class="o">.</span><span class="n">fileobj</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="match_upstream">
+<a class="viewcode-back" href="../../autoapi/socks_router/router/index.html#socks_router.router.match_upstream">[docs]</a>
+<span class="k">def</span> <span class="nf">match_upstream</span><span class="p">(</span><span class="n">routing_table</span><span class="p">:</span> <span class="n">RoutingTable</span><span class="p">,</span> <span class="n">destination</span><span class="p">:</span> <span class="n">Address</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">UpstreamAddress</span><span class="p">]:</span>
+    <span class="k">def</span> <span class="nf">matches</span><span class="p">(</span><span class="n">patterns</span><span class="p">:</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">Pattern</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">filter</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">destination</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">destination</span><span class="o">.</span><span class="n">address</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">],</span> <span class="n">pattern</span><span class="o">.</span><span class="n">address</span><span class="p">)</span> <span class="k">for</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">patterns</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">upstream</span><span class="p">,</span> <span class="n">patterns</span> <span class="ow">in</span> <span class="n">routing_table</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;matching upstream: </span><span class="si">{</span><span class="n">upstream</span><span class="si">}</span><span class="s2">, patterns: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span><span class="w"> </span><span class="n">patterns</span><span class="p">))</span><span class="si">}</span><span class="s2">, destination: </span><span class="si">{</span><span class="n">destination</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">denied</span><span class="p">,</span> <span class="n">allowed</span> <span class="o">=</span> <span class="n">partition</span><span class="p">(</span><span class="k">lambda</span> <span class="n">pattern</span><span class="p">:</span> <span class="n">pattern</span><span class="o">.</span><span class="n">is_positive_match</span><span class="p">,</span> <span class="n">patterns</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">matches</span><span class="p">(</span><span class="n">allowed</span><span class="p">))</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">matches</span><span class="p">(</span><span class="n">denied</span><span class="p">)):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;matched upstream: </span><span class="si">{</span><span class="n">upstream</span><span class="si">}</span><span class="s2">, patterns: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span><span class="w"> </span><span class="n">patterns</span><span class="p">))</span><span class="si">}</span><span class="s2">, destination: </span><span class="si">{</span><span class="n">destination</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">upstream</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;fallback upstream: </span><span class="si">{</span><span class="kc">None</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="SocksRouter">
+<a class="viewcode-back" href="../../autoapi/socks_router/router/index.html#socks_router.router.SocksRouter">[docs]</a>
+<span class="k">class</span> <span class="nc">SocksRouter</span><span class="p">(</span><span class="n">ThreadingTCPServer</span><span class="p">):</span>
+    <span class="n">allow_reuse_address</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">daemon_threads</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">block_on_close</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="n">context</span><span class="p">:</span> <span class="n">ApplicationContext</span>
+    <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="n">argv</span><span class="p">,</span>
+        <span class="n">context</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ApplicationContext</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">address_family</span><span class="p">:</span> <span class="n">socket</span><span class="o">.</span><span class="n">AddressFamily</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">context</span> <span class="ow">or</span> <span class="n">ApplicationContext</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">address_family</span> <span class="o">=</span> <span class="n">address_family</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">argv</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">address</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Address</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">parse_sockaddr</span><span class="p">(</span><span class="n">cast</span><span class="p">(</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">server_address</span><span class="p">))</span>
+
+<div class="viewcode-block" id="SocksRouter.server_activate">
+<a class="viewcode-back" href="../../autoapi/socks_router/router/index.html#socks_router.router.SocksRouter.server_activate">[docs]</a>
+    <span class="k">def</span> <span class="nf">server_activate</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Server started on </span><span class="si">%r</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">server_address</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">server_activate</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="SocksRouter.get_request">
+<a class="viewcode-back" href="../../autoapi/socks_router/router/index.html#socks_router.router.SocksRouter.get_request">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_request</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">conn</span><span class="p">,</span> <span class="n">addr</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_request</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting connection from client </span><span class="si">%r</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">addr</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">conn</span><span class="p">,</span> <span class="n">addr</span></div>
+
+
+<div class="viewcode-block" id="SocksRouter.shutdown_request">
+<a class="viewcode-back" href="../../autoapi/socks_router/router/index.html#socks_router.router.SocksRouter.shutdown_request">[docs]</a>
+    <span class="k">def</span> <span class="nf">shutdown_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Closing connection from client </span><span class="si">%s</span><span class="s2">:</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="o">*</span><span class="n">request</span><span class="o">.</span><span class="n">getpeername</span><span class="p">())</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Closing connection from client, request: </span><span class="si">%r</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">request</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">shutdown_request</span><span class="p">(</span><span class="n">request</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SocksRouter.shutdown">
+<a class="viewcode-back" href="../../autoapi/socks_router/router/index.html#socks_router.router.SocksRouter.shutdown">[docs]</a>
+    <span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Server is shutting down&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">upstream_address</span><span class="p">,</span> <span class="n">upstream</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">upstreams</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">match</span> <span class="n">upstream</span><span class="p">:</span>
+                <span class="k">case</span> <span class="n">SSHUpstream</span><span class="p">(</span><span class="n">ssh_client</span><span class="p">,</span> <span class="n">_</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">ssh_client</span><span class="o">.</span><span class="n">poll</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">ssh_client</span><span class="o">.</span><span class="n">kill</span><span class="p">()</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;ssh_client.stdout: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">ssh_client</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;ssh_client.stderr: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">ssh_client</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+                <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
+                    <span class="k">pass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">upstreams</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SocksRouterRequestHandler">
+<a class="viewcode-back" href="../../autoapi/socks_router/router/index.html#socks_router.router.SocksRouterRequestHandler">[docs]</a>
+<span class="k">class</span> <span class="nc">SocksRouterRequestHandler</span><span class="p">(</span><span class="n">StreamRequestHandler</span><span class="p">):</span>
+    <span class="n">server</span><span class="p">:</span> <span class="n">SocksRouter</span>
+    <span class="n">state</span><span class="p">:</span> <span class="n">Socks5State</span> <span class="o">=</span> <span class="n">Socks5State</span><span class="o">.</span><span class="n">LISTEN</span>
+    <span class="n">remote</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">socks</span><span class="o">.</span><span class="n">socksocket</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">logger</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">client_address</span> <span class="o">=</span> <span class="n">parse_sockaddr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client_address</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">getChild</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;handler-</span><span class="si">{</span><span class="n">client_address</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SocksRouterRequestHandler.acquire_upstream">
+<a class="viewcode-back" href="../../autoapi/socks_router/router/index.html#socks_router.router.SocksRouterRequestHandler.acquire_upstream">[docs]</a>
+    <span class="k">def</span> <span class="nf">acquire_upstream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">destination</span><span class="p">:</span> <span class="n">Address</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">UpstreamAddress</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">upstream</span> <span class="o">:=</span> <span class="n">match_upstream</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">routing_table</span><span class="p">,</span> <span class="n">destination</span><span class="p">))</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">mutex</span><span class="p">:</span>
+            <span class="k">match</span> <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">upstreams</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">upstream</span><span class="p">):</span>
+                <span class="k">case</span> <span class="n">SSHUpstream</span><span class="p">(</span><span class="n">ssh_client</span><span class="p">,</span> <span class="n">proxy_server</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">ssh_client</span><span class="o">.</span><span class="n">poll</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;found working upstream: </span><span class="si">{</span><span class="n">upstream</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">proxy_server</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="k">return</span> <span class="n">upstream</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;upstream </span><span class="si">{</span><span class="n">upstream</span><span class="si">}</span><span class="s2">, proxy_server: </span><span class="si">{</span><span class="n">proxy_server</span><span class="si">}</span><span class="s2"> connection is dead, removing from upstreams, stdout: %r, stderr: %r&quot;</span>
+                        <span class="o">%</span> <span class="p">(</span><span class="n">ssh_client</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="n">ssh_client</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+                    <span class="p">)</span>
+                    <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">upstreams</span><span class="p">[</span><span class="n">upstream</span><span class="p">]</span>
+                <span class="k">case</span> <span class="n">ProxyUpstream</span><span class="p">(</span><span class="n">proxy_server</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;found existing proxy upstream </span><span class="si">{</span><span class="n">upstream</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">proxy_server</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">upstream</span>
+                <span class="k">case</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;upstream: </span><span class="si">{</span><span class="n">upstream</span><span class="si">}</span><span class="s2"> does not appear in self.upstreams, creating...&quot;</span><span class="p">)</span>
+                <span class="k">case</span><span class="w"> </span><span class="k">_</span> <span class="k">as</span> <span class="n">unreachable</span><span class="p">:</span>
+                    <span class="n">assert_never</span><span class="p">(</span><span class="n">unreachable</span><span class="p">)</span>
+
+            <span class="k">match</span> <span class="n">upstream</span><span class="o">.</span><span class="n">scheme</span><span class="p">:</span>
+                <span class="k">case</span> <span class="n">UpstreamScheme</span><span class="o">.</span><span class="n">SSH</span><span class="p">:</span>
+                    <span class="c1"># check if ssh is reachable</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">upstreams</span><span class="p">[</span><span class="n">upstream</span><span class="p">]</span> <span class="o">=</span> <span class="n">SSHUpstream</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+                        <span class="n">upstream</span><span class="o">.</span><span class="n">address</span><span class="p">,</span>
+                        <span class="n">proxy_server</span> <span class="o">:=</span> <span class="n">IPv4</span><span class="p">(</span><span class="o">*</span><span class="n">free_port</span><span class="p">(</span><span class="s2">&quot;127.0.0.1&quot;</span><span class="p">)),</span>
+                        <span class="n">ssh_options</span><span class="o">=</span><span class="p">{</span>
+                            <span class="s2">&quot;StrictHostKeyChecking&quot;</span><span class="p">:</span> <span class="s2">&quot;accept-new&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;ConnectTimeout&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">ssh_connection_timeout</span><span class="p">,</span>
+                            <span class="s2">&quot;ServerAliveInterval&quot;</span><span class="p">:</span> <span class="mi">240</span><span class="p">,</span>
+                            <span class="s2">&quot;ExitOnForwardFailure&quot;</span><span class="p">:</span> <span class="s2">&quot;yes&quot;</span><span class="p">,</span>
+                        <span class="p">},</span>
+                    <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;ssh: </span><span class="si">%r</span><span class="s2">, proxy_server: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">upstream</span><span class="o">.</span><span class="n">address</span><span class="p">,</span> <span class="n">proxy_server</span><span class="p">))</span>
+                    <span class="k">return</span> <span class="n">upstream</span>
+                <span class="k">case</span> <span class="n">UpstreamScheme</span><span class="o">.</span><span class="n">SOCKS5</span> <span class="o">|</span> <span class="n">UpstreamScheme</span><span class="o">.</span><span class="n">SOCKS5H</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">upstreams</span><span class="p">[</span><span class="n">upstream</span><span class="p">]</span> <span class="o">=</span> <span class="n">ProxyUpstream</span><span class="p">(</span><span class="n">upstream</span><span class="o">.</span><span class="n">with_default_port</span><span class="p">()</span><span class="o">.</span><span class="n">address</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">upstream</span>
+                <span class="k">case</span><span class="w"> </span><span class="k">_</span> <span class="k">as</span> <span class="n">unreachable</span><span class="p">:</span>  <span class="c1"># type: ignore[misc]</span>
+                    <span class="n">assert_never</span><span class="p">(</span><span class="n">unreachable</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SocksRouterRequestHandler.handshake">
+<a class="viewcode-back" href="../../autoapi/socks_router/router/index.html#socks_router.router.SocksRouterRequestHandler.handshake">[docs]</a>
+    <span class="k">def</span> <span class="nf">handshake</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">request</span> <span class="o">=</span> <span class="n">read_socket</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="p">,</span> <span class="n">Socks5MethodSelectionRequest</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">version</span> <span class="o">!=</span> <span class="n">SOCKS_VERSION</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;invalid request: version: </span><span class="si">{</span><span class="n">request</span><span class="o">.</span><span class="n">version</span><span class="si">}</span><span class="s2">, methods: </span><span class="si">{</span><span class="n">request</span><span class="o">.</span><span class="n">methods</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">Socks5State</span><span class="o">.</span><span class="n">CLOSED</span>
+            <span class="k">return</span>
+
+        <span class="c1"># select method from server side</span>
+        <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">methods</span><span class="p">:</span>
+            <span class="k">match</span> <span class="n">method</span><span class="p">:</span>
+                <span class="k">case</span> <span class="n">Socks5Method</span><span class="o">.</span><span class="n">NO_AUTHENTICATION_REQUIRED</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;accept no authentication required&quot;</span><span class="p">)</span>
+                    <span class="n">write_socket</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="p">,</span> <span class="n">Socks5MethodSelectionResponse</span><span class="p">(</span><span class="n">SOCKS_VERSION</span><span class="p">,</span> <span class="n">Socks5Method</span><span class="o">.</span><span class="n">NO_AUTHENTICATION_REQUIRED</span><span class="p">)</span>
+                    <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">Socks5State</span><span class="o">.</span><span class="n">REQUEST</span>
+                    <span class="k">return</span>
+                <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
+                    <span class="k">pass</span>
+
+        <span class="c1"># none of the methods listed by the client are acceptable</span>
+        <span class="c1"># notify the client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;notify client no Socks5Method.NO_ACCEPTABLE_METHODS&quot;</span><span class="p">)</span>
+        <span class="n">write_socket</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="p">,</span> <span class="n">Socks5MethodSelectionResponse</span><span class="p">(</span><span class="n">SOCKS_VERSION</span><span class="p">,</span> <span class="n">Socks5Method</span><span class="o">.</span><span class="n">NO_ACCEPTABLE_METHODS</span><span class="p">))</span>
+        <span class="c1"># the client MUST close the connection</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">Socks5State</span><span class="o">.</span><span class="n">CLOSED</span></div>
+
+
+<div class="viewcode-block" id="SocksRouterRequestHandler.reply">
+<a class="viewcode-back" href="../../autoapi/socks_router/router/index.html#socks_router.router.SocksRouterRequestHandler.reply">[docs]</a>
+    <span class="k">def</span> <span class="nf">reply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="n">Socks5ReplyType</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Replying </span><span class="si">{</span><span class="nb">type</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">write_socket</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="p">,</span>
+                <span class="n">Socks5Reply</span><span class="p">(</span><span class="n">SOCKS_VERSION</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">server_bound_address</span><span class="o">=</span><span class="n">Socks5Address</span><span class="o">.</span><span class="n">from_address</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">address</span><span class="p">)),</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">BrokenPipeError</span><span class="p">:</span>
+            <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="SocksRouterRequestHandler.connect_remote">
+<a class="viewcode-back" href="../../autoapi/socks_router/router/index.html#socks_router.router.SocksRouterRequestHandler.connect_remote">[docs]</a>
+    <span class="k">def</span> <span class="nf">connect_remote</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">destination</span><span class="p">:</span> <span class="n">Address</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">socks</span><span class="o">.</span><span class="n">socksocket</span><span class="p">:</span>
+        <span class="n">proxy_server</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">upstream</span> <span class="o">:=</span> <span class="bp">self</span><span class="o">.</span><span class="n">acquire_upstream</span><span class="p">(</span><span class="n">destination</span><span class="p">))</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">proxy_server</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">upstreams</span><span class="p">[</span><span class="n">upstream</span><span class="p">]</span><span class="o">.</span><span class="n">proxy_server</span>
+            <span class="k">if</span> <span class="n">upstream</span><span class="o">.</span><span class="n">scheme</span> <span class="o">==</span> <span class="n">UpstreamScheme</span><span class="o">.</span><span class="n">SOCKS5</span><span class="p">:</span>
+                <span class="n">destination</span> <span class="o">=</span> <span class="n">resolve_address</span><span class="p">(</span><span class="n">destination</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;acquired upstream </span><span class="si">{</span><span class="n">upstream</span><span class="si">}</span><span class="s2"> with proxy_server </span><span class="si">{</span><span class="n">proxy_server</span><span class="si">}</span><span class="s2"> for destination </span><span class="si">{</span><span class="n">destination</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">connect_remote</span><span class="p">(</span>
+            <span class="n">destination</span><span class="p">,</span>
+            <span class="n">proxy_server</span><span class="p">,</span>
+            <span class="n">remote_socket_timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">remote_socket_timeout</span><span class="p">,</span>
+            <span class="n">proxy_poll_socket_timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">proxy_poll_socket_timeout</span><span class="p">,</span>
+            <span class="n">proxy_retry_options</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">proxy_retry_options</span><span class="p">,</span>
+            <span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SocksRouterRequestHandler.handle_request">
+<a class="viewcode-back" href="../../autoapi/socks_router/router/index.html#socks_router.router.SocksRouterRequestHandler.handle_request">[docs]</a>
+    <span class="k">def</span> <span class="nf">handle_request</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">request</span> <span class="o">=</span> <span class="n">read_socket</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="p">,</span> <span class="n">Socks5Request</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">match</span> <span class="n">request</span><span class="o">.</span><span class="n">command</span><span class="p">:</span>
+                <span class="k">case</span> <span class="n">Socks5Command</span><span class="o">.</span><span class="n">CONNECT</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">remote</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">connect_remote</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">destination</span><span class="o">.</span><span class="n">sockaddr</span><span class="p">)</span>
+
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;Connected to destination </span><span class="si">{</span><span class="n">request</span><span class="o">.</span><span class="n">destination</span><span class="o">.</span><span class="n">sockaddr</span><span class="si">}</span><span class="s2">, binding client socket: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">remote</span><span class="o">.</span><span class="n">getsockname</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">reply</span><span class="p">(</span><span class="n">Socks5ReplyType</span><span class="o">.</span><span class="n">SUCCEEDED</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">Socks5State</span><span class="o">.</span><span class="n">ESTABLISHED</span>
+                        <span class="k">return</span>
+                    <span class="k">except</span> <span class="n">socks</span><span class="o">.</span><span class="n">ProxyError</span> <span class="k">as</span> <span class="n">exception</span><span class="p">:</span>
+                        <span class="n">e</span> <span class="o">=</span> <span class="n">exception</span>
+                        <span class="k">while</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">socks</span><span class="o">.</span><span class="n">ProxyError</span><span class="p">)</span> <span class="ow">and</span> <span class="n">e</span><span class="o">.</span><span class="n">socket_err</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unwrapping </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                            <span class="n">e</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">socket_err</span>
+                        <span class="c1"># rethrow the inner-most socks.ProxyError</span>
+                        <span class="k">raise</span> <span class="n">e</span> <span class="kn">from</span> <span class="nn">exception</span>
+                <span class="k">case</span><span class="w"> </span><span class="k">_</span> <span class="k">as</span> <span class="n">command</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;COMMAND_NOT_SUPPORTED: </span><span class="si">{</span><span class="n">command</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">reply</span><span class="p">(</span><span class="n">Socks5ReplyType</span><span class="o">.</span><span class="n">COMMAND_NOT_SUPPORTED</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">Socks5State</span><span class="o">.</span><span class="n">CLOSED</span>
+                    <span class="k">return</span>
+        <span class="k">except</span> <span class="n">socks</span><span class="o">.</span><span class="n">SOCKS5Error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="c1"># upstream server returned an error to our socks client</span>
+            <span class="n">status</span><span class="p">,</span> <span class="n">error_message</span> <span class="o">=</span> <span class="n">pysocks_socks5_error</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">msg</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Upstream server returned error: </span><span class="si">{</span><span class="n">status</span><span class="si">:</span><span class="s2">#04x</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">error_message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reply</span><span class="p">(</span><span class="n">status</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">socks</span><span class="o">.</span><span class="n">GeneralProxyError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reply</span><span class="p">(</span><span class="n">Socks5ReplyType</span><span class="o">.</span><span class="n">GENERAL_SOCKS_SERVER_FAILURE</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">TimeoutError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reply</span><span class="p">(</span><span class="n">Socks5ReplyType</span><span class="o">.</span><span class="n">HOST_UNREACHABLE</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="k">match</span> <span class="n">e</span><span class="o">.</span><span class="n">errno</span><span class="p">:</span>
+                <span class="k">case</span> <span class="n">errno</span><span class="o">.</span><span class="n">ENETUNREACH</span> <span class="o">|</span> <span class="n">socket</span><span class="o">.</span><span class="n">EAI_NODATA</span> <span class="o">|</span> <span class="n">socket</span><span class="o">.</span><span class="n">EAI_NONAME</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">reply</span><span class="p">(</span><span class="n">Socks5ReplyType</span><span class="o">.</span><span class="n">NETWORK_UNREACHABLE</span><span class="p">)</span>
+                <span class="k">case</span> <span class="n">errno</span><span class="o">.</span><span class="n">EHOSTUNREACH</span> <span class="o">|</span> <span class="n">errno</span><span class="o">.</span><span class="n">ETIMEDOUT</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">reply</span><span class="p">(</span><span class="n">Socks5ReplyType</span><span class="o">.</span><span class="n">HOST_UNREACHABLE</span><span class="p">)</span>
+                <span class="k">case</span> <span class="n">errno</span><span class="o">.</span><span class="n">ECONNREFUSED</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">reply</span><span class="p">(</span><span class="n">Socks5ReplyType</span><span class="o">.</span><span class="n">CONNECTION_REFUSED</span><span class="p">)</span>
+                <span class="k">case</span> <span class="n">socket</span><span class="o">.</span><span class="n">EAI_ADDRFAMILY</span> <span class="o">|</span> <span class="n">socket</span><span class="o">.</span><span class="n">EAI_FAMILY</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">reply</span><span class="p">(</span><span class="n">Socks5ReplyType</span><span class="o">.</span><span class="n">ADDRESS_TYPE_NOT_SUPPORTED</span><span class="p">)</span>
+                <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;unexpected exception occured: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">errno</span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="o">.</span><span class="n">strerror</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">reply</span><span class="p">(</span><span class="n">Socks5ReplyType</span><span class="o">.</span><span class="n">GENERAL_SOCKS_SERVER_FAILURE</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;unexpected exception occurred: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reply</span><span class="p">(</span><span class="n">Socks5ReplyType</span><span class="o">.</span><span class="n">GENERAL_SOCKS_SERVER_FAILURE</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">Socks5State</span><span class="o">.</span><span class="n">CLOSED</span>
+        <span class="k">return</span></div>
+
+
+    <span class="c1"># TODO: When a reply (REP value other than X&#39;00&#39;) indicates a failure, the SOCKS server MUST terminate the TCP connection shortly after sending the reply.  This must be no more than 10 seconds after detecting the condition that caused a failure.</span>
+<div class="viewcode-block" id="SocksRouterRequestHandler.exchange">
+<a class="viewcode-back" href="../../autoapi/socks_router/router/index.html#socks_router.router.SocksRouterRequestHandler.exchange">[docs]</a>
+    <span class="k">def</span> <span class="nf">exchange</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">remote</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="n">exchange_loop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">remote</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">Socks5State</span><span class="o">.</span><span class="n">CLOSED</span></div>
+
+
+<div class="viewcode-block" id="SocksRouterRequestHandler.setup">
+<a class="viewcode-back" href="../../autoapi/socks_router/router/index.html#socks_router.router.SocksRouterRequestHandler.setup">[docs]</a>
+    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;setup&quot;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setup</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="SocksRouterRequestHandler.handle">
+<a class="viewcode-back" href="../../autoapi/socks_router/router/index.html#socks_router.router.SocksRouterRequestHandler.handle">[docs]</a>
+    <span class="k">def</span> <span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle incoming connections&quot;&quot;&quot;</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;state: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">match</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">:</span>
+                    <span class="k">case</span> <span class="n">Socks5State</span><span class="o">.</span><span class="n">LISTEN</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">Socks5State</span><span class="o">.</span><span class="n">HANDSHAKE</span>
+                    <span class="k">case</span> <span class="n">Socks5State</span><span class="o">.</span><span class="n">HANDSHAKE</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">handshake</span><span class="p">()</span>
+                        <span class="c1"># TODO: The client and server then enter a method-specific sub-negotiation.</span>
+                        <span class="c1"># Descriptions of the method-dependent sub-negotiations appear in separate memos.</span>
+                        <span class="c1"># Compliant implementations MUST support GSSAPI and SHOULD support USERNAME/PASSWORD authentication methods.</span>
+                    <span class="k">case</span> <span class="n">Socks5State</span><span class="o">.</span><span class="n">REQUEST</span><span class="p">:</span>
+                        <span class="c1"># Once the method-dependent subnegotiation has completed, the client sends the request details.  If the negotiated method includes encapsulation for purposes of integrity checking and/or confidentiality, these requests MUST be encapsulated in the method-dependent encapsulation.</span>
+                        <span class="c1"># The SOCKS server will typically evaluate the request based on source and destination addresses, and return one or more reply messages, as appropriate for the request type.</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">handle_request</span><span class="p">()</span>
+                    <span class="k">case</span> <span class="n">Socks5State</span><span class="o">.</span><span class="n">ESTABLISHED</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">exchange</span><span class="p">()</span>
+                    <span class="k">case</span> <span class="n">Socks5State</span><span class="o">.</span><span class="n">CLOSED</span><span class="p">:</span>
+                        <span class="k">break</span>
+                    <span class="k">case</span><span class="w"> </span><span class="k">_</span> <span class="k">as</span> <span class="n">unreachable</span><span class="p">:</span>
+                        <span class="n">assert_never</span><span class="p">(</span><span class="n">unreachable</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">struct</span><span class="o">.</span><span class="n">error</span><span class="p">:</span>
+                <span class="c1"># ignore: socket has nothing to read</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">Socks5State</span><span class="o">.</span><span class="n">CLOSED</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;unexpected exception occurred: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">Socks5State</span><span class="o">.</span><span class="n">CLOSED</span></div>
+
+
+<div class="viewcode-block" id="SocksRouterRequestHandler.finish">
+<a class="viewcode-back" href="../../autoapi/socks_router/router/index.html#socks_router.router.SocksRouterRequestHandler.finish">[docs]</a>
+    <span class="k">def</span> <span class="nf">finish</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">remote</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">remote</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">remote</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;finish&quot;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

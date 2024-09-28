@@ -1,0 +1,29 @@
+socks_router.cli
+================
+
+.. py:module:: socks_router.cli
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   socks_router.cli.logger
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   socks_router.cli.cli
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+.. py:function:: cli(ctx: click.Context, logging_config: str, hostname: str, port: int, routes: Optional[str], routes_file: pathlib.Path, retries: int)
+
