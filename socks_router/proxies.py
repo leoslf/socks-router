@@ -32,7 +32,7 @@ class BaseProxy[T](Proxy[T]):
         return self.__subject__[key]
 
     @classmethod
-    def create[**P](cls, *args: P.args, **kwargs: P.kwargs) -> T:
+    def create[**P](cls, *args: P.args, **kwargs: P.kwargs) -> T:  # type: ignore[valid-type]
         return cast(T, cls(*args, **kwargs))
 
 

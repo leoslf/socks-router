@@ -9,7 +9,7 @@ import socket
 import selectors
 import socks
 
-from typing import Optional, assert_never, cast
+from typing import Literal, Optional, assert_never, cast
 from collections.abc import Iterator
 from more_itertools import partition
 from socketserver import ThreadingTCPServer, StreamRequestHandler
@@ -30,6 +30,7 @@ from socks_router.models import (
     Socks5ReplyType,
     Socks5Reply,
     Socks5State,
+    SocketAddress,
     Address,
     IPv4,
     IPv6,
@@ -51,14 +52,26 @@ CHUNK_SIZE = 4096
 
 logger = logging.getLogger(__name__)
 
+type SocketType = Literal[  # type: ignore[valid-type]
+    socket.SOCK_STREAM,
+    socket.SOCK_DGRAM,
+    socket.SOCK_RAW,
+    socket.SOCK_RDM,
+    socket.SOCK_SEQPACKET,
+]
 
-def create_socket[**P](type: Socks5AddressType, *args: P.args, **kwargs: P.kwargs) -> socks.socksocket:
-    logger.info("create_socket")
-    match type:
+
+def create_socket[**P](
+    address_type: Socks5AddressType,
+    socket_type: SocketType = socket.SOCK_STREAM,
+    *args: P.args,  # type: ignore[valid-type]
+    **kwargs: P.kwargs,  # type: ignore[valid-type]
+) -> socks.socksocket:
+    match address_type:
         case Socks5AddressType.IPv4 | Socks5AddressType.DOMAINNAME:
-            return socks.socksocket(socket.AF_INET, socket.SOCK_STREAM, proto=0, *args, **kwargs)
+            return socks.socksocket(socket.AF_INET, socket_type, proto=0, *args, **kwargs)
         case Socks5AddressType.IPv6:
-            return socks.socksocket(socket.AF_INET6, socket.SOCK_STREAM, proto=0, *args, **kwargs)
+            return socks.socksocket(socket.AF_INET6, socket_type, proto=0, *args, **kwargs)
         case _ as unreachable:
             assert_never(unreachable)
 
@@ -297,12 +310,14 @@ class SocksRouterRequestHandler(StreamRequestHandler):
         # the client MUST close the connection
         self.state = Socks5State.CLOSED
 
-    def reply(self, type: Socks5ReplyType):
+    def reply(self, type: Socks5ReplyType, bound_address: Optional[Address] = None):
         self.logger.debug(f"Replying {type.name}")
         try:
             write_socket(
                 self.connection,
-                Socks5Reply(SOCKS_VERSION, type, server_bound_address=Socks5Address.from_address(self.server.address)),
+                Socks5Reply(
+                    SOCKS_VERSION, type, server_bound_address=Socks5Address.from_address(bound_address or self.server.address)
+                ),
             )
         except BrokenPipeError:
             pass
@@ -326,6 +341,7 @@ class SocksRouterRequestHandler(StreamRequestHandler):
 
     def handle_request(self):
         request = read_socket(self.connection, Socks5Request)
+        self.logger.info("request: %r", request)
 
         try:
             match request.command:
@@ -346,6 +362,25 @@ class SocksRouterRequestHandler(StreamRequestHandler):
                             e = e.socket_err
                         # rethrow the inner-most socks.ProxyError
                         raise e from exception
+                case Socks5Command.BIND:
+                    listener = create_socket(Socks5AddressTypes[type(request.destination.sockaddr)])
+                    listener.bind(request.destination.sockaddr)
+                    listener.listen(1)
+                    self.reply(Socks5ReplyType.SUCCEEDED, bound_address=request.destination.sockaddr)
+
+                    self.remote, remote_address = listener.accept()
+                    self.logger.warngin(f"{type(remote_address)}: {remote_address}")
+                    # FIXME
+                    self.reply(Socks5ReplyType.SUCCEEDED, bound_address=SocketAddress.from_sockaddr(remote_address))
+                    listener.close()
+                    self.state = Socks5State.ESTABLISHED
+                    return
+                case Socks5Command.UDP_ASSOCIATE:
+                    self.remote = create_socket(
+                        Socks5AddressTypes[type(request.destination.sockaddr)], socket_type=socket.SOCK_DGRAM
+                    )
+                    self.reply(Socks5ReplyType.SUCCEEDED, bound_address=SocketAddress.from_sockaddr(self.remote.getsockname()))
+                    return
                 case _ as command:
                     self.logger.warning(f"COMMAND_NOT_SUPPORTED: {command}")
                     self.reply(Socks5ReplyType.COMMAND_NOT_SUPPORTED)
@@ -412,7 +447,7 @@ class SocksRouterRequestHandler(StreamRequestHandler):
                     case Socks5State.ESTABLISHED:
                         self.exchange()
                     case Socks5State.CLOSED:
-                        break
+                        return
                     case _ as unreachable:
                         assert_never(unreachable)
             except struct.error:

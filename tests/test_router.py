@@ -13,6 +13,7 @@ import ipaddress
 import threading
 import subprocess
 import tempfile
+import struct
 
 import requests
 
@@ -23,7 +24,10 @@ import pytest
 from mocket import Mocket, MocketEntry, mocketize
 from mocket.mocket import MocketSocket, true_gethostbyname
 
+
 import socket
+
+
 import socks
 
 from socks_router.models import (
@@ -31,7 +35,6 @@ from socks_router.models import (
     Socks5Method,
     Socks5MethodSelectionRequest,
     Socks5MethodSelectionResponse,
-    Socks5Command,
     Socks5Request,
     Socks5ReplyType,
     Socks5Reply,
@@ -79,7 +82,7 @@ def ids(value, depth: int = 0):
 
 
 def proxies(proxy_server: Address, scheme: str = "socks5h") -> dict[str, str]:
-    return dict.fromkeys(["http", "https"], f"{scheme}://{proxy_server}")
+    return dict.fromkeys(["http", "https", "ftp"], f"{scheme}://{proxy_server}")
 
 
 # SEE: https://en.wikipedia.org/wiki/Reserved_IP_addresses
@@ -366,7 +369,7 @@ def describe_SocksRouter():
                         SOCKS_VERSION, Socks5Method.NO_ACCEPTABLE_METHODS
                     )
 
-    def when_client_attempt_to_use_command_other_than_connect():
+    def when_client_attempt_to_use_invalid_command():
         def it_should_reply_command_not_supported(daemonize):
             with daemonize() as proxy:
                 # handshake
@@ -381,7 +384,13 @@ def describe_SocksRouter():
                     # request
                     write_socket(
                         client,
-                        Socks5Request(SOCKS_VERSION, Socks5Command.BIND, 0x00, Socks5Address.from_address(Host("localhost", 80))),
+                        Socks5Request(
+                            SOCKS_VERSION,
+                            # intentionally invalid
+                            struct.pack("!B", 0xFF),  # type: ignore[arg-type]
+                            0x00,
+                            Socks5Address.from_address(Host("localhost", 80)),
+                        ),
                     )
                     assert read_socket(client, Socks5Reply) == Socks5Reply(
                         SOCKS_VERSION,
@@ -588,6 +597,63 @@ def describe_SocksRouter():
                             ).json()
 
                             process_request.assert_called()
+
+    """
+    # @pytest.fixture
+    # def daemonize_ftp(reraise):
+    #     @contextlib.contextmanager
+    #     def daemonize_ftp(
+    #         # NOTE: if we have to use server.address we have to bind with an actual address instead of 0.0.0.0 or ::
+    #         address: str = "127.0.0.1",
+    #         type: type[IPv4] | type[IPv6] | type[Host] = IPv4, # type: ignore[syntax]
+    #         handler: type = FTPHandler,
+    #         **kwargs,
+    #     ) -> Iterator[ThreadedFTPServer]:
+    #         authorizer = DummyAuthorizer()
+    #         authorizer.add_user("user", "fakepassword", ".", perm="elradfmwMT")
+    #         handler.authorizer = authorizer
+    #         _, port = free_port("127.0.0.1")
+    #         server = ThreadedFTPServer((address, port), handler, **kwargs)
+
+    #         threading.Thread(target=reraise.wrap(server.serve_forever), name="ftp", daemon=True).start()
+    #         yield server, type(address, port)
+
+    #     return daemonize_ftp
+
+    # def when_used_with_ftp():
+    #     def it_should_make_use_of_bind(daemonize_ftp, daemonize, mocker):
+    #         with tempfile.TemporaryDirectory() as workspace:
+    #             with daemonize_ftp() as (ftp_server, destination):
+    #                 with daemonize() as proxy:
+    #                     mocker.patch("ftplib.socket.create_connection", socks.create_connection)
+    #                     # set default proxy
+    #                     mocker.patch("socks.socksocket.default_proxy", (socks.SOCKS5, *proxy.address.sockaddr, True, None, None))
+    #                     # environ = {"ftp_proxy": f"socks5h://{proxy.address}"}
+
+    #                     ftp_address = f"ftp://user:fakepassword@{destination}"
+
+    #                     with open(os.path.join(workspace, "foo.txt"), "wb") as f:
+    #                         f.write(b"hello world")
+
+    #                     # CONNECT to ftp server as destination via proxy
+
+    #                     with ftplib.FTP() as ftp:
+    #                         ftp.set_debuglevel(1)
+    #                         logger.info(destination.sockaddr)
+    #                         ftp.connect(*destination.sockaddr)
+    #                         ftp.login("user", "fakepassword")
+
+    #                     # results = subprocess.check_output(["curl", "-P", "-", "--disable-eprt", ftp_address], cwd=workspace, env=environ)
+    #                     # logger.info("results: %r", results)
+
+    #                     # results = subprocess.check_output(["curl", "-P", "-", "-T", "foo.txt", "--disable-eprt", ftp_address], cwd=workspace, env=environ)
+    #                     # logger.info("results: %r", results)
+
+    #                     # results = subprocess.check_output(["curl", "-P", "-", "-T", "foo.txt", "--disable-eprt", ftp_address], cwd=workspace, env=environ)
+    #                     # logger.info("results: %r", results)
+
+    #                     raise Exception
+    """
 
     def when_filedesctiprors_get_out_of_FD_SETSIZE():
         @pytest.mark.parametrize("address_type,address", [(IPv4, "127.0.0.1")])

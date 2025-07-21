@@ -16,6 +16,7 @@ from typing import (
 from collections.abc import Iterator
 
 import builtins
+import enum
 import inspect
 import re
 import struct
@@ -83,7 +84,7 @@ def tokenize_pack_format(format: str) -> Iterator[PackingSequence]:
             yield ordering + field
 
 
-def read_socket[T](sock: socket.socket, type: builtins.type[T], format: Optional[str] = None) -> T:
+def read_socket[T](sock: socket.socket, type: builtins.type[T], format: Optional[str] = None, default: Optional[T] = None) -> T:
     def read(sock: socket.socket, format: str):
         return struct.unpack(format, sock.recv(struct.calcsize(format)))
 
@@ -111,6 +112,16 @@ def read_socket[T](sock: socket.socket, type: builtins.type[T], format: Optional
     is_str = inspect.isclass(type) and issubclass(type, str)
     supports_unbytes = inspect.isclass(type) and issubclass(type, SupportsUnbytes)
 
+    def create[**P](*args: P.args, **kwargs: P.kwargs) -> T:  # type: ignore[valid-type]
+        try:
+            return type(*args, **kwargs)
+        except ValueError as e:
+            if issubclass(cast(builtins.type[T], type), enum.Enum):
+                return cast(T, args[0])
+            if default is None:
+                raise e from None
+            return default
+
     if is_primitive or is_list(type) or is_str or supports_unbytes:
         if format is None:
             raise TypeError(f"cannot read {type} from socket without format")
@@ -134,11 +145,11 @@ def read_socket[T](sock: socket.socket, type: builtins.type[T], format: Optional
                     if is_str:
                         return content[0].decode("utf-8")
 
-                    return type(content)  # type: ignore[call-arg]
+                    return create(content)  # type: ignore[call-arg]
 
                 raise TypeError(f"variable-length format {format} is not allowed on non-sequence type, given type: {type}")
             case _ as fmt:
-                return type(*read(sock, cast(str, fmt)))
+                return create(*read(sock, cast(str, fmt)))
 
     if dataclasses.is_dataclass(type):
         field_descriptors = {field.name: field for field in dataclasses.fields(type)}
@@ -178,7 +189,7 @@ def read_socket[T](sock: socket.socket, type: builtins.type[T], format: Optional
             else:
                 results[name] = read_socket(sock, field.type)
 
-        return cast(T, type(**results))
+        return create(**results)
 
     # we have no way to deserialize
     raise TypeError(

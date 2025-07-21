@@ -1,6 +1,20 @@
 from __future__ import annotations
 
-from typing import Any, Annotated, Final, Literal, Optional, Type, Self, Protocol, runtime_checkable, overload, assert_never
+from typing import (
+    Any,
+    Annotated,
+    Final,
+    Literal,
+    Never,
+    Optional,
+    Type,
+    Self,
+    Protocol,
+    cast,
+    runtime_checkable,
+    overload,
+    assert_never,
+)
 from abc import abstractmethod
 from collections.abc import Mapping, MutableMapping
 from enum import IntEnum, StrEnum, auto
@@ -58,6 +72,25 @@ class SocketAddress:
     @property
     def url_literal(self) -> str:
         return ":".join(map(str, filter(lambda x: x is not None, [self.address, self.port])))
+
+    @overload
+    @classmethod
+    def from_sockaddr(self, sockaddr: tuple[str, int]) -> IPv4: ...
+    @overload
+    @classmethod
+    def from_sockaddr(self, sockaddr: tuple[str, int, int, int]) -> IPv6: ...
+    @classmethod
+    def from_sockaddr(self, sockaddr: tuple[str, int] | tuple[str, int, int, int]) -> IPv4 | IPv6:
+        match sockaddr:
+            case str(address), int(port):
+                return IPv4(address).with_port(port)
+            case str(address), int(port), int(flowinfo), int(scope_id):
+                cast(None, flowinfo)
+                if scope_id is not None:
+                    address = f"{address}%{scope_id}"
+                return IPv6(address).with_port(port)
+            case _ as unreachable:
+                assert_never(cast(Never, unreachable))
 
 
 @dataclass(frozen=True)
